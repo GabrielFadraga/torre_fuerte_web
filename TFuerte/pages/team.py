@@ -6,6 +6,7 @@ from TFuerte.components.info_text import info_text
 from TFuerte.views.header.header import header
 from TFuerte.views.header.header_about import header_about
 from TFuerte.views.header.header_team import header_team
+from TFuerte.views.header.header_responsive import header_responsive
 from TFuerte.views.links.links import links
 from TFuerte.components.footer import footer
 from TFuerte.components.link_button import link_button
