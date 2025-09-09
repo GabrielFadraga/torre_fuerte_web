@@ -5,7 +5,7 @@ from TFuerte.styles.colors import Text_tx
 def footer() -> rx.Component:
     return rx.vstack(
         rx.image(src="torre.png", border_radius="15px 15px", height="50px"),
-        rx.link(f"2020 - {datetime.date.today().year} by:torrefuertemipyme", 
+        rx.link(f"2024 - {datetime.date.today().year} by:torrefuertemipyme", 
                 href="https://www.instagram.com/torre_fuerte_surl?igsh=NGdkZDJxZnluNnM=",
                 is_external=True,
                 color=Text_tx.Footer.value),
