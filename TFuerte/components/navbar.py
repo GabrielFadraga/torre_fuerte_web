@@ -9,16 +9,6 @@ from TFuerte.routes import Route
 def navbar(text: str) -> rx.Component:
     return rx.box(
             rx.hstack(
-                rx.link(
-                rx.avatar(  fallback="TF", 
-                    size="6", 
-                    src="tf2.png",
-                    radius="full",
-                    margin="1.3em",        #styles.Spacer.LARGE.value,
-                    #padding_x="11px"
-                    ),
-                href=Route.INDEX.value,
-            ),
                     rx.vstack(
                     title(
                         text=text),
@@ -30,7 +20,8 @@ def navbar(text: str) -> rx.Component:
                 ),
                 justify="between",
                 align_items="center",
-                bg=Color_tx.Content.value,
+                bg=Color_tx.New.value,
+                #bg=
                 padding=styles.Spacer.EXTRA_SMALL.value,
                 width="100%",
                 style=styles.navbar_title_style,

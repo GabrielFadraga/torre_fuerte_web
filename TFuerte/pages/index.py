@@ -3,6 +3,7 @@ import TFuerte.utils as utils
 from TFuerte.components.navbar import navbar
 from TFuerte.components.info_text import info_text
 from TFuerte.views.header.header import header
+from TFuerte.views.header.header_img import header_img
 from TFuerte.views.links.links import links
 from TFuerte.components.footer import footer
 from TFuerte.components.link_button import link_button
@@ -24,12 +25,13 @@ def index() -> rx.Component:
         navbar("Bienvenidos a Torre Fuerte"),
         rx.center(
             rx.vstack(
+                #header_img(),
                 header(),
                 links(),
                 sponsor(),
 
                 align_items="center",
-                max_width=styles.MAX_WIDTH,
+                #max_width=styles.MAX_WIDTH,
                 margin_y=styles.Spacer.BIG.value,
                 width="100%",
                 spacing="2",

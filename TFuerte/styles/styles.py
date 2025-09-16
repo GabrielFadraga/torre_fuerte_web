@@ -31,7 +31,7 @@ StyleSheets = [
 BASE_STYLES = {
     "font_family" : fonttx.Default.value,
     "font_weight" : FontWeight.Light.value,
-    "background_color" : tx.Background.value,
+    "background_color" : tx.New.value,
 
     rx.button: {
         "width":"100%",
@@ -58,16 +58,17 @@ navbar_title_style = dict(
 )
 
 title_style = dict(
-    size="lg",
+    #size="lg",
     width="100%",
     padding_top=Spacer.DEFAULT.value,
     font_family= fonttx.Default.value,
     font_weight= FontWeight.Light.value,
+
 )
 
 button_title_style = dict(
     font_family= fonttx.Title.value,
-    font_size=Spacer.DEFAULT.value
+    font_size=Spacer.LARGE.value
 )
 
 button_body_style = dict(

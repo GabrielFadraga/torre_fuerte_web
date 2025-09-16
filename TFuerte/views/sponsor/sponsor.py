@@ -4,10 +4,8 @@ from TFuerte.components.title import title
 from TFuerte.components.link_sponsor import link_sponsor
 
 def sponsor() -> rx.Component:
-    return rx.vstack(
-        title("Nuestros clientes:",
-        ),
-        rx.grid(
+    return rx.hstack(
+        rx.hstack(
             link_sponsor(
                 "navegacion.png",
                 "https://www.gemar.transnet.cu/es/empresas/empresa-de-navegacion-caribe",
@@ -20,9 +18,12 @@ def sponsor() -> rx.Component:
                 "eng.png",
                 "https://www.engimov.pt/es/grupo/engimov-caribe",
             ),
-            spacing="6",
-            columns=rx.breakpoints(initial="1", sm="2", lg="3"),
+            align_items="center",
+            spacing="8",
+            width="20%",
         ),
-        width="100%",
-        spacing="5"
+            background_color="#194264FF",
+            z_index="1000",
+            width="80%",
+            justify="center",
     )

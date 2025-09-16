@@ -1,6 +1,7 @@
 import reflex as rx
 from TFuerte.components.info_text import info_text
 import TFuerte.styles.styles as styles
+from TFuerte.styles.colors import Text_tx
 
 def header_services() -> rx.Component:
         return rx.center(
@@ -38,6 +39,7 @@ def header_services() -> rx.Component:
                 ),
                 align_items="start",
                 width="100%",
+                color=Text_tx.Black.value,
                 ),
                 
         #spacing="5",

@@ -5,11 +5,12 @@ from TFuerte.views.header.header_responsive import header_responsive
 
 def header_team() -> rx.Component:
     return rx.center(
-    rx.vstack(
+        rx.vstack(
         rx.desktop_only(
         rx.hstack(
             rx.heading("Consejo Directivo"),
             align_items="start",
+            margin=styles.Spacer.SMALL.value,
         ),
         #1 user
         rx.vstack(
@@ -28,6 +29,7 @@ def header_team() -> rx.Component:
         align_items="center",
     ),
     #1 user
+
 
     #1 user
         rx.vstack(
@@ -147,6 +149,7 @@ def header_team() -> rx.Component:
     width="100%",
     align_items="center",
 ),
+
     ),
     #3user
     rx.mobile_and_tablet(
@@ -154,7 +157,8 @@ def header_team() -> rx.Component:
     ),
 
     width="100%",
+    spacing="6",
 ), 
-    spacing="5",
+    spacing="6",
     width="100%",
 )

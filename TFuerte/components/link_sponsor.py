@@ -4,7 +4,7 @@ import TFuerte.styles.styles as styles
 def link_sponsor(imagen: str, url: str) -> rx.Component:
     return rx.link(
         rx.image(
-            height="100px",
+            height="7.5em",
             src=imagen
         ),
         href=url,

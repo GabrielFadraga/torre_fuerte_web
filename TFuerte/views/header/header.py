@@ -6,11 +6,11 @@ def header() -> rx.Component:
     return rx.center(
     rx.vstack(
     rx.hstack(
-        rx.avatar(  fallback="TF", 
-                    size="9", 
-                    src="bien.png",
-                    radius="full",
+        rx.image( 
+                src="sf.png",
+                radius="none",
             ),
+        
         rx.vstack(
             rx.heading("Con la mirada en lo alto"),
             rx.text("maidomm78@gmail.com", size="2"),
@@ -21,15 +21,15 @@ def header() -> rx.Component:
             width="100%",
         ),
 
-    rx.flex(
-            rx.vstack(
-            info_text("+5", "años de experiencia"),
-            rx.spacer(),
-            info_text("+50", "profesionales dando servicio en Cuba"),
-            spacing="1",
-            ),
-            width="100%",
-        ),
+    #rx.flex(
+        #    rx.vstack(
+        #    info_text("+5", "años de experiencia"),
+        #    rx.spacer(),
+        #    info_text("+50", "profesionales dando servicio en Cuba"),
+        #    spacing="1",
+        #    ),
+        #     width="100%",
+        #),
         rx.vstack(
         rx.text(
                 """Nos dedicamos a brindar servicios de reparación, mantenimiento y rehabilitación de 

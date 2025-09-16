@@ -7,3 +7,5 @@ class Route(Enum):
     SERVICES = "/services"
     PROJECTS = "/projects"
     TEAM = "/team"
+    NEW = "/new"
+    CREATION = "/creations"

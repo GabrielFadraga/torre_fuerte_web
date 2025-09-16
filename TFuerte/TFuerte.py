@@ -5,6 +5,8 @@ from TFuerte.pages.about import about
 from TFuerte.pages.services import services
 from TFuerte.pages.projects import projects
 from TFuerte.pages.team import team
+from TFuerte.pages.new import new
+from TFuerte.pages.my_creation import my_creation
 from rxconfig import config
 
 
