@@ -46,6 +46,6 @@ def services() -> rx.Component:
         align_items="center",
             ),
         align_items="center",
-        
+        spacing="9"
         
 )

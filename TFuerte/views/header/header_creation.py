@@ -6,7 +6,7 @@ def headcreat() -> rx.Component:
     return rx.center(
             rx.vstack(
                 rx.heading(
-                    "Somos la empresa Torre Fuerte", 
+                    "Somos Torre Fuerte SURL", 
                     size="9", 
                     color="white",
                     text_align="center",
@@ -16,6 +16,7 @@ def headcreat() -> rx.Component:
                     """Nos dedicamos a brindar servicios de reparación, mantenimiento y 
                     rehabilitación de equipos industriales en las especialidades de 
                     mecánica, electricidad y automática.""",
+                    margin_top="0.5em",
                     size="7",
                     color="white",
                     text_align="center",
@@ -30,7 +31,8 @@ def headcreat() -> rx.Component:
                         _hover={"background_color": "orange"},
                         style=styles.button_title_style,
                         body=styles.button_body_style,
-                        size="4"
+                        size="4",
+                        variant="outline"
                     ),
                     href="https://wa.me/message/OKIP2WN55MKEK1",
                     is_external=True
@@ -44,4 +46,4 @@ def headcreat() -> rx.Component:
             height="500px",
             width="100%",
             id="inicio"
-        ),
+        )

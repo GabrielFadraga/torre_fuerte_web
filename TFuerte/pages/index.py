@@ -9,6 +9,9 @@ from TFuerte.components.footer import footer
 from TFuerte.components.link_button import link_button
 import TFuerte.styles.styles as styles
 from TFuerte.views.sponsor.sponsor import sponsor
+from TFuerte.components.navbar_creation import creation
+from TFuerte.views.header.header_creation import headcreat
+from TFuerte.views.header.logo_header import logo
 from rxconfig import config
 
 from TFuerte.styles.colors import Text_tx 
@@ -21,31 +24,31 @@ from TFuerte.styles.colors import Text_tx
 )
 def index() -> rx.Component:
     return rx.box(
+        rx.vstack(
         utils.lang(),
-        navbar("Bienvenidos a Torre Fuerte"),
-        rx.center(
-            rx.vstack(
-                #header_img(),
-                header(),
-                links(),
-                sponsor(),
+        creation(),
+        headcreat(),
+        logo(),
+        #footer(),
 
-                align_items="center",
-                #max_width=styles.MAX_WIDTH,
-                margin_y=styles.Spacer.BIG.value,
+                #align_items="center",
+                max_width=styles.MAX_WIDTH,
+                #margin=styles.Spacer.DEFAULT.value,
+                #margin_y=styles.Spacer.DEFAULT.value,
+                
                 width="100%",
-                spacing="2",
-                padding=styles.Spacer.BIG.value,
+                spacing="4",
+                
 
             ),
-        ),
         rx.vstack(
+        sponsor(),
         footer(),
         width="100%",
-        align_items="center",
+        #align_items="center",
             ),
-        align_items="center",
+        width="100%",
         
-        
-)
+    )
+
 

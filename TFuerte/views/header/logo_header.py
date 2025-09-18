@@ -18,7 +18,7 @@ def logo() -> rx.Component:
                 margin="1em"
             ),
             rx.vstack( 
-        rx.text("""Es un honor presentarles Torre Fuerte, su aliado estratégico en soluciones 
+        rx.text("""Es un honor presentarles Torre Fuerte SURL, su aliado estratégico en soluciones 
                 industriales integrales. Con la mirada siempre en lo alto, nos hemos consolidado 
                 como referentes nacionales en el mantenimiento, reparación y rehabilitación de 
                 equipos industriales, brindando servicios especializados en las áreas de mecánica,

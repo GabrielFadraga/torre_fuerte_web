@@ -15,14 +15,18 @@ def navbar(text: str) -> rx.Component:
                         #font_family="Fonts_tx.Default.value",
                         #font_weight="FontWeight.Medium.value",
                     
-                    align_items="center",
+                    
+                    align="start"
+                    
                     ),
+                    width="100%",
+                    top="0",
+                    z_index="1000",
+                    #margin="1em",
                 ),
-                justify="between",
-                align_items="center",
-                bg=Color_tx.New.value,
-                #bg=
-                padding=styles.Spacer.EXTRA_SMALL.value,
+                justify="start",
+                background_color="#194264FF",
+                padding=styles.Spacer.DEFAULT.value,
                 width="100%",
                 style=styles.navbar_title_style,
             )

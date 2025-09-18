@@ -33,7 +33,7 @@ def team() -> rx.Component:
                 header_team(),
 
                 align_items="center",
-                max_width=styles.ABOUT_WIDTH,
+                max_width=styles.TEAM_WIDTH,
                 margin=styles.Spacer.BIG.value,
                 width="100%",
                 spacing="2",

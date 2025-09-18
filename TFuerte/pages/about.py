@@ -25,13 +25,13 @@ from TFuerte.styles.colors import Text_tx
 def about() -> rx.Component:
     return rx.box(
         utils.lang(),
-        navbar_about(),
+        navbar("Sobre nosotros"),
         rx.center(
             rx.vstack(
                 header_about(),
 
                 align_items="center",
-                max_width=styles.ABOUT_WIDTH,
+                max_width=styles.MAX_WIDTH,
                 margin=styles.Spacer.BIG.value,
                 width="100%",
                 spacing="2",

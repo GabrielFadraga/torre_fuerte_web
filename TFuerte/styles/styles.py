@@ -7,13 +7,15 @@ from .fonts import Fonts_tx as fonttx
 from .fonts import FontWeight as FontWeight
 
 #Constants
-MAX_WIDTH="560px"
+MAX_WIDTH="500em"
 
-ABOUT_WIDTH="1000px"
+ABOUT_WIDTH="90em"
+
+TEAM_WIDTH="200em"
 
 #Sizes
 class Spacer(Enum):
-    EXTRA_SMALL="0.1"
+    EXTRA_SMALL="0.1em"
     SMALL="0.5em"
     MEDIUM="0.8em"
     DEFAULT="1em"
@@ -38,13 +40,13 @@ BASE_STYLES = {
         "height":"100%",
         "display":"Block",
         "color": texttx.Header.value,
-        "background_color" : tx.Content.value,
+        #"background_color" : tx.Content.value,
         "padding":Spacer.SMALL.value,
         "border_radius":Spacer.DEFAULT.value,
         "white_space":"normal",
         "text_align":"normal",
         "_hover": {
-        "background_color" : tx.Secondary.value
+        #"background_color" : tx.Secondary.value
         }
     },
     rx.link: {

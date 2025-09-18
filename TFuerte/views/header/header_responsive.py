@@ -1,13 +1,15 @@
 import reflex as rx
 from TFuerte.components.info_text import info_text
 import TFuerte.styles.styles as styles
+from TFuerte.styles.colors import Text_tx
 
 def header_responsive() -> rx.Component:
     return rx.center(
     rx.vstack(
     rx.hstack(
-            rx.heading("Consejo Directivo"),
-            align_items="start",
+            rx.heading("Consejo Directivo", size="7"),
+            align="start",
+            color=Text_tx.Black.value,
         ),
         #1 user
         rx.vstack(
@@ -21,6 +23,7 @@ def header_responsive() -> rx.Component:
             rx.text("Presidente"),
             width="100%",
             align_items="center",
+            color=Text_tx.Black.value,
         ),
         width="100%",
         align_items="center",
@@ -39,6 +42,7 @@ def header_responsive() -> rx.Component:
             rx.text("Director Adjunto"),
             width="100%",
             align_items="center",
+            color=Text_tx.Black.value,
         ),
         width="100%",
         align_items="center",
@@ -57,6 +61,7 @@ def header_responsive() -> rx.Component:
             rx.text("Jefa de Área Administrativa"),
             width="100%",
             align_items="center",
+            color=Text_tx.Black.value,
         ),
         width="100%",
         align_items="center",
@@ -75,6 +80,7 @@ def header_responsive() -> rx.Component:
             rx.text("Jefe de Área Logística"),
             width="100%",
             align_items="center",
+            color=Text_tx.Black.value,
         ),
         width="100%",
         align_items="center",
@@ -95,6 +101,7 @@ def header_responsive() -> rx.Component:
             width="100%",
             align_items="center",
             spacing="1",
+            color=Text_tx.Black.value,
         ),
         width="100%",
         align_items="center",
@@ -113,6 +120,7 @@ def header_responsive() -> rx.Component:
             rx.text("Jefe de Coordinación Oriente"),
             width="100%",
             align_items="center",
+            color=Text_tx.Black.value,
         ),
         width="100%",
         align_items="center",
@@ -131,6 +139,7 @@ def header_responsive() -> rx.Component:
             rx.text("Jefa de Área Técnica"),
             width="100%",
             align_items="center",
+            color=Text_tx.Black.value,
         ),
         width="100%",
         align_items="center",
@@ -138,6 +147,7 @@ def header_responsive() -> rx.Component:
     #1 user
 
     width="100%",
+    padding_y="1.5em",
 ), 
     spacing="5",
     width="100%",
