@@ -1,6 +1,7 @@
 import reflex as rx
 import TFuerte.utils as utils
 from TFuerte.components.navbar import navbar
+from TFuerte.components.sidebar import sidebar
 from TFuerte.components.info_text import info_text
 from TFuerte.views.header.header import header
 from TFuerte.views.header.header_img import header_img
@@ -12,6 +13,7 @@ from TFuerte.views.sponsor.sponsor import sponsor
 from TFuerte.components.navbar_creation import creation
 from TFuerte.views.header.header_creation import headcreat
 from TFuerte.views.header.logo_header import logo
+from TFuerte.views.header.logo_responsive import logo_resp
 from rxconfig import config
 
 from TFuerte.styles.colors import Text_tx 
@@ -24,28 +26,39 @@ from TFuerte.styles.colors import Text_tx
 )
 def index() -> rx.Component:
     return rx.box(
-        rx.vstack(
         utils.lang(),
+        rx.vstack(
         creation(),
+
+
         headcreat(),
+
+        spacing="5",
+        width="100%",
+    ),   
+        rx.vstack(
+        rx.desktop_only(
         logo(),
-        #footer(),
+        ),
+        rx.mobile_and_tablet(
+        logo_resp(),
+    ),
 
-                #align_items="center",
-                max_width=styles.MAX_WIDTH,
-                #margin=styles.Spacer.DEFAULT.value,
-                #margin_y=styles.Spacer.DEFAULT.value,
+        align_items="center",        
+        #margin=styles.Spacer.SMALL.value,
+        margin_y=styles.Spacer.SMALL.value,
                 
-                width="100%",
-                spacing="4",
+        width="100%",
+        spacing="2",
+        max_width=styles.TEAM_WIDTH,
                 
-
-            ),
+                
+    ),
         rx.vstack(
         sponsor(),
         footer(),
         width="100%",
-        #align_items="center",
+        align="center",
             ),
         width="100%",
         

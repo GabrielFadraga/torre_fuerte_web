@@ -7,9 +7,9 @@ from .fonts import Fonts_tx as fonttx
 from .fonts import FontWeight as FontWeight
 
 #Constants
-MAX_WIDTH="500em"
+MAX_WIDTH="5000px"
 
-ABOUT_WIDTH="90em"
+ABOUT_WIDTH="95em"
 
 TEAM_WIDTH="200em"
 
@@ -22,6 +22,7 @@ class Spacer(Enum):
     LARGE="1.5em"
     BIG="2em"
     VERY_BIG="3em"
+    SMS_P="5.5em"
 
 #StylesSheets
 StyleSheets = [
@@ -62,7 +63,7 @@ navbar_title_style = dict(
 title_style = dict(
     #size="lg",
     width="100%",
-    padding_top=Spacer.DEFAULT.value,
+    #padding_top=Spacer.DEFAULT.value,
     font_family= fonttx.Default.value,
     font_weight= FontWeight.Light.value,
 

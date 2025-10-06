@@ -5,16 +5,16 @@ from TFuerte.views.header.header_responsive import header_responsive
 from TFuerte.styles.colors import Text_tx
 
 def header_team() -> rx.Component:
-    return rx.center(
-        rx.vstack(
-        rx.desktop_only(
-        rx.hstack(
-            rx.heading("Consejo Directivo", size="9"),
-            align="start",
+    return rx.vstack(
+            rx.hstack(
+            rx.heading("Principales contactos de la empresa", size="9"),
+            align="center",
             margin=styles.Spacer.SMALL.value,
-            color=Text_tx.Black.value,
-            
+            color=Text_tx.Black.value,    
         ),
+        rx.center(
+        rx.desktop_only(
+
         #1 user
         rx.vstack(
             rx.image(
@@ -56,7 +56,7 @@ def header_team() -> rx.Component:
     ),
     #1 user
 
-        #2 users
+        #5 users
     
         rx.vstack(
             rx.hstack(
@@ -89,24 +89,12 @@ def header_team() -> rx.Component:
             align_items="center",
             color=Text_tx.Black.value,
         ),
+        
         width="100%",
         align_items="center",
     ),
-        width="85%",
-        align_items="center",
-        spacing="1",
-    ),
-    width="100%",
-    align_items="center",
-    padding_y="1em"
-),
-    #2user
 
-#3 users
-    
-        rx.vstack(
-            rx.hstack(
-            rx.vstack(
+    rx.vstack(
             rx.image(
                 src="user1.png", 
                 width="200px", 
@@ -114,7 +102,8 @@ def header_team() -> rx.Component:
             ),
             rx.vstack(
             rx.text("Ing. Gilberto Acosta Monjes", size="7"),
-            rx.text("Jefe de Coordinación Habana-Mayabeque", size="6"),
+            rx.text("Jefe de Coordinación", size="6"),
+            rx.text("Habana-Mayabeque", size="6"),
             width="100%",
             align_items="center",
             color=Text_tx.Black.value,
@@ -123,10 +112,7 @@ def header_team() -> rx.Component:
         align_items="center",
     ),
 
-    rx.spacer(),
-    rx.spacer(),
-
-            rx.vstack(
+    rx.vstack(
             rx.image(
                 src="user1.png", 
                 width="200px", 
@@ -142,9 +128,6 @@ def header_team() -> rx.Component:
         width="100%",
         align_items="center",
     ),
-
-    rx.spacer(),
-    rx.spacer(),
 
     rx.vstack(
             rx.image(
@@ -162,24 +145,26 @@ def header_team() -> rx.Component:
         width="100%",
         align_items="center",
     ),
-        width="100%",
+
+        width="85%",
         align_items="center",
-        spacing="9",
+        spacing="1",
     ),
     width="100%",
     align_items="center",
-    padding_y="1em",
+    padding_y="1em"
 ),
-
-    ),
+    #5user
+),
     #3user
     rx.mobile_and_tablet(
         header_responsive(),
     ),
+
     align="center",
     width="100%",
     spacing="6",
-), 
-    spacing="6",
+),
     width="100%",
-)
+    align="center"
+    )

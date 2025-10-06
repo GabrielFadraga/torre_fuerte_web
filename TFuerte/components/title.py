@@ -10,4 +10,5 @@ def title(text: str) -> rx.Component:
                         #font_size=styles.Spacer.BIG.value,
                         color=Text_tx.Header.value,
                         weight="medium",
+                        margin=styles.Spacer.EXTRA_SMALL.value,
         )

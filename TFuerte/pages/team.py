@@ -14,6 +14,7 @@ import TFuerte.styles.styles as styles
 from TFuerte.views.sponsor.sponsor import sponsor
 from rxconfig import config
 from TFuerte.routes import Route
+from TFuerte.components.sidebar import sidebar
 
 from TFuerte.styles.colors import Text_tx 
 
@@ -27,6 +28,7 @@ from TFuerte.styles.colors import Text_tx
 def team() -> rx.Component:
     return rx.box(
         utils.lang(),
+
         navbar("Nuestro equipo"),
         rx.center(
             rx.vstack(

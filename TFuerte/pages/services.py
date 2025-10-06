@@ -13,6 +13,7 @@ import TFuerte.styles.styles as styles
 from TFuerte.views.sponsor.sponsor import sponsor
 from rxconfig import config
 from TFuerte.routes import Route
+from TFuerte.components.sidebar import sidebar
 
 from TFuerte.styles.colors import Text_tx 
 
@@ -26,8 +27,8 @@ from TFuerte.styles.colors import Text_tx
 def services() -> rx.Component:
     return rx.box(
         utils.lang(),
+
         navbar("Nuestros servicios"),
-        rx.center(
             rx.vstack(
                 header_services(),
 
@@ -39,7 +40,6 @@ def services() -> rx.Component:
                 padding=styles.Spacer.BIG.value,
 
             ),
-        ),
         rx.vstack(
         footer(),
         width="100%",
