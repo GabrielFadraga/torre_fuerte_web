@@ -16,7 +16,7 @@ def logo_resp() -> rx.Component:
                 font_size=styles.Spacer.LARGE.value,
             ),
         rx.text("""Es un honor presentarles Torre Fuerte SURL, su aliado estratégico en soluciones 
-                industriales integrales. Con la mirada siempre en lo alto, nos hemos consolidado 
+                industriales integrales. Nos hemos consolidado 
                 como referentes nacionales en el mantenimiento, reparación y rehabilitación de 
                 equipos industriales, brindando servicios especializados en las áreas de mecánica,
                 electricidad y automática.""",
@@ -24,17 +24,17 @@ def logo_resp() -> rx.Component:
                 margin=styles.Spacer.MEDIUM.value,
                 color="black",
                 ),
-                rx.text("""Nuestro valor diferencial radica en la combinación de expertise técnico, 
+                rx.text("""Nuestro valor diferencial radica en la combinación de experticia técnica, 
                         tecnologías avanzadas y un enfoque orientado a resultados tangibles que 
                         impactan positivamente en su productividad y rentabilidad. Confíe en Torre 
-                        Fuerte para elevar los estándares de performance de sus operaciones industriales. 
+                        Fuerte para elevar los estándares de rendimiento de sus operaciones industriales. 
                         Estamos comprometidos con su éxito operativo y nos dedicamos a construir relaciones 
                         a largo plazo basadas en la excelencia, confiabilidad y valor agregado.""",
                 font_size=styles.Spacer.DEFAULT.value,
                 margin=styles.Spacer.MEDIUM.value,
                 color="black",
                 ),
-                rx.text(""" "En Torre Fuerte, elevamos cada proyecto con la convicción de que su éxito industrial 
+                rx.text(""" "En Torre Fuerte, abordamos cada proyecto con la convicción de que su éxito industrial 
                         es nuestro compromiso más firme" """,
                 font_size=styles.Spacer.DEFAULT.value,
                 margin=styles.Spacer.MEDIUM.value,

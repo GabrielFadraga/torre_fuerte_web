@@ -183,7 +183,7 @@ def header_abres() -> rx.Component:
                         margin_bottom=styles.Spacer.MEDIUM.value,
                     ),
                     rx.text(
-                        "Más de 5 años transformando la gestión de activos industriales con soluciones innovadoras y sostenibles",
+                        "Transformando la gestión de activos industriales con soluciones innovadoras y sostenibles",
                         font_size=styles.Spacer.LARGE.value,
                         color="rgba(255, 255, 255, 0.9)",
                         text_align="center",
@@ -197,21 +197,6 @@ def header_abres() -> rx.Component:
                 # Estadísticas - Versión Desktop (horizontal)
                 rx.box(
                     rx.hstack(
-                        rx.vstack(
-                            rx.heading(
-                                "5+",
-                                font_size=styles.Spacer.BIG.value,
-                                color="white",
-                                font_weight="bold",
-                            ),
-                            rx.text(
-                                "Años de Experiencia",
-                                font_size=styles.Spacer.LARGE.value,
-                                color="rgba(255, 255, 255, 0.8)",
-                            ),
-                            align_items="center",
-                            spacing="2",
-                        ),
                         rx.vstack(
                             rx.heading(
                                 "500+",
@@ -229,7 +214,7 @@ def header_abres() -> rx.Component:
                         ),
                         rx.vstack(
                             rx.heading(
-                                "98%",
+                                "100%",
                                 font_size=styles.Spacer.BIG.value,
                                 color="white",
                                 font_weight="bold",
@@ -254,21 +239,6 @@ def header_abres() -> rx.Component:
                     rx.vstack(
                         rx.vstack(
                             rx.heading(
-                                "5+",
-                                font_size=styles.Spacer.BIG.value,
-                                color="white",
-                                font_weight="bold",
-                            ),
-                            rx.text(
-                                "Años de Experiencia",
-                                font_size=styles.Spacer.LARGE.value,
-                                color="rgba(255, 255, 255, 0.8)",
-                            ),
-                            align_items="center",
-                            spacing="2",
-                        ),
-                        rx.vstack(
-                            rx.heading(
                                 "500+",
                                 font_size=styles.Spacer.BIG.value,
                                 color="white",
@@ -284,7 +254,7 @@ def header_abres() -> rx.Component:
                         ),
                         rx.vstack(
                             rx.heading(
-                                "98%",
+                                "100%",
                                 font_size=styles.Spacer.BIG.value,
                                 color="white",
                                 font_weight="bold",

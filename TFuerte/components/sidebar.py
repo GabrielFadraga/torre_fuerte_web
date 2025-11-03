@@ -47,7 +47,7 @@ def sidebar_items() -> rx.Component:
         sidebar_item("Servicios", "notebook-tabs", Route.SERVICES.value),
         sidebar_item("Cartera", "folder-open-dot", Route.PROJECTS.value),
         sidebar_item("Grupo", "user-round", Route.TEAM.value),
-        sidebar_item("Contacto", "mail", "#contacto"),
+        sidebar_item("Taller", "pickaxe", Route.TALLER.value),
         spacing="2",
         width="100%",
     )

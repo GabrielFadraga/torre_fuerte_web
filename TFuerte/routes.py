@@ -9,3 +9,4 @@ class Route(Enum):
     TEAM = "/team"
     NEW = "/new"
     CREATION = "/creations"
+    TALLER = "/taller"

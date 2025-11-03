@@ -2,16 +2,17 @@ import reflex as rx
 import TFuerte.utils as utils
 from TFuerte.components.navbar import navbar
 from TFuerte.components.sidebar import sidebar
+from TFuerte.components.scroll_top import scroll_top_final
 from TFuerte.components.info_text import info_text
 from TFuerte.views.header.header import header
 from TFuerte.views.header.header_img import header_img
 from TFuerte.views.links.links import links
-from TFuerte.components.footer import footer
+from TFuerte.components.footer import footer, footer_final
 from TFuerte.components.link_button import link_button
 import TFuerte.styles.styles as styles
-from TFuerte.views.sponsor.sponsor import sponsor
+from TFuerte.views.sponsor.sponsor import sponsor, sponsor_final
 from TFuerte.components.navbar_creation import creation
-from TFuerte.views.header.header_creation import headcreat
+from TFuerte.views.header.header_creation import headcreat, headcreat_final
 from TFuerte.views.header.logo_header import logo
 from TFuerte.views.header.logo_responsive import logo_resp
 from rxconfig import config
@@ -30,24 +31,21 @@ def index() -> rx.Component:
         rx.vstack(
         creation(),
 
+        headcreat_final(),
 
-        headcreat(),
-
+    
         spacing="5",
         width="100%",
     ),   
         rx.vstack(
-        rx.desktop_only(
         logo(),
-        ),
-        rx.mobile_and_tablet(
-        logo_resp(),
-    ),
-
+        
+        scroll_top_final(),
         align_items="center",        
         #margin=styles.Spacer.SMALL.value,
         margin_y=styles.Spacer.SMALL.value,
-                
+
+            
         width="100%",
         spacing="2",
         max_width=styles.TEAM_WIDTH,
@@ -55,8 +53,8 @@ def index() -> rx.Component:
                 
     ),
         rx.vstack(
-        sponsor(),
-        footer(),
+        sponsor_final(),
+        footer_final(),
         width="100%",
         align="center",
             ),
