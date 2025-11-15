@@ -18,7 +18,7 @@ def headcreat() -> rx.Component:
                 rx.vstack(
                     # Badge moderno
                     rx.box(
-                        "EXCELENCIA INDUSTRIAL",
+                        "SOLUCIONES INDUSTRIALES",
                         background="linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%)",
                         color="white",
                         padding_x="24px",
@@ -50,7 +50,7 @@ def headcreat() -> rx.Component:
                     
                     # Subtítulo destacado
                     rx.text(
-                        "Líderes en Soluciones Industriales Integrales",
+                        "Incursionando en la industria nacional",
                         size="6",
                         color="rgba(255,255,255,0.9)",
                         text_align="center",
@@ -237,7 +237,7 @@ def headcreat_mobile() -> rx.Component:
             rx.center(
                 rx.vstack(
                     rx.box(
-                        "EXCELENCIA INDUSTRIAL",
+                        "SOLUCIONES INDUSTRIALES",
                         background="linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.1) 100%)",
                         color="white",
                         padding_x="20px",
@@ -262,7 +262,7 @@ def headcreat_mobile() -> rx.Component:
                     ),
                     
                     rx.text(
-                        "Líderes en Soluciones Industriales Integrales",
+                        "Incursionando en la industria nacional",
                         size="5",
                         color="rgba(255,255,255,0.9)",
                         text_align="center",

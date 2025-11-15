@@ -365,7 +365,7 @@ def president_message() -> rx.Component:
                         rx.hstack(
                             rx.vstack(
                                 rx.text(
-                                    "📍 Calle E, esquina 15, Vedado",
+                                    "📍 Calle C, e/Calle 15 y Calle 13, Vedado",
                                     font_size="16px",
                                     color="#194264",
                                     font_weight="500",
@@ -388,7 +388,7 @@ def president_message() -> rx.Component:
                                 opacity="0.5",
                             ),
                             rx.image(
-                                src="ubu.jpg",
+                                src="ubu.png",
                                 width="200px",
                                 height="120px",
                                 object_fit="cover",
@@ -617,7 +617,7 @@ def president_message_mobile() -> rx.Component:
                         text_align="center",
                     ),
                     rx.text(
-                        "📍 Calle E, esquina 15, Vedado",
+                        "📍 Calle C, e/Calle 15 y Calle 13, Vedado",
                         font_size="16px",
                         color="#194264",
                         font_weight="500",
@@ -641,7 +641,7 @@ def president_message_mobile() -> rx.Component:
                         text_align="center",
                     ),
                     rx.image(
-                        src="ubu.jpg",
+                        src="ubu.png",
                         width="100%",
                         height="200px",
                         object_fit="cover",

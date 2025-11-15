@@ -28,6 +28,7 @@ from TFuerte.styles.colors import Text_tx
 def index() -> rx.Component:
     return rx.box(
         utils.lang(),
+        
         rx.vstack(
         creation(),
 

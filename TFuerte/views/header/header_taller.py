@@ -448,7 +448,7 @@ def taller_creative_section() -> rx.Component:
                 rx.vstack(
                     rx.box(
                         rx.heading(
-                            "TALLER DE EXCELENCIA INDUSTRIAL",
+                            "TALLER DE ALCANCE INDUSTRIAL",
                             font_size="32px",
                             color="white",
                             text_align="center",
@@ -488,7 +488,7 @@ def taller_creative_section() -> rx.Component:
                                     text_shadow="0 0 20px rgba(67,233,123,0.5)",
                                 ),
                                 rx.text(
-                                    "Servicios de taller prestados",
+                                    "Servicios prestados",
                                     font_size="14px",
                                     color="rgba(255, 255, 255, 0.8)",
                                     font_weight="600",
@@ -531,7 +531,7 @@ def taller_creative_section() -> rx.Component:
                                         font_weight="black",
                                     ),
                                     rx.text(
-                                        "Servicios de taller prestados",
+                                        "Servicios prestados",
                                         font_size="11px",
                                         color="rgba(255, 255, 255, 0.8)",
                                         font_weight="600",

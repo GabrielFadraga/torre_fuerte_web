@@ -23,7 +23,7 @@ from TFuerte.styles.colors import Text_tx
 
 @rx.page(
     route=Route.PROJECTS.value,
-    title="Nuestros proyectos",
+    title="Cartera de servicos prestados",
     description="Aquí evidenciamos los logros de Torre Fuerte",
     image="tff.png"
 )
@@ -31,27 +31,25 @@ def projects() -> rx.Component:
     return rx.box(
         utils.lang(),
 
-        navbar("Nuestros proyectos"),
-        rx.center(
+        navbar("Cartera de servicos prestados"),
             rx.vstack(
                 gallery(),
 
                 scroll_top_final(),
                 align_items="center",
+                
                 max_width=styles.TEAM_WIDTH,
-                margin=styles.Spacer.BIG.value,
+                margin_y=styles.Spacer.SMALL.value,
                 width="100%",
                 spacing="2",
-                padding=styles.Spacer.BIG.value,
 
             ),
-        ),
         rx.vstack(
         footer_final(),
         width="100%",
         align_items="center",
             ),
         align_items="center",
-        
+        width="100%",
         
 )

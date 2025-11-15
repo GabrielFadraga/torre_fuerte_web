@@ -24,10 +24,10 @@ def creative_project_card(project: dict, delay: float, rotation: float) -> rx.Co
     """Tarjeta de proyecto creativa con efectos 3D - COMPLETAMENTE RESPONSIVE"""
     return rx.box(
         rx.vstack(
-            # Contenedor de imagen del proyecto - MISMOS PARÁMETROS QUE EL TALLER
+            # Contenedor de imagen del proyecto
             rx.box(
                 rx.image(
-                    src=project["image"],  # CAMBIADO: Usar directamente el nombre del archivo como en el taller
+                    src=project["image"],
                     width="100%",
                     height="250px",
                     object_fit="cover",
@@ -107,7 +107,7 @@ def creative_project_card(project: dict, delay: float, rotation: float) -> rx.Co
                 width="100%",
                 height="100%",
                 cursor="pointer",
-                on_click=GalleryState.open_lightbox(project["image"]),  # CAMBIADO: Pasar solo el nombre del archivo
+                on_click=GalleryState.open_lightbox(project["image"]),
                 _hover={
                     ".info-overlay": {
                         "opacity": "1",
@@ -223,12 +223,12 @@ def lightbox_component() -> rx.Component:
                     on_click=GalleryState.close_lightbox,
                     backdrop_filter="blur(10px)",
                 ),
-                # Contenido del lightbox - MISMOS PARÁMETROS QUE EL TALLER
+                # Contenido del lightbox
                 rx.center(
                     rx.vstack(
                         rx.box(
                             rx.image(
-                                src=GalleryState.selected_image,  # CAMBIADO: Usar directamente el nombre del archivo
+                                src=GalleryState.selected_image,
                                 max_width="85vw",
                                 max_height="80vh",
                                 object_fit="contain",
@@ -319,10 +319,12 @@ def navigation_tabs() -> rx.Component:
                 (category, f"2px solid {_get_color(category)}"),
                 "2px solid rgba(255,255,255,0.2)"
             ),
-            padding_x="20px",
-            padding_y="10px",
+            # RESPONSIVE MEJORADO: Padding adaptable para todos los dispositivos
+            padding_x=["0.8rem", "1rem", "1.2rem", "1.5rem"],
+            padding_y=["0.6rem", "0.7rem", "0.75rem"],
             border_radius="12px",
-            font_size="14px",
+            # RESPONSIVE MEJORADO: Tamaño de fuente escalable
+            font_size=["11px", "12px", "13px", "14px"],
             font_weight="bold",
             transition="all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
             _hover={
@@ -331,155 +333,295 @@ def navigation_tabs() -> rx.Component:
             },
             on_click=GalleryState.set_filter_category(category),
             white_space="nowrap",
+            # RESPONSIVE MEJORADO: Ancho flexible para móvil/tablet
+            width=["100%", "100%", "auto"],
+            min_width=["auto", "auto", "120px", "140px"],
+            flex=["1", "1", "0 1 auto"],
         )
     
     return rx.center(
         rx.box(
-            # Desktop - Botones compactos en fila
+            # Desktop - Botones en fila
             rx.hstack(
                 create_filter_button("Todos"),
-                create_filter_button("Residencial"),
-                create_filter_button("Comercial"),
-                create_filter_button("Industrial"),
+                create_filter_button("Automatización"),
+                create_filter_button("Eléctrica"),
+                create_filter_button("Mecánica"),
                 spacing="5",
                 justify="center",
-                # Solo visible en desktop (lg en adelante)
+                align="center",
+                flex_wrap="wrap",
+                # Solo visible en desktop
                 display=["none", "none", "flex"],
-                class_name="desktop-navigation"
-            ),
-            # Mobile/Tablet - Botones en columna
-            rx.vstack(
-                create_filter_button("Todos"),
-                create_filter_button("Residencial"),
-                create_filter_button("Comercial"),
-                create_filter_button("Industrial"),
-                spacing="4",
-                justify="center",
+                class_name="desktop-navigation",
                 width="100%",
-                # Solo visible en móvil y tablet (hasta md)
+                max_width="1200px",
+                margin_x="auto",
+            ),
+            # Mobile/Tablet - Botones en grid 2x2
+            rx.box(
+                rx.grid(
+                    create_filter_button("Todos"),
+                    create_filter_button("Automatización"),
+                    create_filter_button("Eléctrica"),
+                    create_filter_button("Mecánica"),
+                    columns="2",
+                    spacing="3",
+                    width="100%",
+                    max_width="400px",
+                    justify="center",
+                ),
+                # Solo visible en móvil y tablet
                 display=["flex", "flex", "none"],
+                justify_content="center",
+                width="100%",
                 class_name="mobile-navigation"
             ),
             width="100%",
+            display="flex",
+            justify_content="center",
         ),
         width="100%",
         padding_y=styles.Spacer.MEDIUM.value,
         background="linear-gradient(135deg, #1a1a2e 0%, #16213e 100%)",
-        padding_x=["15px", "20px", "0px"],
+        # RESPONSIVE MEJORADO: Padding lateral adaptable
+        padding_x=["0.8rem", "1rem", "1.5rem", "2rem"],
     )
 
 def gallery() -> rx.Component:
     """Sección principal de galería de proyectos - COMPLETAMENTE RESPONSIVE"""
     
-    # Lista de proyectos - USANDO EXACTAMENTE EL MISMO FORMATO QUE EL TALLER
-    projects = [
+    # Lista de proyectos para AUTOMATIZACIÓN
+    projects_automatizacion = [
         {
-            "title": "Residencia Moderna",
-            "category": "Residencial", 
-            "description": "Diseño contemporáneo con espacios abiertos y máxima iluminación natural",
-            "year": "2023",
-            "features": ["Diseño sustentable", "Máxima iluminación", "Espacios integrados"],
-            "image": "1.jpg",  # SOLO EL NOMBRE DEL ARCHIVO, COMO EN EL TALLER
+            "title": "Línea de produccion minisdosis de mantequilla.",
+            "category": "Automatización", 
+            "description": "Restablecimiento del funcionamiento de máquina envasadora de mantequilla",
+            "year": "2025",
+            "features": ["Control PLC", "Red industrial", "Red industrial"],
+            "image": "auto1.png",
             "delay": 0.1,
             "rotation": -2
         },
         {
-            "title": "Oficinas Corporativas",
-            "category": "Comercial",
-            "description": "Espacios de trabajo innovadores que fomentan la colaboración", 
-            "year": "2024",
-            "features": ["Open space", "Áreas colaborativas", "Tecnología integrada"],
-            "image": "2.jpg",  # SOLO EL NOMBRE DEL ARCHIVO, COMO EN EL TALLER
+            "title": "Reparación de equipos de lavandería",
+            "category": "Automatización",
+            "description": "Defectación, reparación y puesta en marcha de equipos de lavadoras automáticas", 
+            "year": "2025",
+            "features": ["Lavadoras automáticas", "Programación", "Control de variables"],
+            "image": "auto2.png",
             "delay": 0.2,
             "rotation": 1
         },
         {
-            "title": "Centro Comercial Vista",
-            "category": "Comercial",
-            "description": "Arquitectura comercial que redefine la experiencia de compra",
-            "year": "2023",
-            "features": ["Diseño experiencial", "Circulación fluida", "Fachada innovadora"],
-            "image": "3.jpg",  # SOLO EL NOMBRE DEL ARCHIVO, COMO EN EL TALLER
+            "title": "Reparación e instalación de VFD",
+            "category": "Automatización",
+            "description": "Instalación de VFD para control de velocidad de motor",
+            "year": "2025",
+            "features": ["Control de velocidad de motores", "Alertas automáticas", "Alertas automáticas"],
+            "image": "auto3.png",
             "delay": 0.3,
             "rotation": -1
         },
         {
-            "title": "Nave Industrial Smart", 
-            "category": "Industrial",
-            "description": "Instalaciones industriales con tecnología de punta",
-            "year": "2024",
-            "features": ["Eficiencia energética", "Automatización", "Seguridad industrial"],
-            "image": "4.jpg",  # SOLO EL NOMBRE DEL ARCHIVO, COMO EN EL TALLER
+            "title": "Defectación de sistema automático de compresor", 
+            "category": "Automatización",
+            "description": "Diagnóstico del sistema automático de compresor",
+            "year": "2025",
+            "features": ["Compresores", "Sistema automático", "Detección de errores"],
+            "image": "auto4.png",
             "delay": 0.4,
             "rotation": 2
         },
         {
-            "title": "Casa de Playa",
-            "category": "Residencial",
-            "description": "Integración perfecta entre arquitectura y naturaleza costera",
-            "year": "2023",
-            "features": ["Resistente a corrosión", "Vistas al mar", "Terraza amplia"],
-            "image": "5.jpg",  # SOLO EL NOMBRE DEL ARCHIVO, COMO EN EL TALLER
+            "title": "Reparación de sistema de control automático",
+            "category": "Automatización",
+            "description": "Defectación y reparación de la automática de una embarcaión",
+            "year": "2025",
+            "features": ["Programación PLC", "TX/RX de comandos", "Comunicación industrial"],
+            "image": "auto5.png",
             "delay": 0.5,
             "rotation": -3
         },
         {
-            "title": "Edificio Multifamiliar",
-            "category": "Residencial", 
-            "description": "Complejo residencial con amenities premium",
-            "year": "2024",
-            "features": ["Amenities", "Áreas verdes", "Estacionamiento inteligente"],
-            "image": "6.jpg",  # SOLO EL NOMBRE DEL ARCHIVO, COMO EN EL TALLER
+            "title": "Optimización del control automático industrial",
+            "category": "Automatización", 
+            "description": "Reparación y optimización de la automática de máquina envasadora de mantequilla",
+            "year": "2025",
+            "features": ["Programación PLC", "Optimización automática", "Reportes inteligentes"],
+            "image": "auto6.png",
             "delay": 0.6,
             "rotation": 1
         },
         {
-            "title": "Restaurante Gourmet",
-            "category": "Comercial",
-            "description": "Ambiente sofisticado que realza la experiencia gastronómica",
-            "year": "2023",
-            "features": ["Acústica perfecta", "Iluminación especializada", "Cocina industrial"],
-            "image": "7.jpg",  # SOLO EL NOMBRE DEL ARCHIVO, COMO EN EL TALLER
+            "title": "Reparación y mantenimiento de VFD",
+            "category": "Automatización",
+            "description": "Defectación y mantenimiento de VFD para control de velocidad en motores de embarcaciones",
+            "year": "2025",
+            "features": ["Manual de usuario VFD", "Puesta en marcha", "Mínimo mantenimiento"],
+            "image": "auto7.png",
             "delay": 0.7,
             "rotation": -2
         },
         {
-            "title": "Planta de Producción",
-            "category": "Industrial",
-            "description": "Optimización de procesos industriales con diseño inteligente",
-            "year": "2024",
-            "features": ["Logística optimizada", "Sustentabilidad", "Control de calidad"],
-            "image": "8.jpg",  # SOLO EL NOMBRE DEL ARCHIVO, COMO EN EL TALLER
+            "title": "Implementación de control automático de joystick",
+            "category": "Automatización",
+            "description": "programación de PLC para control de Joystick de embarcación mediante tren de pulsos",
+            "year": "2025",
+            "features": ["Automática en embarcaciones", "Programación C/C++", "Estadísticas en tiempo real"],
+            "image": "auto8.png",
             "delay": 0.8,
             "rotation": 3
         },
+
+    ]
+    
+    # Lista de proyectos para ELÉCTRICA
+    projects_electrica = [
         {
-            "title": "Vivienda Minimalista",
-            "category": "Residencial",
-            "description": "Concepto de vida minimal con máximo aprovechamiento del espacio",
+            "title": "Defectación de pizarras de control industrial",
+            "category": "Eléctrica", 
+            "description": "Diagnóstico de pizzarra de control de compresor industrial",
+            "year": "2025",
+            "features": ["Diagnóstco detallado", "Protecciones eléctricas", "Pizarras de control"],
+            "image": "elec1.png",
+            "delay": 0.1,
+            "rotation": -2
+        },
+        {
+            "title": "Diagnóstico y reparación de pizarra de control",
+            "category": "Eléctrica",
+            "description": "Defectación, mantenimiento, puesta en marcha de pizarra de control en embarcaciones", 
+            "year": "2025",
+            "features": ["Trabajo en embarcaciones", "Diagnóstico eléctrico", "Medición de variables eléctricas"],
+            "image": "elec2.png",
+            "delay": 0.2,
+            "rotation": 1
+        },
+        {
+            "title": "Panel de control de bombas de un sistema de bombeo",
+            "category": "Eléctrica",
+            "description": "Panel de control de bombas de un sistema de bombeo de hospital",
             "year": "2023",
-            "features": ["Diseño minimalista", "Optimización espacial", "Materiales naturales"],
-            "image": "9.jpg",  # SOLO EL NOMBRE DEL ARCHIVO, COMO EN EL TALLER
-            "delay": 0.9,
+            "features": ["Instalaciones eléctricas", "Montaje y puesta en marcha", "Certificación"],
+            "image": "elec3.png",
+            "delay": 0.3,
             "rotation": -1
         },
         {
-            "title": "Showroom Tecnológico",
-            "category": "Comercial",
-            "description": "Espacio expositivo con integración tecnológica de vanguardia",
+            "title": "Instalación eléctrica de panel de control", 
+            "category": "Eléctrica",
+            "description": "Instalación de panel de control eléctrico de una bomba",
             "year": "2024",
-            "features": ["Tecnología inmersiva", "Flexibilidad espacial", "Sostenibilidad"],
-            "image": "10.jpg",  # SOLO EL NOMBRE DEL ARCHIVO, COMO EN EL TALLER
-            "delay": 1.0,
+            "features": ["Medición de variables eléctricas", "Seguridad operacional", "Mediciones"],
+            "image": "elec4.png",
+            "delay": 0.4,
             "rotation": 2
-        }
+        },
+        {
+            "title": "Montaje de pizarra de control",
+            "category": "Eléctrica",
+            "description": "Reparación e instalación de pizarra de control de grúa",
+            "year": "2025",
+            "features": ["Instalación eléctrica", "Defectación", "Control remoto"],
+            "image": "elec5.png",
+            "delay": 0.5,
+            "rotation": -3
+        },
+        {
+            "title": "Mantenimiento eléctrico de equipos de lavandería",
+            "category": "Eléctrica", 
+            "description": "Reparación y mantenimiento de sistema eléctrico de secadoras industriales",
+            "year": "2025",
+            "features": ["Desarme eléctrico", "Medición de variables eléctricas", "Seguridad mejorada"],
+            "image": "elec6.png",
+            "delay": 0.6,
+            "rotation": 1
+        },
     ]
     
-    # Filtrar proyectos según la categoría seleccionada - USANDO LISTAS ESTÁTICAS
-    projects_all = projects
-    projects_residencial = [p for p in projects if p["category"] == "Residencial"]
-    projects_comercial = [p for p in projects if p["category"] == "Comercial"]
-    projects_industrial = [p for p in projects if p["category"] == "Industrial"]
+    # Lista de proyectos para MECÁNICA
+    projects_mecanica = [
+        {
+            "title": "Montaje y alineamiento de motor de embarcación",
+            "category": "Mecánica", 
+            "description": "Defectación, montaje y alineamiento del motor de embarcación",
+            "year": "2025",
+            "features": ["Diagnóstico técnico", "Montaje de motor", "Puesta en marcha"],
+            "image": "meca1.png",
+            "delay": 0.1,
+            "rotation": -2
+        },
+        {
+            "title": "Reparación de motor-generador",
+            "category": "Mecánica",
+            "description": "Defectación y reparación de motor-generador de embarcación", 
+            "year": "2025",
+            "features": ["Diagnóstico", "Puesta en marcha", "Monitoreo continuo"],
+            "image": "meca2.png",
+            "delay": 0.2,
+            "rotation": 1
+        },
+        {
+            "title": "Reparación y montaje de bombas de succión",
+            "category": "Mecánica",
+            "description": "Instalación de bombas de succión en hospitales",
+            "year": "2025",
+            "features": ["Reparaciones mecánicas", "Montaje especializqado", "Materiales"],
+            "image": "meca3.jpg",
+            "delay": 0.3,
+            "rotation": -1
+        },
+        {
+            "title": "Insulación de líneas de gases", 
+            "category": "Mecánica",
+            "description": "Aislamiento térmico de líneas de gases de un remolcador",
+            "year": "2025",
+            "features": ["Aislamiento térmico", "Ahorro de combustible", "Control"],
+            "image": "meca4.png",
+            "delay": 0.4,
+            "rotation": 2
+        },
+        {
+            "title": "Defectación y reparación mecánica de equipos de lavandería",
+            "category": "Mecánica",
+            "description": "Reparación y puesta en marcha de secadoras",
+            "year": "2025",
+            "features": ["Diagnóstico preciso", "Reparación in-situ", "Garantía de trabajo"],
+            "image": "meca5.png",
+            "delay": 0.5,
+            "rotation": -3
+        },
+        {
+            "title": "Reparación de grúa",
+            "category": "Mecánica", 
+            "description": "Defectación y reparación de sistema mecánico de grúa",
+            "year": "2025",
+            "features": ["Reparación mecánica", "Mecánica de precisión", "Implementación"],
+            "image": "meca6.png",
+            "delay": 0.6,
+            "rotation": 1
+        },
+        {
+            "title": "Traslado de bomba de producto",
+            "category": "Mecánica",
+            "description": "Traslado de bomba de producto en embarcaciones",
+            "year": "2025",
+            "features": ["Trabajo de precisión", "Puesta en marcha", "Trabajo en el mar"],
+            "image": "meca7.png",
+            "delay": 0.7,
+            "rotation": -2
+        },
+    ]
+    
+    # Combinar todos los proyectos
+    all_projects = projects_automatizacion + projects_electrica + projects_mecanica
+    
+    # Filtrar proyectos según la categoría seleccionada
+    projects_all = all_projects
+    projects_automatizacion_filtered = [p for p in all_projects if p["category"] == "Automatización"]
+    projects_electrica_filtered = [p for p in all_projects if p["category"] == "Eléctrica"]
+    projects_mecanica_filtered = [p for p in all_projects if p["category"] == "Mecánica"]
     
     def render_projects_grid(projects_list):
         """Renderiza el grid de proyectos"""
@@ -500,7 +642,7 @@ def gallery() -> rx.Component:
                 rx.vstack(
                     rx.box(
                         rx.heading(
-                            "PORTAFOLIO DE EXCELENCIA ARQUITECTÓNICA",
+                            "ESPECIALIDADES TÉCNICAS TORRE FUERTE", 
                             font_size="32px",
                             color="white",
                             text_align="center",
@@ -512,7 +654,7 @@ def gallery() -> rx.Component:
                             class_name="hero-heading"
                         ),
                         rx.text(
-                            "Transformamos visiones en espacios extraordinarios que inspiran y perduran",
+                            "Soluciones integrales en automática, eléctrica y mecánica para la industria",
                             font_size="18px",
                             color="rgba(255, 255, 255, 0.9)",
                             text_align="center",
@@ -532,7 +674,7 @@ def gallery() -> rx.Component:
                         rx.hstack(
                             rx.vstack(
                                 rx.heading(
-                                    "50+",
+                                    "300+",
                                     font_size="36px",
                                     color="#43e97b",
                                     font_weight="black",
@@ -540,25 +682,7 @@ def gallery() -> rx.Component:
                                     text_shadow="0 0 20px rgba(67,233,123,0.5)",
                                 ),
                                 rx.text(
-                                    "Proyectos Completados",
-                                    font_size="14px",
-                                    color="rgba(255, 255, 255, 0.8)",
-                                    font_weight="600",
-                                ),
-                                align_items="center",
-                                spacing="1",
-                            ),
-                            rx.vstack(
-                                rx.heading(
-                                    "8",
-                                    font_size="36px",
-                                    color="#fa709a",
-                                    font_weight="black",
-                                    animation="countUp 1s ease-out 0.9s both",
-                                    text_shadow="0 0 20px rgba(250,112,154,0.5)",
-                                ),
-                                rx.text(
-                                    "Años de Experiencia",
+                                    "Servicios prestados",
                                     font_size="14px",
                                     color="rgba(255, 255, 255, 0.8)",
                                     font_weight="600",
@@ -595,29 +719,13 @@ def gallery() -> rx.Component:
                             rx.hstack(
                                 rx.vstack(
                                     rx.heading(
-                                        "50+",
+                                        "300+",
                                         font_size="24px",
                                         color="#43e97b",
                                         font_weight="black",
                                     ),
                                     rx.text(
-                                        "Proyectos",
-                                        font_size="11px",
-                                        color="rgba(255, 255, 255, 0.8)",
-                                        font_weight="600",
-                                    ),
-                                    align_items="center",
-                                    spacing="1",
-                                ),
-                                rx.vstack(
-                                    rx.heading(
-                                        "8",
-                                        font_size="24px",
-                                        color="#fa709a",
-                                        font_weight="black",
-                                    ),
-                                    rx.text(
-                                        "Años Exp.",
+                                        "Servicios prestados",
                                         font_size="11px",
                                         color="rgba(255, 255, 255, 0.8)",
                                         font_weight="600",
@@ -674,14 +782,14 @@ def gallery() -> rx.Component:
                 }
             ),
             
-            # Navegación entre categorías
+            # Navegación entre especialidades - MEJORADA
             navigation_tabs(),
             
-            # Galería de Proyectos - USANDO rx.match EN LUGAR DE CONDICIONES
+            # Galería de Proyectos - USANDO rx.match PARA FILTRAR
             rx.box(
                 rx.vstack(
                     rx.heading(
-                        "NUESTROS PROYECTOS DESTACADOS",
+                        "NUESTROS SERVICIOS EN ESPECIALIDADES TÉCNICAS",
                         font_size="28px",
                         color=Color_tx.Primary.value,
                         text_align="center",
@@ -691,7 +799,7 @@ def gallery() -> rx.Component:
                         class_name="section-heading"
                     ),
                     rx.text(
-                        "Descubre nuestra trayectoria de innovación y excelencia en arquitectura",
+                        "Soluciones innovadoras en automática, sistemas eléctricos y mecánica industrial",
                         font_size="16px",
                         color=Text_tx.Black.value,
                         text_align="center",
@@ -706,9 +814,9 @@ def gallery() -> rx.Component:
                         rx.match(
                             GalleryState.filter_category,
                             ("Todos", render_projects_grid(projects_all)),
-                            ("Residencial", render_projects_grid(projects_residencial)),
-                            ("Comercial", render_projects_grid(projects_comercial)),
-                            ("Industrial", render_projects_grid(projects_industrial)),
+                            ("Automatización", render_projects_grid(projects_automatizacion_filtered)),
+                            ("Eléctrica", render_projects_grid(projects_electrica_filtered)),
+                            ("Mecánica", render_projects_grid(projects_mecanica_filtered)),
                             render_projects_grid(projects_all)  # Default
                         ),
                         width="100%",
@@ -732,51 +840,19 @@ def gallery() -> rx.Component:
             # Llamado a la acción
             rx.center(
                 rx.vstack(
-                    rx.badge(
-                        "¿Listo para comenzar?",
-                        variant="solid",
-                        color_scheme="blue",
-                        size="2",
-                        padding_x="2rem",
-                        padding_y="1rem"
-                    ),
                     rx.heading(
-                        "Transformemos tu visión en realidad", 
+                        "Transformemos sus procesos industriales", 
                         size="7", 
                         text_align="center",
                         max_width="600px",
                         color="white"
                     ),
                     rx.text(
-                        "Nuestro equipo está listo para crear el espacio perfecto para tus necesidades",
+                        "Nuestro equipo especializado está listo para optimizar sus operaciones",
                         size="4",
                         color="rgba(255,255,255,0.8)",
                         text_align="center",
                         max_width="500px"
-                    ),
-                    rx.hstack(
-                        rx.button(
-                            "Solicitar Cotización",
-                            size="3",
-                            variant="solid",
-                            color_scheme="blue",
-                            padding_x="3rem",
-                            _hover={"transform": "translateY(-2px)", "box_shadow": "0 12px 25px -5px rgba(59, 130, 246, 0.4)"},
-                            transition="all 0.3s ease"
-                        ),
-                        rx.button(
-                            "Ver Más Proyectos",
-                            size="3",
-                            variant="outline",
-                            color_scheme="gray",
-                            padding_x="3rem",
-                            _hover={"transform": "translateY(-2px)"},
-                            transition="all 0.3s ease"
-                        ),
-                        spacing="4",
-                        margin_top="2rem",
-                        flex_wrap="wrap",
-                        justify="center"
                     ),
                     spacing="4",
                     align="center"
@@ -792,10 +868,9 @@ def gallery() -> rx.Component:
         ),
         # Lightbox para imágenes
         lightbox_component(),
-        # Estilos CSS ultra creativos (los mismos del taller)
+        # Estilos CSS ultra creativos MEJORADOS
         rx.html("""
             <style>
-                /* Todos los estilos de animación del taller */
                 @keyframes fadeInUp {
                     from {
                         opacity: 0;
@@ -881,7 +956,7 @@ def gallery() -> rx.Component:
                     z-index: 10 !important;
                 }
 
-                /* Estilos específicos para navegación responsive */
+                /* MEJORAS ESPECÍFICAS PARA NAVEGACIÓN DESKTOP */
                 .desktop-navigation {
                     display: none !important;
                 }
@@ -890,9 +965,20 @@ def gallery() -> rx.Component:
                     display: flex !important;
                 }
 
+                /* Desktop: 769px en adelante */
                 @media (min-width: 769px) {
                     .desktop-navigation {
                         display: flex !important;
+                        flex-wrap: wrap !important;
+                        justify-content: center !important;
+                        align-items: center !important;
+                        gap: 1rem !important;
+                        width: 100% !important;
+                    }
+                    
+                    .desktop-navigation button {
+                        flex: 0 1 auto !important;
+                        min-width: 140px !important;
                     }
                     
                     .mobile-navigation {
@@ -900,7 +986,62 @@ def gallery() -> rx.Component:
                     }
                 }
 
-                /* Responsive improvements */
+                /* Tablet: 481px a 768px */
+                @media (min-width: 481px) and (max-width: 768px) {
+                    .mobile-navigation {
+                        max-width: 90% !important;
+                    }
+                    
+                    .mobile-navigation .grid {
+                        gap: 12px !important;
+                    }
+                    
+                    .mobile-navigation button {
+                        font-size: 13px !important;
+                        padding: 10px 16px !important;
+                    }
+                }
+
+                /* Mobile pequeño: hasta 480px */
+                @media (max-width: 480px) {
+                    .mobile-navigation {
+                        max-width: 95% !important;
+                    }
+                    
+                    .mobile-navigation .grid {
+                        gap: 10px !important;
+                    }
+                    
+                    .mobile-navigation button {
+                        font-size: 11px !important;
+                        padding: 8px 12px !important;
+                        min-height: 44px !important; /* Para mejor touch */
+                    }
+                }
+
+                /* Desktop grande: 1024px en adelante */
+                @media (min-width: 1024px) {
+                    .desktop-navigation {
+                        gap: 1.25rem !important;
+                    }
+                    
+                    .desktop-navigation button {
+                        min-width: 150px !important;
+                    }
+                }
+
+                /* Desktop muy grande: 1200px en adelante */
+                @media (min-width: 1200px) {
+                    .desktop-navigation {
+                        gap: 1.5rem !important;
+                    }
+                    
+                    .desktop-navigation button {
+                        min-width: 160px !important;
+                    }
+                }
+
+                /* MEJORAS GENERALES DE RESPONSIVIDAD */
                 @media (max-width: 768px) {
                     .creative-project-card {
                         margin: 0 auto;
@@ -934,23 +1075,28 @@ def gallery() -> rx.Component:
                     
                     .hero-heading {
                         font-size: 24px !important;
+                        padding: 0 1rem !important;
                     }
                     
                     .hero-subtitle {
                         font-size: 14px !important;
+                        padding: 0 1rem !important;
                     }
                     
                     .section-heading {
-                        font-size: 20px !important;
+                        font_size: 20px !important;
+                        padding: 0 1rem !important;
                     }
                     
                     .section-subtitle {
-                        font-size: 13px !important;
+                        font_size: 13px !important;
+                        padding: 0 1rem !important;
                     }
                     
                     .projects-grid {
                         grid-template-columns: 1fr !important;
                         gap: 16px !important;
+                        padding: 0 1rem !important;
                     }
                 }
                 
@@ -958,6 +1104,7 @@ def gallery() -> rx.Component:
                     .projects-grid {
                         grid-template-columns: repeat(2, 1fr) !important;
                         gap: 20px !important;
+                        padding: 0 1.5rem !important;
                     }
                     
                     .mobile-info {
@@ -985,6 +1132,18 @@ def gallery() -> rx.Component:
                     .mobile-stats {
                         display: none !important;
                     }
+                    
+                    .projects-grid {
+                        padding: 0 2rem !important;
+                    }
+                }
+
+                /* Asegurar que los botones sean táctiles en móvil */
+                @media (max-width: 768px) {
+                    button {
+                        min-height: 44px !important;
+                        touch-action: manipulation !important;
+                    }
                 }
             </style>
         """),
@@ -994,27 +1153,27 @@ def gallery() -> rx.Component:
 
 def _get_color(category: str) -> str:
     colors = {
-        "Residencial": "#3b82f6",  # Azul
-        "Comercial": "#8b5cf6",    # Púrpura
-        "Industrial": "#10b981",   # Verde
-        "Todos": "#6b7280"         # Gris
+        "Automatización": "#3b82f6",  # Azul - representa tecnología y control
+        "Eléctrica": "#f59e0b",       # Ámbar - representa energía y electricidad  
+        "Mecánica": "#10b981",        # Verde - representa ingeniería y precisión
+        "Todos": "#6b7280"            # Gris
     }
     return colors.get(category, "#3b82f6")
 
 def _get_dark_color(category: str) -> str:
     colors = {
-        "Residencial": "#1d4ed8",  # Azul oscuro
-        "Comercial": "#7c3aed",    # Púrpura oscuro
-        "Industrial": "#047857",   # Verde oscuro
-        "Todos": "#4b5563"         # Gris oscuro
+        "Automatización": "#1d4ed8",  # Azul oscuro
+        "Eléctrica": "#d97706",       # Ámbar oscuro
+        "Mecánica": "#047857",        # Verde oscuro
+        "Todos": "#4b5563"            # Gris oscuro
     }
     return colors.get(category, "#1d4ed8")
 
 def _get_color_scheme(category: str) -> str:
     color_schemes = {
-        "Residencial": "blue",
-        "Comercial": "purple", 
-        "Industrial": "green",
+        "Automatización": "blue",
+        "Eléctrica": "yellow", 
+        "Mecánica": "green",
         "Todos": "gray"
     }
     return color_schemes.get(category, "blue")

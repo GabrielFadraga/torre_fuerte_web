@@ -78,7 +78,7 @@ def quality_policy_section() -> rx.Component:
                             rx.vstack(
                                 rx.hstack(
                                     rx.icon(
-                                        tag="check_circle",
+                                        tag="chevron-right",
                                         color=Color_tx.Primary.value,
                                         font_size="20px",
                                         flex_shrink="0",
@@ -94,7 +94,7 @@ def quality_policy_section() -> rx.Component:
                                 ),
                                 rx.hstack(
                                     rx.icon(
-                                        tag="check_circle", 
+                                        tag="chevron-right", 
                                         color=Color_tx.Primary.value,
                                         font_size="20px",
                                         flex_shrink="0",
@@ -110,7 +110,7 @@ def quality_policy_section() -> rx.Component:
                                 ),
                                 rx.hstack(
                                     rx.icon(
-                                        tag="check_circle",
+                                        tag="chevron-right",
                                         color=Color_tx.Primary.value,
                                         font_size="20px",
                                         flex_shrink="0",
@@ -126,7 +126,7 @@ def quality_policy_section() -> rx.Component:
                                 ),
                                 rx.hstack(
                                     rx.icon(
-                                        tag="check_circle",
+                                        tag="chevron-right",
                                         color=Color_tx.Primary.value,
                                         font_size="20px",
                                         flex_shrink="0",
@@ -191,14 +191,6 @@ def quality_policy_section() -> rx.Component:
                                     }
                                 }
                             ),
-                            rx.text(
-                                "Certificación de Calidad",
-                                font_size="14px",
-                                color=Text_tx.Black.value,
-                                font_weight="medium",
-                                text_align="center",
-                                margin_top=styles.Spacer.SMALL.value,
-                            ),
                             align_items="center",
                             spacing="3",
                         ),
@@ -244,7 +236,7 @@ def quality_policy_section() -> rx.Component:
                             rx.vstack(
                                 rx.hstack(
                                     rx.icon(
-                                        tag="check_circle",
+                                        tag="chevron-right",
                                         color=Color_tx.Primary.value,
                                         font_size="18px",
                                         flex_shrink="0",
@@ -260,7 +252,7 @@ def quality_policy_section() -> rx.Component:
                                 ),
                                 rx.hstack(
                                     rx.icon(
-                                        tag="check_circle",
+                                        tag="chevron-right",
                                         color=Color_tx.Primary.value,
                                         font_size="18px",
                                         flex_shrink="0",
@@ -276,7 +268,7 @@ def quality_policy_section() -> rx.Component:
                                 ),
                                 rx.hstack(
                                     rx.icon(
-                                        tag="check_circle",
+                                        tag="chevron-right",
                                         color=Color_tx.Primary.value,
                                         font_size="18px",
                                         flex_shrink="0",
@@ -292,7 +284,7 @@ def quality_policy_section() -> rx.Component:
                                 ),
                                 rx.hstack(
                                     rx.icon(
-                                        tag="check_circle",
+                                        tag="chevron-right",
                                         color=Color_tx.Primary.value,
                                         font_size="18px",
                                         flex_shrink="0",
@@ -324,14 +316,6 @@ def quality_policy_section() -> rx.Component:
                                 max_width="300px",
                                 border_radius="15px",
                                 box_shadow="0 10px 25px rgba(25, 66, 100, 0.15)",
-                            ),
-                            rx.text(
-                                "Certificación de Calidad", 
-                                font_size="12px",
-                                color=Text_tx.Black.value,
-                                font_weight="medium",
-                                text_align="center",
-                                margin_top=styles.Spacer.SMALL.value,
                             ),
                             align_items="center",
                             spacing="2",
@@ -393,7 +377,7 @@ def about_with_animations() -> rx.Component:
                 rx.vstack(
                     rx.box(
                         rx.heading(
-                            "Liderando la Excelencia en Mantenimiento Industrial",
+                            "Buscamos la Excelencia en Mantenimiento Industrial",
                             font_size=["20px", "24px", "32px", "40px", "48px"],
                             color="white",
                             text_align="center",
