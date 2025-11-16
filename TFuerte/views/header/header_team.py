@@ -4,7 +4,7 @@ import TFuerte.styles.styles as styles
 from TFuerte.views.header.header_responsive import header_responsive
 from TFuerte.styles.colors import Text_tx, Color_tx
 
-def member_card(name: str, position: str, region: str = None, image: str = "user1.png") -> rx.Component:
+def member_card(name: str, position: str, image: str, region: str = None) -> rx.Component:
     """Componente de tarjeta para cada miembro del equipo"""
     return rx.card(
         rx.vstack(
@@ -73,7 +73,8 @@ def header_team() -> rx.Component:
                 rx.center(
                     member_card(
                         "Lic Maikel Torres López",
-                        "Presidente"
+                        "Presidente",
+                        "user1.png"
                     ),
                     width="100%",
                     margin_bottom="2em",
@@ -83,7 +84,8 @@ def header_team() -> rx.Component:
                 rx.box(
                     member_card(
                         "Ing. Euclides Rodríguez Mejías", 
-                        "Director Adjunto"
+                        "Director Adjunto",
+                        "user1.png"
                     ),
                     width="100%",
                     display="flex",
@@ -97,24 +99,29 @@ def header_team() -> rx.Component:
                     rx.flex(
                         member_card(
                             "Lic. Meylin Yu Parra",
-                            "Jefa de Área Administrativa"
+                            "Jefa de Área Administrativa",
+                            "Meylin.jpeg"
                         ),
                         member_card(
                             "Ing. Miguel Obregón Salomón",
-                            "Jefe de Área Logística"
+                            "Jefe de Área Logística",
+                            "Miguel.jpeg"
                         ),
                         member_card(
                             "Ing. Gilberto Acosta Monjes",
-                            "Jefe de Coordinación",
-                            "Habana-Mayabeque"
+                            """Jefe de Coordinación
+                                Habana-Mayabeque""",
+                            "Acosta.jpeg"
                         ),
                         member_card(
                             "Ing. Manuel Núñez Brea",
-                            "Jefe de Coordinación Oriente"
+                            "Jefe de Coordinación Oriente",
+                            "user1.png"
                         ),
                         member_card(
                             "T.M Alexander Martínez Elias",
-                            "Jefe de Área Técnica"
+                            "Jefe de Área Técnica",
+                            "Alexander.jpeg"
                         ),
                         direction="row",
                         wrap="wrap",
@@ -132,13 +139,13 @@ def header_team() -> rx.Component:
         # Versión móvil y tablet
         rx.mobile_and_tablet(
             rx.vstack(
-                member_card("Lic Maikel Torres López", "Presidente"),
-                member_card("Ing. Euclides Rodríguez Mejías", "Director Adjunto"),
-                member_card("Lic. Meylin Yu Parra", "Jefa de Área Administrativa"),
-                member_card("Ing. Miguel Obregón Salomón", "Jefe de Área Logística"),
-                member_card("Ing. Gilberto Acosta Monjes", "Jefe de Coordinación", "Habana-Mayabeque"),
-                member_card("Ing. Manuel Núñez Brea", "Jefe de Coordinación Oriente"),
-                member_card("T.M Alexander Martínez Elias", "Jefe de Área Técnica"),
+                member_card("Lic Maikel Torres López", "Presidente", "user1.png"),
+                member_card("Ing. Euclides Rodríguez Mejías", "Director Adjunto", "user1.png"),
+                member_card("Lic. Meylin Yu Parra", "Jefa de Área Administrativa", "Meylin.jpeg"),
+                member_card("Ing. Miguel Obregón Salomón", "Jefe de Área Logística", "Miguel.jpeg"),
+                member_card("Ing. Gilberto Acosta Monjes", """Jefe de Coordinación Habana-Mayabeque""", "Acosta.jpeg"),
+                member_card("Ing. Manuel Núñez Brea", "Jefe de Coordinación Oriente", "user1.png"),
+                member_card("T.M Alexander Martínez Elias", "Jefe de Área Técnica", "Alexander.jpeg"),
                 spacing="4",
                 width="100%",
             )
