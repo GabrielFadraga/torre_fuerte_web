@@ -11,7 +11,7 @@ from TFuerte.components.footer import footer
 from TFuerte.components.link_button import link_button
 import TFuerte.styles.styles as styles
 from TFuerte.views.sponsor.sponsor import sponsor
-from rxconfig import config
+from TFuerte.rxconfig import config
 from TFuerte.routes import Route
 from TFuerte.components.sidebar import sidebar
 from TFuerte.components.scroll_top import scroll_top_final

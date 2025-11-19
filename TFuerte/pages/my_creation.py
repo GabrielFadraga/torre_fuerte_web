@@ -1,6 +1,6 @@
 import reflex as rx
 from TFuerte.styles.colors import Text_tx, Color_tx
-from rxconfig import config
+from TFuerte.rxconfig import config
 from TFuerte.routes import Route
 import TFuerte.styles.styles as styles
 from TFuerte.components.navbar_creation import creation

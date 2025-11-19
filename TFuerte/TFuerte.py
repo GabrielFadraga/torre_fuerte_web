@@ -7,7 +7,7 @@ from TFuerte.pages.projects import projects
 from TFuerte.pages.team import team
 from TFuerte.pages.taller import taller
 from TFuerte.pages.my_creation import my_creation
-from rxconfig import config
+from TFuerte.rxconfig import config
 
 
 app = rx.App(

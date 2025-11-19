@@ -15,7 +15,7 @@ from TFuerte.components.navbar_creation import creation
 from TFuerte.views.header.header_creation import headcreat, headcreat_final
 from TFuerte.views.header.logo_header import logo
 from TFuerte.views.header.logo_responsive import logo_resp
-from rxconfig import config
+from TFuerte.rxconfig import config
 
 from TFuerte.styles.colors import Text_tx 
 
