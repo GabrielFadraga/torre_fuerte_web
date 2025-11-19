@@ -85,7 +85,7 @@ def header_team() -> rx.Component:
                     member_card(
                         "Ing. Euclides Rodríguez Mejías", 
                         "Director Adjunto",
-                        "user1.png"
+                        "Euclides.jpeg"
                     ),
                     width="100%",
                     display="flex",
@@ -116,7 +116,7 @@ def header_team() -> rx.Component:
                         member_card(
                             "Ing. Manuel Núñez Brea",
                             "Jefe de Coordinación Oriente",
-                            "user1.png"
+                            "Brea.jpeg"
                         ),
                         member_card(
                             "T.M Alexander Martínez Elias",
@@ -140,11 +140,11 @@ def header_team() -> rx.Component:
         rx.mobile_and_tablet(
             rx.vstack(
                 member_card("Lic Maikel Torres López", "Presidente", "user1.png"),
-                member_card("Ing. Euclides Rodríguez Mejías", "Director Adjunto", "user1.png"),
+                member_card("Ing. Euclides Rodríguez Mejías", "Director Adjunto", "Euclides.jpeg"),
                 member_card("Lic. Meylin Yu Parra", "Jefa de Área Administrativa", "Meylin.jpeg"),
                 member_card("Ing. Miguel Obregón Salomón", "Jefe de Área Logística", "Miguel.jpeg"),
                 member_card("Ing. Gilberto Acosta Monjes", """Jefe de Coordinación Habana-Mayabeque""", "Acosta.jpeg"),
-                member_card("Ing. Manuel Núñez Brea", "Jefe de Coordinación Oriente", "user1.png"),
+                member_card("Ing. Manuel Núñez Brea", "Jefe de Coordinación Oriente", "Brea.jpeg"),
                 member_card("T.M Alexander Martínez Elias", "Jefe de Área Técnica", "Alexander.jpeg"),
                 spacing="4",
                 width="100%",
