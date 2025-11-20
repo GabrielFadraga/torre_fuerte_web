@@ -74,7 +74,7 @@ def header_team() -> rx.Component:
                     member_card(
                         "Lic Maikel Torres López",
                         "Presidente",
-                        "user1.png"
+                        "Maykel.jpeg"
                     ),
                     width="100%",
                     margin_bottom="2em",
@@ -139,7 +139,7 @@ def header_team() -> rx.Component:
         # Versión móvil y tablet
         rx.mobile_and_tablet(
             rx.vstack(
-                member_card("Lic Maikel Torres López", "Presidente", "user1.png"),
+                member_card("Lic Maikel Torres López", "Presidente", "Maykel.jpeg"),
                 member_card("Ing. Euclides Rodríguez Mejías", "Director Adjunto", "Euclides.jpeg"),
                 member_card("Lic. Meylin Yu Parra", "Jefa de Área Administrativa", "Meylin.jpeg"),
                 member_card("Ing. Miguel Obregón Salomón", "Jefe de Área Logística", "Miguel.jpeg"),
