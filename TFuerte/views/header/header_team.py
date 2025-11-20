@@ -114,6 +114,11 @@ def header_team() -> rx.Component:
                             "Acosta.jpeg"
                         ),
                         member_card(
+                            "Msc. Ing. Misbel Palmero Aguilar",
+                            "Jefe de Coordinación Matanzas",
+                            "Misbel.jpeg"
+                        ),
+                        member_card(
                             "Ing. Manuel Núñez Brea",
                             "Jefe de Coordinación Oriente",
                             "Brea.jpeg"
@@ -122,6 +127,11 @@ def header_team() -> rx.Component:
                             "T.M Alexander Martínez Elias",
                             "Jefe de Área Técnica",
                             "Alexander.jpeg"
+                        ),
+                        member_card(
+                            "T.M Walter Baluja Hernan",
+                            "Jefe de Taller de Maquinado",
+                            "Walter.jpeg"
                         ),
                         direction="row",
                         wrap="wrap",
@@ -144,8 +154,10 @@ def header_team() -> rx.Component:
                 member_card("Lic. Meylin Yu Parra", "Jefa de Área Administrativa", "Meylin.jpeg"),
                 member_card("Ing. Miguel Obregón Salomón", "Jefe de Área Logística", "Miguel.jpeg"),
                 member_card("Ing. Gilberto Acosta Monjes", """Jefe de Coordinación Habana-Mayabeque""", "Acosta.jpeg"),
+                member_card("Msc. Ing. Misbel Palmero Aguilar", "Jefe de Coordinación Matanzas", "Misbel.jpeg"),
                 member_card("Ing. Manuel Núñez Brea", "Jefe de Coordinación Oriente", "Brea.jpeg"),
                 member_card("T.M Alexander Martínez Elias", "Jefe de Área Técnica", "Alexander.jpeg"),
+                member_card("T.M Walter Baluja Hernan", "Jefe de Taller de Maquinado", "Walter.jpeg"),
                 spacing="4",
                 width="100%",
             )
