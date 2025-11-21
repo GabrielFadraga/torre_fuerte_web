@@ -108,7 +108,7 @@ def header_team() -> rx.Component:
                             "Miguel.jpeg"
                         ),
                         member_card(
-                            "Ing. Gilberto Acosta Monjes",
+                            "Msc. Ing. Gilberto Acosta Monjes",
                             """Jefe de Coordinación
                                 Habana-Mayabeque""",
                             "Acosta.jpeg"
@@ -129,7 +129,7 @@ def header_team() -> rx.Component:
                             "Alexander.jpeg"
                         ),
                         member_card(
-                            "T.M Walter Baluja Hernan",
+                            "N.S Walter Vargas Hernández",
                             "Jefe de Taller de Maquinado",
                             "Walter.jpeg"
                         ),
@@ -153,11 +153,11 @@ def header_team() -> rx.Component:
                 member_card("Ing. Euclides Rodríguez Mejías", "Director Adjunto", "Euclides.jpeg"),
                 member_card("Lic. Meylin Yu Parra", "Jefa de Área Administrativa", "Meylin.jpeg"),
                 member_card("Ing. Miguel Obregón Salomón", "Jefe de Área Logística", "Miguel.jpeg"),
-                member_card("Ing. Gilberto Acosta Monjes", """Jefe de Coordinación Habana-Mayabeque""", "Acosta.jpeg"),
+                member_card("Msc. Ing. Gilberto Acosta Monjes", """Jefe de Coordinación Habana-Mayabeque""", "Acosta.jpeg"),
                 member_card("Msc. Ing. Misbel Palmero Aguilar", "Jefe de Coordinación Matanzas", "Misbel.jpeg"),
                 member_card("Ing. Manuel Núñez Brea", "Jefe de Coordinación Oriente", "Brea.jpeg"),
                 member_card("T.M Alexander Martínez Elias", "Jefe de Área Técnica", "Alexander.jpeg"),
-                member_card("T.M Walter Baluja Hernan", "Jefe de Taller de Maquinado", "Walter.jpeg"),
+                member_card("N.S Walter Vargas Hernández", "Jefe de Taller de Maquinado", "Walter.jpeg"),
                 spacing="4",
                 width="100%",
             )
