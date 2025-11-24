@@ -3,8 +3,508 @@ from TFuerte.components.info_text import info_text
 import TFuerte.styles.styles as styles
 from TFuerte.styles.colors import Text_tx, Color_tx
 
+def feria_banner() -> rx.Component:
+    return rx.box(
+        rx.hstack(
+            # Contenedor de imágenes - Diseño mejorado para diferentes formatos
+            rx.box(
+                rx.hstack(
+                    # Foto del equipo en la feria (horizontal)
+                    rx.box(
+                        rx.vstack(
+                            rx.image(
+                                src="fihavabout.jpg",  # Foto horizontal del equipo en la feria
+                                width="100%",
+                                height="380px",  # Aumenté la altura de 280px a 380px
+                                object_fit="cover",
+                                border_radius="12px",
+                                transition="all 0.5s ease-in-out",
+                                filter="brightness(0.95) contrast(1.05)",
+                                _hover={
+                                    "transform": "scale(1.03)",
+                                    "filter": "brightness(1) contrast(1.1)",
+                                    "box_shadow": "0 10px 30px rgba(25, 66, 100, 0.25)",
+                                },
+                                animation="fadeInLeft 0.8s ease-out",
+                            ),
+                            rx.text(
+                                "Nuestro equipo en la Feria Internacional de La Habana",
+                                font_size="12px",
+                                color="#64748b",
+                                font_weight="500",
+                                text_align="center",
+                                padding="8px",
+                                background="rgba(25, 66, 100, 0.05)",
+                                border_radius="0 0 12px 12px",
+                                margin_top="-4px",
+                            ),
+                            spacing="0",
+                            height="100%",
+                        ),
+                        flex="2",  # Más espacio para la imagen horizontal
+                        position="relative",
+                        margin_right="20px",  # Espacio entre imágenes
+                        _before={
+                            "content": "''",
+                            "position": "absolute",
+                            "top": "0",
+                            "left": "0",
+                            "right": "0",
+                            "bottom": "0",
+                            "background": "linear-gradient(135deg, rgba(25, 66, 100, 0.1) 0%, transparent 50%)",
+                            "pointer_events": "none",
+                            "border_radius": "12px",
+                        }
+                    ),
+                    
+                    # Tarjeta de presentación de la empresa (vertical)
+                    rx.box(
+                        rx.vstack(
+                            rx.image(
+                                src="trj.png",  # Tarjeta vertical
+                                width="100%",
+                                height="380px",  # Aumenté la altura de 280px a 380px
+                                object_fit="contain",  # Cambiado a contain para mostrar completa
+                                background="white",
+                                border_radius="12px",
+                                transition="all 0.5s ease-in-out",
+                                filter="brightness(0.98)",
+                                _hover={
+                                    "transform": "scale(1.03)",
+                                    "filter": "brightness(1)",
+                                    "box_shadow": "0 10px 30px rgba(25, 66, 100, 0.25)",
+                                },
+                                animation="fadeInRight 0.8s ease-out 0.2s both",
+                                padding="10px",  # Espacio interno para la tarjeta
+                                border="1px solid rgba(25, 66, 100, 0.1)",
+                            ),
+                            rx.text(
+                                "Tarjeta de Presentación de Evento",
+                                font_size="12px",
+                                color="#64748b",
+                                font_weight="500",
+                                text_align="center",
+                                padding="8px",
+                                background="rgba(42, 90, 138, 0.05)",
+                                border_radius="0 0 12px 12px",
+                                margin_top="-4px",
+                            ),
+                            spacing="0",
+                            height="100%",
+                        ),
+                        flex="1",  # Menos espacio para la tarjeta vertical
+                        position="relative",
+                        _before={
+                            "content": "''",
+                            "position": "absolute",
+                            "top": "0",
+                            "left": "0",
+                            "right": "0",
+                            "bottom": "0",
+                            "background": "linear-gradient(135deg, transparent 0%, rgba(42, 90, 138, 0.05) 100%)",
+                            "pointer_events": "none",
+                            "border_radius": "12px",
+                        }
+                    ),
+                    
+                    spacing="0",
+                    width="100%",
+                    height="100%",
+                    align_items="center",
+                ),
+                flex="2",
+                position="relative",
+                overflow="hidden",
+            ),
+            
+            # Información de la feria con animaciones
+            rx.box(
+                rx.vstack(
+                    rx.heading(
+                        "¡Te Esperamos!",
+                        size="4",
+                        color="#194264",
+                        font_weight="bold",
+                        margin_bottom="8px",
+                        # Animación de texto
+                        animation="fadeInUp 0.6s ease-out 0.2s both",
+                        text_shadow="0 2px 4px rgba(0,0,0,0.1)",
+                    ),
+                    rx.text(
+                        "Feria Internacional de La Habana",
+                        font_size="20px",
+                        color="#194264",
+                        font_weight="bold",
+                        margin_bottom="4px",
+                        animation="fadeInUp 0.6s ease-out 0.3s both",
+                    ),
+                    rx.text(
+                        "ExpoCuba - Pabellón 16",
+                        font_size="18px",
+                        color="#2a5a8a",
+                        font_weight="600",
+                        margin_bottom="12px",
+                        animation="fadeInUp 0.6s ease-out 0.4s both",
+                    ),
+                    rx.text(
+                        "Ven y conoce nuestras soluciones industriales",
+                        font_size="16px",
+                        color="#64748b",
+                        font_weight="500",
+                        animation="fadeInUp 0.6s ease-out 0.5s both",
+                    ),
+                    rx.box(
+                        rx.text(
+                            "Stand de Torre Fuerte SURL",
+                            font_size="14px",
+                            color="#194264",
+                            font_weight="bold",
+                            font_style="italic",
+                        ),
+                        background="linear-gradient(135deg, rgba(25, 66, 100, 0.1) 0%, rgba(42, 90, 138, 0.05) 100%)",
+                        padding="8px 16px",
+                        border_radius="6px",
+                        margin_top="8px",
+                        border="1px solid rgba(25, 66, 100, 0.1)",
+                        transition="all 0.3s ease",
+                        animation="fadeInUp 0.6s ease-out 0.6s both",
+                        _hover={
+                            "transform": "translateY(-2px)",
+                            "box_shadow": "0 8px 20px rgba(25, 66, 100, 0.15)",
+                            "background": "linear-gradient(135deg, rgba(25, 66, 100, 0.15) 0%, rgba(42, 90, 138, 0.08) 100%)",
+                        }
+                    ),
+                    # Elemento decorativo animado
+                    rx.hstack(
+                        rx.box(
+                            width="8px",
+                            height="8px",
+                            background="#194264",
+                            border_radius="50%",
+                            animation="pulse 2s infinite",
+                        ),
+                        rx.box(
+                            width="6px",
+                            height="6px",
+                            background="#2a5a8a",
+                            border_radius="50%",
+                            animation="pulse 2s infinite 0.5s",
+                        ),
+                        rx.box(
+                            width="4px",
+                            height="4px",
+                            background="#64748b",
+                            border_radius="50%",
+                            animation="pulse 2s infinite 1s",
+                        ),
+                        spacing="2",
+                        margin_top="16px",
+                    ),
+                    align_items="start",
+                    spacing="2",
+                    height="100%",
+                    justify="center",
+                ),
+                flex="1",
+                padding="24px",
+                background="linear-gradient(135deg, #FFFFFF 0%, #F8FAFC 100%)",
+                border_radius="12px",
+                height="400px",  # Ya estaba en 400px, lo mantenemos
+                position="relative",
+                overflow="hidden",
+                # Efecto de borde animado
+                _before={
+                    "content": "''",
+                    "position": "absolute",
+                    "top": "0",
+                    "left": "0",
+                    "right": "0",
+                    "height": "3px",
+                    "background": "linear-gradient(90deg, #194264, #2a5a8a, #194264)",
+                    "background_size": "200% 100%",
+                    "animation": "shimmer 3s infinite linear",
+                },
+                # Efecto hover en todo el panel
+                transition="all 0.3s ease",
+                _hover={
+                    "box_shadow": "0 10px 30px rgba(25, 66, 100, 0.15)",
+                    "transform": "translateY(-2px)",
+                }
+            ),
+            
+            align_items="stretch",
+            spacing="4",  # Espacio entre el contenedor de imágenes y la información
+            width="100%",
+            height="400px",  # AUMENTÉ de 200px a 400px - Esto es clave para que no se corte la foto
+            # Animación de entrada del contenedor principal
+            animation="fadeIn 0.8s ease-out",
+        ),
+        width="100%",
+        padding=styles.Spacer.LARGE.value,
+        background="linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 100%)",
+        border_bottom="1px solid #e2e8f0",
+        # Animaciones CSS globales
+        style={
+            "@keyframes fadeIn": {
+                "0%": {"opacity": "0"},
+                "100%": {"opacity": "1"}
+            },
+            "@keyframes fadeInLeft": {
+                "0%": {
+                    "opacity": "0",
+                    "transform": "translateX(-30px)"
+                },
+                "100%": {
+                    "opacity": "1",
+                    "transform": "translateX(0)"
+                }
+            },
+            "@keyframes fadeInRight": {
+                "0%": {
+                    "opacity": "0",
+                    "transform": "translateX(30px)"
+                },
+                "100%": {
+                    "opacity": "1",
+                    "transform": "translateX(0)"
+                }
+            },
+            "@keyframes fadeInUp": {
+                "0%": {
+                    "opacity": "0",
+                    "transform": "translateY(20px)"
+                },
+                "100%": {
+                    "opacity": "1",
+                    "transform": "translateY(0)"
+                }
+            },
+            "@keyframes pulse": {
+                "0%, 100%": {"opacity": "1", "transform": "scale(1)"},
+                "50%": {"opacity": "0.7", "transform": "scale(1.1)"}
+            },
+            "@keyframes shimmer": {
+                "0%": {"background_position": "-200% 0"},
+                "100%": {"background_position": "200% 0"}
+            }
+        }
+    )
+
+def feria_banner_mobile() -> rx.Component:
+    return rx.box(
+        rx.vstack(
+            # Contenedor de imágenes para móvil - Con espacio entre ellas
+            rx.vstack(
+                # Foto del equipo en la feria (horizontal)
+                rx.box(
+                    rx.vstack(
+                        rx.image(
+                            src="fihavabout.jpg",
+                            width="100%",
+                            height="200px",  # Aumenté de 180px a 200px para móvil
+                            object_fit="cover",
+                            border_radius="12px",
+                            transition="all 0.4s ease",
+                            filter="brightness(0.95)",
+                            _hover={
+                                "filter": "brightness(1)",
+                                "transform": "scale(1.02)",
+                            },
+                            animation="fadeInDown 0.6s ease-out",
+                        ),
+                        rx.text(
+                            "Nuestro equipo en la Feria",
+                            font_size="11px",
+                            color="#64748b",
+                            font_weight="500",
+                            text_align="center",
+                            padding="6px",
+                            background="rgba(25, 66, 100, 0.05)",
+                            border_radius="0 0 12px 12px",
+                            margin_top="-4px",
+                        ),
+                        spacing="0",
+                    ),
+                    width="100%",
+                    margin_bottom="16px",  # Espacio entre imágenes
+                ),
+                
+                # Tarjeta de presentación de la empresa (vertical)
+                rx.box(
+                    rx.vstack(
+                        rx.image(
+                            src="trj.png",
+                            width="100%",
+                            height="200px",  # Aumenté de 180px a 200px para móvil
+                            object_fit="contain",
+                            background="white",
+                            border_radius="12px",
+                            transition="all 0.4s ease",
+                            filter="brightness(0.98)",
+                            _hover={
+                                "filter": "brightness(1)",
+                                "transform": "scale(1.02)",
+                            },
+                            animation="fadeInDown 0.6s ease-out 0.2s both",
+                            padding="10px",
+                            border="1px solid rgba(25, 66, 100, 0.1)",
+                        ),
+                        rx.text(
+                            "Tarjeta de Presentación",
+                            font_size="11px",
+                            color="#64748b",
+                            font_weight="500",
+                            text_align="center",
+                            padding="6px",
+                            background="rgba(42, 90, 138, 0.05)",
+                            border_radius="0 0 12px 12px",
+                            margin_top="-4px",
+                        ),
+                        spacing="0",
+                    ),
+                    width="100%",
+                ),
+                
+                spacing="0",
+                width="100%",
+            ),
+            
+            # Información de la feria para móvil
+            rx.vstack(
+                rx.heading(
+                    "¡Te Esperamos!",
+                    size="3",
+                    color="#194264",
+                    font_weight="bold",
+                    margin_bottom="4px",
+                    text_align="center",
+                    animation="fadeInUp 0.6s ease-out 0.2s both",
+                ),
+                rx.text(
+                    "Feria Internacional de La Habana",
+                    font_size="18px",
+                    color="#194264",
+                    font_weight="bold",
+                    margin_bottom="2px",
+                    text_align="center",
+                    animation="fadeInUp 0.6s ease-out 0.3s both",
+                ),
+                rx.text(
+                    "ExpoCuba - Pabellón 16",
+                    font_size="16px",
+                    color="#2a5a8a",
+                    font_weight="600",
+                    margin_bottom="8px",
+                    text_align="center",
+                    animation="fadeInUp 0.6s ease-out 0.4s both",
+                ),
+                rx.text(
+                    "Ven y conoce nuestras soluciones industriales",
+                    font_size="14px",
+                    color="#64748b",
+                    font_weight="500",
+                    text_align="center",
+                    animation="fadeInUp 0.6s ease-out 0.5s both",
+                ),
+                rx.box(
+                    rx.text(
+                        "Stand de Torre Fuerte SURL",
+                        font_size="13px",
+                        color="#194264",
+                        font_weight="bold",
+                        font_style="italic",
+                    ),
+                    background="linear-gradient(135deg, rgba(25, 66, 100, 0.1) 0%, rgba(42, 90, 138, 0.05) 100%)",
+                    padding="6px 12px",
+                    border_radius="6px",
+                    margin_top="6px",
+                    border="1px solid rgba(25, 66, 100, 0.1)",
+                    animation="fadeInUp 0.6s ease-out 0.6s both",
+                ),
+                # Indicador de puntos animado para móvil
+                rx.hstack(
+                    rx.box(
+                        width="6px",
+                        height="6px",
+                        background="#194264",
+                        border_radius="50%",
+                        animation="pulse 2s infinite",
+                    ),
+                    rx.box(
+                        width="5px",
+                        height="5px",
+                        background="#2a5a8a",
+                        border_radius="50%",
+                        animation="pulse 2s infinite 0.3s",
+                    ),
+                    rx.box(
+                        width="4px",
+                        height="4px",
+                        background="#64748b",
+                        border_radius="50%",
+                        animation="pulse 2s infinite 0.6s",
+                    ),
+                    spacing="1",
+                    justify="center",
+                    margin_top="12px",
+                ),
+                align_items="center",
+                spacing="2",
+                width="100%",
+                padding="20px",
+                background="white",
+                border_radius="12px",
+                box_shadow="0 4px 12px rgba(0,0,0,0.1)",
+                margin_top="16px",
+            ),
+            
+            spacing="0",
+            width="100%",
+        ),
+        width="100%",
+        padding=styles.Spacer.MEDIUM.value,
+        background="linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 100%)",
+        border_bottom="1px solid #e2e8f0",
+        # Animaciones para móvil
+        style={
+            "@keyframes fadeInDown": {
+                "0%": {
+                    "opacity": "0",
+                    "transform": "translateY(-20px)"
+                },
+                "100%": {
+                    "opacity": "1",
+                    "transform": "translateY(0)"
+                }
+            },
+            "@keyframes fadeInUp": {
+                "0%": {
+                    "opacity": "0",
+                    "transform": "translateY(10px)"
+                },
+                "100%": {
+                    "opacity": "1",
+                    "transform": "translateY(0)"
+                }
+            },
+            "@keyframes pulse": {
+                "0%, 100%": {"opacity": "1", "transform": "scale(1)"},
+                "50%": {"opacity": "0.6", "transform": "scale(1.2)"}
+            }
+        }
+    )
+
+# El resto del código se mantiene igual...
+
 def president_message() -> rx.Component:
     return rx.vstack(
+        # Banner de la feria
+        rx.box(
+            rx.desktop_only(feria_banner()),
+            rx.mobile_and_tablet(feria_banner_mobile()),
+            width="100%",
+        ),
+        
         # Hero Section renovada con logo sobre fondo blanco
         rx.box(
             rx.hstack(
@@ -445,6 +945,12 @@ def president_message() -> rx.Component:
 
 def president_message_mobile() -> rx.Component:
     return rx.vstack(
+        # Banner de la feria en móvil
+        rx.box(
+            feria_banner_mobile(),
+            width="100%",
+        ),
+        
         # Header móvil
         rx.box(
             rx.center(
