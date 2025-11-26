@@ -118,7 +118,7 @@ def feria_section() -> rx.Component:
                             ),
                             rx.box(
                                 rx.image(
-                                    src="Lunes4.jpg",
+                                    src="Martes2.jpg",
                                     width="100%",
                                     height="300px",
                                     object_fit="cover",
