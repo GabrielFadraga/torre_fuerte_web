@@ -19,6 +19,8 @@ from rxconfig import config
 
 from TFuerte.styles.colors import Text_tx 
 
+class State(rx.State):
+    """Define your app state here."""
 
 @rx.page(
     title="Torre Fuerte",
