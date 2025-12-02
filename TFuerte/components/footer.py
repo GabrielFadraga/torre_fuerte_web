@@ -42,7 +42,7 @@ def footer() -> rx.Component:
                     # Información de contacto
                     rx.vstack(
                         rx.text(
-                            "Calle C, e/Calle 15 y Calle 13, Vedado",
+                            "Calle C, e/Calle 15 y Calle 17, Vedado",
                             size="2",
                             color="rgba(255,255,255,0.8)",
                             font_weight="medium",
@@ -209,7 +209,7 @@ def footer_mobile() -> rx.Component:
             # Información de contacto
             rx.vstack(
                 rx.text(
-                    "Calle C, e/Calle 15 y Calle 13, Vedado",
+                    "Calle C, e/Calle 15 y Calle 17, Vedado",
                     size="1",
                     color="rgba(255,255,255,0.8)",
                     text_align="center",
