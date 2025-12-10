@@ -2,7 +2,7 @@ import reflex as rx
 import TFuerte.utils as utils
 from TFuerte.components.navbar import navbar
 from TFuerte.components.sidebar import sidebar
-from TFuerte.components.scroll_top import scroll_top_final
+from TFuerte.components.scroll_top import scroll_top_button
 from TFuerte.components.info_text import info_text
 from TFuerte.views.header.header import header
 from TFuerte.views.header.header_img import header_img
@@ -43,7 +43,7 @@ def index() -> rx.Component:
         rx.vstack(
         logo(),
         
-        scroll_top_final(),
+        scroll_top_button(),
         align_items="center",        
         #margin=styles.Spacer.SMALL.value,
         margin_y=styles.Spacer.SMALL.value,

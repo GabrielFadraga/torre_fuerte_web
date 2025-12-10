@@ -14,7 +14,7 @@ from TFuerte.views.sponsor.sponsor import sponsor
 from rxconfig import config
 from TFuerte.routes import Route
 from TFuerte.components.sidebar import sidebar
-from TFuerte.components.scroll_top import scroll_top_final
+from TFuerte.components.scroll_top import scroll_top_button
 from TFuerte.components.footer import footer, footer_final
 
 from TFuerte.styles.colors import Text_tx 
@@ -34,7 +34,7 @@ def services() -> rx.Component:
             rx.vstack(
                 header_services(),
 
-                scroll_top_final(),
+                scroll_top_button(),
                 align_items="center",
                 max_width=styles.TEAM_WIDTH,
                 margin_y=styles.Spacer.SMALL.value,

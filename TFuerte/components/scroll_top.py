@@ -165,7 +165,7 @@ def scroll_to_top_always_visible() -> rx.Component:
     )
 
 # Versión final recomendada (usa esta)
-def scroll_top_final() -> rx.Component:
+def scroll_top_button() -> rx.Component:
     return rx.box(
         # Botón
         rx.button(

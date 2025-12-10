@@ -18,7 +18,4 @@
   <url>
     <loc>http://localhost:3000/taller</loc>
   </url>
-  <url>
-    <loc>http://localhost:3000/creations</loc>
-  </url>
 </urlset>

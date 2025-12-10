@@ -8,7 +8,7 @@ from TFuerte.views.header.header_creation import headcreat
 from TFuerte.views.header.logo_header import logo
 from TFuerte.components.footer import footer
 from TFuerte.views.sponsor.sponsor import sponsor
-from TFuerte.components.scroll_top import scroll_top_final
+from TFuerte.components.scroll_top import scroll_top_button
 
 @rx.page(
     route=Route.CREATION.value,
