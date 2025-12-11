@@ -10,12 +10,8 @@ from TFuerte.pages.taller import taller
 from rxconfig import config
 from TFuerte.api.api import hello
 
-class State(rx.State):
-    """Define your app state here."""
 
 app = rx.App(
     stylesheets=styles.StyleSheets,
     style=styles.BASE_STYLES
 )
-
-app._api.route("/hello", hello)

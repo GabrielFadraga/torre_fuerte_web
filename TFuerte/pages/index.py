@@ -16,11 +16,14 @@ from TFuerte.views.header.header_creation import headcreat, headcreat_final
 from TFuerte.views.header.logo_header import logo
 from TFuerte.views.header.logo_responsive import logo_resp
 from rxconfig import config
+from TFuerte.api.api import hello
 
 from TFuerte.styles.colors import Text_tx 
 
-class State(rx.State):
-    """Define your app state here."""
+class IndexState(rx.State):
+    @rx.var()
+    def sayhello(self) -> str:
+        return hello()
 
 @rx.page(
     title="Torre Fuerte",
@@ -30,6 +33,7 @@ class State(rx.State):
 def index() -> rx.Component:
     return rx.box(
         utils.lang(),
+        rx.text(IndexState.sayhello, color_scheme="iris"),
         
         rx.vstack(
         creation(),

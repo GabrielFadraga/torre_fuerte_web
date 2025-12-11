@@ -1,4 +1,4 @@
 import reflex as rx
 
-def hello(request) -> str:
+def hello() -> str:
     return "GaboFadraga"
