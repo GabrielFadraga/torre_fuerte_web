@@ -194,11 +194,63 @@ def sponsor() -> rx.Component:
                         }
                     ),
                     
+                    # Separador decorativo
+                    rx.box(
+                        width="1px",
+                        height="40px",
+                        background="linear-gradient(180deg, transparent, rgba(255,255,255,0.3), transparent)",
+                        margin_x="20px",
+                    ),
+                    
+                    # Cliente 4 - Prácticos de Puerto (NUEVO)
+                    rx.box(
+                        rx.link(
+                            rx.vstack(
+                                rx.image(
+                                    src="puerto.png",
+                                    width="120px",
+                                    height="60px",
+                                    object_fit="contain",
+                                    filter="brightness(0) invert(1)",
+                                    transition="all 0.3s ease",
+                                    _hover={
+                                        "transform": "scale(1.1)",
+                                        "filter": "brightness(0) invert(1) drop-shadow(0 4px 12px rgba(255,255,255,0.3))",
+                                    }
+                                ),
+                                rx.text(
+                                    "Prácticos de Puerto",
+                                    font_size="12px",
+                                    color="rgba(255,255,255,0.7)",
+                                    text_align="center",
+                                    margin_top="8px",
+                                    font_weight="medium",
+                                ),
+                                align_items="center",
+                                spacing="2",
+                            ),
+                            href="https://www.practicosdepuerto.es",
+                            is_external=True,
+                        ),
+                        padding="20px",
+                        background="linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
+                        border_radius="12px",
+                        border="1px solid rgba(255,255,255,0.1)",
+                        backdrop_filter="blur(10px)",
+                        transition="all 0.3s ease",
+                        _hover={
+                            "transform": "translateY(-5px)",
+                            "background": "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)",
+                            "border": "1px solid rgba(255,255,255,0.2)",
+                            "box_shadow": "0 10px 30px rgba(0,0,0,0.2)",
+                        }
+                    ),
+                    
                     align_items="center",
                     justify="center",
                     spacing="0",
                     width="100%",
-                    max_width="1000px",
+                    max_width="1200px",
                 ),
                 width="100%",
                 padding_y=styles.Spacer.LARGE.value,
@@ -366,6 +418,39 @@ def sponsor_mobile() -> rx.Component:
                             spacing="2",
                         ),
                         href="https://www.engimov.pt/es/grupo/engimov-caribe",
+                        is_external=True,
+                    ),
+                    padding="16px",
+                    background="linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
+                    border_radius="10px",
+                    border="1px solid rgba(255,255,255,0.1)",
+                    width="100%",
+                    max_width="250px",
+                ),
+                
+                # Cliente 4 - Prácticos de Puerto (NUEVO)
+                rx.box(
+                    rx.link(
+                        rx.vstack(
+                            rx.image(
+                                src="puerto.png",
+                                width="100px",
+                                height="50px",
+                                object_fit="contain",
+                                filter="brightness(0) invert(1)",
+                            ),
+                            rx.text(
+                                "Prácticos de Puerto",
+                                font_size="11px",
+                                color="rgba(255,255,255,0.7)",
+                                text_align="center",
+                                margin_top="6px",
+                                font_weight="medium",
+                            ),
+                            align_items="center",
+                            spacing="2",
+                        ),
+                        href="https://www.practicosdepuerto.es",
                         is_external=True,
                     ),
                     padding="16px",

@@ -6,6 +6,7 @@ from TFuerte.pages.services import services
 from TFuerte.pages.projects import projects
 from TFuerte.pages.team import team
 from TFuerte.pages.taller import taller
+from TFuerte.pages.eventos import event
 
 from rxconfig import config
 from TFuerte.api.api import hello

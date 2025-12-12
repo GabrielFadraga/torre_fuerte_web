@@ -48,6 +48,7 @@ def sidebar_items() -> rx.Component:
         sidebar_item("Cartera", "folder-open-dot", Route.PROJECTS.value),
         sidebar_item("Grupo", "user-round", Route.TEAM.value),
         sidebar_item("Taller", "pickaxe", Route.TALLER.value),
+        sidebar_item("Eventos", "cctv", Route.EVENTOS.value),
         spacing="2",
         width="100%",
     )

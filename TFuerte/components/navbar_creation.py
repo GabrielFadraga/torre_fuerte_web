@@ -20,6 +20,7 @@ def creation() -> rx.Component:
                         _nav_item("Cartera", Route.PROJECTS.value),
                         _nav_item("Grupo", Route.TEAM.value),
                         _nav_item("Taller", Route.TALLER.value),
+                        _nav_item("Eventos", Route.EVENTOS.value),
                         spacing="5",
                         align="end",
                         justify="end",
