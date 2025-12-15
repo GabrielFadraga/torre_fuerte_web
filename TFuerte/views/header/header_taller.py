@@ -438,7 +438,7 @@ def taller_creative_section() -> rx.Component:
         {"image": "Juan1.jpg", "name": "Juan", "description": "Tornero", "delay": 0.6, "rotation": -2},
         {"image": "Juan2.jpg", "name": "Juan", "description": "Tornero", "delay": 0.7, "rotation": 3},
         {"image": "Juan3.jpg", "name": "Juan", "description": "Tornero", "delay": 0.8, "rotation": -1},
-        {"image": "Máximo1.jpg", "name": "Máximo", "description": "Fresador", "delay": 0.9, "rotation": 2},
+        {"image": "Maximo1.jpg", "name": "Máximo", "description": "Fresador", "delay": 0.9, "rotation": 2},
     ]
     
     return rx.box(
