@@ -21,6 +21,7 @@ def creation() -> rx.Component:
                         _nav_item("Grupo", Route.TEAM.value),
                         _nav_item("Taller", Route.TALLER.value),
                         _nav_item("Eventos", Route.EVENTOS.value),
+                        _nav_item("Admin", Route.ADMIN_PAGE.value),
                         spacing="5",
                         align="end",
                         justify="end",

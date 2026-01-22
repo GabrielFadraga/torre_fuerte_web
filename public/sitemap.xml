@@ -21,4 +21,28 @@
   <url>
     <loc>http://localhost:3000/eventos</loc>
   </url>
+  <url>
+    <loc>http://localhost:3000/db</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/authlogin</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/dashboard1</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/admin-login-new</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/solicitante-login</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/admin-dashboard</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/solicitante-dashboard</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/admin_page</loc>
+  </url>
 </urlset>

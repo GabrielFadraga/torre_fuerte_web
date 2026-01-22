@@ -7,7 +7,7 @@ from .fonts import Fonts_tx as fonttx
 from .fonts import FontWeight as FontWeight
 
 #Constants
-MAX_WIDTH="5000px"
+MAX_WIDTH="800em"
 
 ABOUT_WIDTH="95em"
 
