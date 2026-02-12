@@ -1,26 +1,73 @@
+# TFuerte/state/solicitante_dashboard_state.py
 import reflex as rx
 from typing import List
 from TFuerte.api.solicitudes_api import SolicitudesAPI
 from datetime import datetime
+import uuid
+import traceback
 
 class SolicitanteDashboardState(rx.State):
     """Estado para el dashboard de solicitantes"""
     
-    # Formulario de nueva solicitud
-    descripcion: str = ""
-    cantidad: str = ""
-    observacion: str = ""
+    # Formulario de nueva solicitud múltiple
     destino: str = ""
     
-    # Mis solicitudes
+    # Lista de recursos en el formulario
+    recursos_form: List[dict] = []
+    
+    # Mis solicitudes (agrupadas)
     mis_solicitudes: List[dict] = []
     
-    # ID del solicitante (se establecerá después del login)
+    # ID del solicitante
     solicitante_id: int = 0
     solicitante_custom_id: int = 0
     
     # Estados de UI
     loading: bool = False
+    
+    # ID del grupo actual para la próxima solicitud
+    grupo_id_actual: str = ""
+
+    def _fetch_and_group_solicitudes(self) -> List[dict]:
+        """Obtiene y agrupa las solicitudes del solicitante actual (sin eventos)."""
+        if not self.solicitante_custom_id:
+            print("⚠️ No hay custom_id disponible")
+            return []
+        
+        solicitudes = SolicitudesAPI.get_solicitudes_by_solicitante(self.solicitante_custom_id)
+        if not solicitudes:
+            return []
+        
+        grupos = {}
+        for solicitud in solicitudes:
+            grupo_id = solicitud.get("solicitud_grupo_id") or f"individual_{solicitud.get('id')}"
+            
+            if grupo_id not in grupos:
+                fecha_solicitud = solicitud.get("fecha_solicitud", "")
+                fecha_formateada = ""
+                if fecha_solicitud:
+                    try:
+                        fecha_formateada = fecha_solicitud.split('T')[0] if 'T' in fecha_solicitud else fecha_solicitud[:10]
+                    except:
+                        fecha_formateada = fecha_solicitud[:10] if len(fecha_solicitud) >= 10 else fecha_solicitud
+                
+                grupos[grupo_id] = {
+                    "grupo_id": grupo_id,
+                    "solicitudes": [],
+                    "estado": solicitud.get("estado", "pendiente"),
+                    "fecha_solicitud": fecha_solicitud,
+                    "fecha_formateada": fecha_formateada,
+                    "destino": solicitud.get("Destino", "")
+                }
+            
+            grupos[grupo_id]["solicitudes"].append(solicitud)
+        
+        for grupo in grupos.values():
+            grupo["num_recursos"] = len(grupo["solicitudes"])
+        
+        grupos_lista = list(grupos.values())
+        grupos_lista.sort(key=lambda x: x.get("fecha_solicitud", ""), reverse=True)
+        return grupos_lista
     
     # Computed vars para estadísticas
     @rx.var
@@ -28,74 +75,149 @@ class SolicitanteDashboardState(rx.State):
         return len(self.mis_solicitudes)
     
     @rx.var
-    def computed_pendientes(self) -> int:
-        if not self.mis_solicitudes:
-            return 0
-        return sum(1 for s in self.mis_solicitudes if s.get("estado") == "pendiente")
+    def computed_total_recursos(self) -> int:
+        total = 0
+        for grupo in self.mis_solicitudes:
+            total += len(grupo.get("solicitudes", []))
+        return total
     
     @rx.var
-    def computed_aprobadas(self) -> int:
-        if not self.mis_solicitudes:
-            return 0
-        return sum(1 for s in self.mis_solicitudes if s.get("estado") == "aprobada")
+    def tiene_recursos_en_formulario(self) -> bool:
+        """Verifica si hay recursos en el formulario"""
+        return len(self.recursos_form) > 0
     
     @rx.var
-    def computed_rechazadas(self) -> int:
-        if not self.mis_solicitudes:
-            return 0
-        return sum(1 for s in self.mis_solicitudes if s.get("estado") == "rechazada")
+    def is_loading(self) -> bool:
+        """Combina el loading propio y el de AlmacenState."""
+        from TFuerte.state.almacen_state import AlmacenState
+        # Ambas son Var[bool], el operador | funciona correctamente
+        return self.loading | AlmacenState.loading
     
     def on_load(self):
         """Se ejecuta al cargar la página"""
         print("🔄 on_load: Cargando dashboard...")
-        # En Reflex, on_load puede retornar el handler directamente
+        # Generar un nuevo ID de grupo para la próxima solicitud
+        self.grupo_id_actual = str(uuid.uuid4())[:8]
         return SolicitanteDashboardState.load_mis_solicitudes
     
     @rx.event
     def load_mis_solicitudes(self):
-        """Carga las solicitudes del solicitante actual"""
+        """Carga las solicitudes del solicitante actual con indicador de carga."""
         self.loading = True
         yield
         
         try:
-            # Verificar si tenemos el custom_id
-            if not self.solicitante_custom_id:
-                print("⚠️ No hay custom_id disponible")
-                self.mis_solicitudes = []
-                self.loading = False
-                return
-            
-            print(f"🔍 Cargando solicitudes para custom_id: {self.solicitante_custom_id}")
-            
-            # Obtener solicitudes
-            solicitudes = SolicitudesAPI.get_solicitudes_by_solicitante(self.solicitante_custom_id)
-            
-            if solicitudes:
-                self.mis_solicitudes = solicitudes
-                print(f"✅ {len(solicitudes)} solicitudes cargadas")
-            else:
-                self.mis_solicitudes = []
-                print("ℹ️ No se encontraron solicitudes")
-            
+            self.mis_solicitudes = self._fetch_and_group_solicitudes()
+            print(f"✅ {len(self.mis_solicitudes)} grupos de solicitudes cargados")
         except Exception as e:
             print(f"❌ Error cargando solicitudes: {e}")
-            import traceback
             traceback.print_exc()
             self.mis_solicitudes = []
-        
-        self.loading = False
-    
-    def set_descripcion(self, descripcion: str):
-        self.descripcion = descripcion
-    
-    def set_cantidad(self, cantidad: str):
-        self.cantidad = cantidad
-    
-    def set_observacion(self, observacion: str):
-        self.observacion = observacion
+            yield rx.toast.error("Error al cargar solicitudes", position="top-right")
+        finally:
+            self.loading = False
     
     def set_destino(self, destino: str):
         self.destino = destino
+    
+    def agregar_recurso_form(self):
+        """Agrega un nuevo recurso al formulario"""
+        nuevo_recurso = {
+            "descripcion": "",
+            "cantidad": "",
+            "observacion": "",
+            "index": len(self.recursos_form)
+        }
+        self.recursos_form.append(nuevo_recurso)
+    
+    def eliminar_recurso_form(self, index: int):
+        """Elimina un recurso del formulario"""
+        if 0 <= index < len(self.recursos_form):
+            self.recursos_form.pop(index)
+            # Reindexar los recursos restantes
+            for i, recurso in enumerate(self.recursos_form):
+                recurso["index"] = i
+    
+    def get_recurso_field(self, index: int, field: str):
+        """Obtiene el valor de un campo de un recurso"""
+        if 0 <= index < len(self.recursos_form):
+            return self.recursos_form[index].get(field, "")
+        return ""
+    
+    def set_recurso_field(self, index: int, field: str, value: str):
+        """Establece el valor de un campo de un recurso"""
+        if 0 <= index < len(self.recursos_form):
+            if field in self.recursos_form[index]:
+                self.recursos_form[index][field] = value
+    
+    @rx.event
+    def crear_solicitud_multiple(self):
+        """Crea una solicitud con múltiples recursos."""
+        # Validaciones (sin cambios)...
+        if len(self.recursos_form) == 0:
+            yield rx.toast.error("❌ Debe agregar al menos un recurso")
+            return
+        if not self.destino.strip():
+            yield rx.toast.error("❌ El destino es requerido")
+            return
+        
+        for i, recurso in enumerate(self.recursos_form):
+            if not recurso.get("descripcion", "").strip():
+                yield rx.toast.error(f"❌ Descripción del recurso #{i+1} requerida")
+                return
+            try:
+                cantidad = int(recurso.get("cantidad", "0"))
+                if cantidad <= 0: raise ValueError
+            except:
+                yield rx.toast.error(f"❌ Cantidad inválida en recurso #{i+1}")
+                return
+        
+        if not self.solicitante_custom_id:
+            yield rx.toast.error("❌ No hay sesión activa. Inicia sesión nuevamente.")
+            return
+        
+        self.loading = True
+        yield
+        
+        recursos_creados = 0
+        try:
+            # Crear cada solicitud
+            for i, recurso in enumerate(self.recursos_form):
+                solicitud_data = {
+                    "Descripcion": recurso.get("descripcion", "").strip(),
+                    "Cantidad": int(recurso.get("cantidad", "0")),
+                    "Observacion": recurso.get("observacion", "").strip() or None,
+                    "Destino": self.destino.strip(),
+                    "solicitante_id": self.solicitante_id,
+                    "custom": self.solicitante_custom_id,
+                    "estado": "pendiente",
+                    "fecha_solicitud": datetime.now().isoformat(),
+                    "solicitud_grupo_id": self.grupo_id_actual,
+                    "item_index": i + 1
+                }
+                
+                result = SolicitudesAPI.create_solicitud(solicitud_data)
+                if result:
+                    recursos_creados += 1
+                else:
+                    print(f"⚠️ Error creando recurso #{i+1}")
+            
+            # Recargar datos SIN usar yield de otro evento
+            self.mis_solicitudes = self._fetch_and_group_solicitudes()
+            
+            # Limpiar formulario
+            self.recursos_form = []
+            self.destino = ""
+            self.grupo_id_actual = str(uuid.uuid4())[:8]
+            
+            yield rx.toast.success(f"✅ Solicitud creada con {recursos_creados} recursos")
+            
+        except Exception as e:
+            print(f"❌ Error en crear_solicitud_multiple: {e}")
+            traceback.print_exc()
+            yield rx.toast.error("❌ Error interno al crear la solicitud")
+        finally:
+            self.loading = False
     
     @rx.event
     def set_solicitante_info(self, solicitante_info: dict):
@@ -105,92 +227,31 @@ class SolicitanteDashboardState(rx.State):
         print(f"✅ Información del solicitante establecida: ID={self.solicitante_id}, CustomID={self.solicitante_custom_id}")
     
     @rx.event
-    def crear_solicitud(self, form_data: dict = None):
-        """Crea una nueva solicitud"""
-        print("📝 Creando nueva solicitud...")
+    def ver_detalle_grupo(self, grupo_id: str):
+        """Muestra los detalles de un grupo de solicitudes"""
+        print(f"🔍 Ver detalles del grupo: {grupo_id}")
         
-        # Validaciones
-        if not self.descripcion.strip() or not self.cantidad.strip() or not self.destino.strip():
-            yield rx.toast.error(
-                "❌ Campos requeridos faltantes",
+        # Buscar el grupo en mis_solicitudes
+        grupo_encontrado = None
+        for grupo in self.mis_solicitudes:
+            if grupo.get("grupo_id") == grupo_id:
+                grupo_encontrado = grupo
+                break
+        
+        if grupo_encontrado:
+            num_recursos = len(grupo_encontrado.get("solicitudes", []))
+            yield rx.toast.info(
+                f"Grupo {grupo_id}: {num_recursos} recursos, Destino: {grupo_encontrado.get('destino', '')}",
                 position="top-right",
                 duration=4000
             )
-            return  # Importante: retornar después del yield
-        
-        try:
-            cantidad_int = int(self.cantidad.strip())
-            if cantidad_int <= 0:
-                raise ValueError
-        except (ValueError, TypeError):
+        else:
             yield rx.toast.error(
-                "❌ Cantidad inválida",
+                f"Grupo {grupo_id} no encontrado",
                 position="top-right",
-                duration=4000
+                duration=3000
             )
-            return  # Importante: retornar después del yield
-        
-        # Verificar si tenemos el custom_id
-        if not self.solicitante_custom_id or not self.solicitante_id:
-            yield rx.toast.error(
-                "❌ No hay sesión activa. Por favor, inicia sesión nuevamente.",
-                position="top-right",
-                duration=4000
-            )
-            return  # Importante: retornar después del yield
-        
-        self.loading = True
-        yield  # Enviar update con loading=True
-        
-        try:
-            # Crear la solicitud
-            solicitud_data = {
-                "Descripcion": self.descripcion.strip(),
-                "Cantidad": cantidad_int,
-                "Observacion": self.observacion.strip() or None,
-                "Destino": self.destino.strip(),
-                "solicitante_id": self.solicitante_id,
-                "custom": self.solicitante_custom_id,
-                "estado": "pendiente",
-                "fecha_solicitud": datetime.now().isoformat()
-            }
-            
-            print(f"📝 Enviando solicitud: {solicitud_data}")
-            
-            # Llamar a la API
-            result = SolicitudesAPI.create_solicitud(solicitud_data)
-            
-            if result:
-                # Limpiar formulario
-                self.descripcion = ""
-                self.cantidad = ""
-                self.observacion = ""
-                self.destino = ""
-                
-                yield rx.toast.success(
-                    "✅ Solicitud creada correctamente",
-                    position="top-right",
-                    duration=4000
-                )
-                
-                # Recargar solicitudes
-                yield self.load_mis_solicitudes()
-            else:
-                yield rx.toast.error(
-                    "❌ Error al crear la solicitud",
-                    position="top-right",
-                    duration=4000
-                )
-                
-        except Exception as e:
-            print(f"❌ Error: {e}")
-            import traceback
-            traceback.print_exc()
-            yield rx.toast.error(
-                "❌ Error interno",
-                position="top-right",
-                duration=4000
-            )
-        
-        self.loading = False
-        # No se necesita yield aquí, el método finaliza naturalmente
+    def limpiar_recursos_form(self):
+        """Limpia todos los recursos del formulario"""
+        self.recursos_form = []
+        self.destino = ""

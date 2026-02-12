@@ -505,7 +505,7 @@ def admin_dashboard() -> rx.Component:
                                 required=True, size="3", min="0", step="0.01"),
                         
                         # Botones
-                        rx.hstack(
+                        rx.vstack(
                             rx.dialog.close(
                                 rx.button("Cancelar", on_click=AlmacenState.close_entrada_dialog, 
                                          variant="soft", color_scheme="gray", size="2")
@@ -579,7 +579,7 @@ def admin_dashboard() -> rx.Component:
                         rx.input(placeholder="Cliente/Proyecto *", name="cliente", required=True, size="3"),
                         
                         # Botones
-                        rx.hstack(
+                        rx.vstack(
                             rx.dialog.close(
                                 rx.button("Cancelar", variant="soft", color_scheme="gray", size="2")
                             ),
@@ -948,7 +948,7 @@ def admin_dashboard() -> rx.Component:
                         ),
                         
                         # Tercera fila: agregar producto y cerrar sesión
-                        rx.hstack(
+                        rx.vstack(
                             add_product_dialog(),
                             rx.button(
                                 "🚪 Cerrar Sesión", 
@@ -962,6 +962,21 @@ def admin_dashboard() -> rx.Component:
                                     "min_width": ["100%", "140px", "140px", "140px"],
                                 }
                             ),
+                            rx.link(
+                            rx.button(
+                                "📃 Generar comprobante",
+                                variant="solid",  
+                                size="2",
+                                style={
+                                    #"background": "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+                                    "flex": "1",
+                                    "min_width": ["100%", "140px", "140px", "140px"],
+                                }
+                            ),
+                            href=Route.GENERAR_COMPROBANTE.value,
+                            width="100%",
+                            color_scheme="indigo",
+                        ),
                             spacing="2",
                             width="100%",
                             wrap="wrap",

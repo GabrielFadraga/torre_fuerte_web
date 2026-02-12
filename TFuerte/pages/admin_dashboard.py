@@ -2,67 +2,211 @@
 import reflex as rx
 from TFuerte.state.admin_auth_state import AdminAuthState
 from TFuerte.state.admin_dashboard_state import AdminDashboardState
+from TFuerte.state.almacen_view_state import AlmacenViewState
 from TFuerte.components.navbar import navbar
+from TFuerte.components.almacen_readonly_table import almacen_readonly_table
 from TFuerte.routes import Route
+
 
 @rx.page(
     route=Route.ADMIN_DASHBOARD.value,
     title="Dashboard - Administración",
-    on_load=[AdminDashboardState.load_data, AdminDashboardState.cargar_admin_username]
+    on_load=[AdminDashboardState.cargar_admin_username, AdminDashboardState.load_data, AlmacenViewState.load_data]
 )
 def admin_dashboard() -> rx.Component:
     """Dashboard para administradores"""
     
     def registro_table() -> rx.Component:
-        # Estilo mejorado para la tabla de datos
+        header_style = {
+            "background": "linear-gradient(135deg, #0f766e 0%, #115e59 100%)",
+            "color": "white",
+            "font_weight": "600",
+            "padding": "14px 8px",
+            "border": "none",
+            "font_size": "13px",
+            "text_transform": "uppercase",
+            "letter_spacing": "0.5px",
+            "white_space": "nowrap",
+        }
+        cell_style = {
+            "padding": "12px 8px",
+            "border_bottom": "1px solid #e2e8f0",
+            "vertical_align": "middle",
+            "font_size": "13px",
+            "color": "#1e293b",
+            "background": "white",
+            "white_space": "nowrap",
+        }
+
+        def registro_row(item):
+            return rx.table.row(
+                rx.table.cell(rx.text(item["id"]), style=cell_style),
+                rx.table.cell(rx.text(item["Producto"]), style=cell_style),
+                rx.table.cell(rx.text(item.get("Fecha E", "")), style=cell_style),
+                rx.table.cell(rx.text(item.get("Cant E", 0)), style=cell_style),
+                rx.table.cell(rx.text(item.get("Fecha S", "")), style=cell_style),
+                rx.table.cell(rx.text(item.get("Cant S", 0)), style=cell_style),
+                rx.table.cell(rx.text(item.get("Recibe", "")), style=cell_style),
+                rx.table.cell(rx.text(item.get("Destino", "")), style=cell_style),
+                rx.table.cell(rx.text(item.get("Cliente", "")), style=cell_style),
+            )
+
+        # --- Función para crear botón de página (igual que en solicitudes) ---
+        def create_page_button(page_num):
+            return rx.button(
+                rx.text(page_num, size="2", font_weight="500"),
+                on_click=lambda: AdminDashboardState.go_to_page_registro(page_num),
+                variant="soft",
+                size="2",
+                style=rx.cond(
+                    AdminDashboardState.current_page_registro == page_num,
+                    {
+                        "background": "#0f766e",
+                        "color": "white",
+                        "border": "1px solid #0f766e",
+                        "_hover": {"background": "#115e59"}
+                    },
+                    {
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "_hover": {
+                            "background": "#f8fafc",
+                            "border": "1px solid #cbd5e1"
+                        }
+                    }
+                )
+            )
+
+        # --- Renderizado de la paginación ---
+        def render_pagination():
+            return rx.hstack(
+                # Anterior
+                rx.button(
+                    "Anterior",
+                    on_click=AdminDashboardState.previous_page_registro,
+                    variant="soft",
+                    size="2",
+                    is_disabled=AdminDashboardState.current_page_registro == 1,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                    }
+                ),
+                # Números de página
+                rx.foreach(
+                    AdminDashboardState.page_numbers_registro,
+                    lambda page_num: create_page_button(page_num)
+                ),
+                # Siguiente
+                rx.button(
+                    "Siguiente",
+                    on_click=AdminDashboardState.next_page_registro,
+                    variant="soft",
+                    size="2",
+                    is_disabled=AdminDashboardState.current_page_registro == AdminDashboardState.total_pages_registro,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                    }
+                ),
+                spacing="1",
+                align="center",
+                wrap="wrap"
+            )
+
         return rx.box(
             rx.cond(
                 AdminDashboardState.registro_filtered.length() == 0,
+                # --- Sin datos ---
                 rx.center(
                     rx.vstack(
                         rx.icon("database", size=32, color="#cbd5e1"),
-                        rx.text("No hay registros disponibles", 
-                               size="3", 
-                               color="#64748b",
-                               font_weight="500"),
+                        rx.text("No hay registros disponibles", size="3", color="#64748b"),
                         spacing="2",
-                        align="center"
                     ),
                     padding="3rem",
-                    width="100%"
                 ),
-                rx.scroll_area(
-                    rx.data_table(
-                        data=AdminDashboardState.registro_filtered,
-                        columns=[
-                            {"title": "ID", "type": "number", "field": "id", "width": 80},
-                            {"title": "Producto", "type": "str", "field": "Producto", "width": 200},
-                            {"title": "Fecha E", "type": "str", "field": "Fecha E", "width": 100},
-                            {"title": "Cant E", "type": "number", "field": "Cant E", "width": 80},
-                            {"title": "Fecha S", "type": "str", "field": "Fecha S", "width": 100},
-                            {"title": "Cant S", "type": "number", "field": "Cant S", "width": 80},
-                            {"title": "Recibe", "type": "str", "field": "Recibe", "width": 150},
-                            {"title": "Destino", "type": "str", "field": "Destino", "width": 150},
-                            {"title": "Cliente", "type": "str", "field": "Cliente", "width": 200},
-                        ],
-                        pagination=True,
-                        search=False,
-                        sort=False,
+                # --- Con datos: tabla + paginación ---
+                rx.vstack(
+                    # Tabla
+                    rx.scroll_area(
+                        rx.table.root(
+                            rx.table.header(
+                                rx.table.row(
+                                    rx.table.column_header_cell("ID", style={**header_style, "width": "70px"}),
+                                    rx.table.column_header_cell("Producto", style={**header_style, "width": "200px"}),
+                                    rx.table.column_header_cell("Fecha E", style={**header_style, "width": "100px"}),
+                                    rx.table.column_header_cell("Cant E", style={**header_style, "width": "80px"}),
+                                    rx.table.column_header_cell("Fecha S", style={**header_style, "width": "100px"}),
+                                    rx.table.column_header_cell("Cant S", style={**header_style, "width": "80px"}),
+                                    rx.table.column_header_cell("Recibe", style={**header_style, "width": "150px"}),
+                                    rx.table.column_header_cell("Destino", style={**header_style, "width": "150px"}),
+                                    rx.table.column_header_cell("Cliente", style={**header_style, "width": "200px"}),
+                                )
+                            ),
+                            rx.table.body(
+                                rx.foreach(
+                                    AdminDashboardState.registro_paginated,
+                                    registro_row
+                                )
+                            ),
+                            style={"width": "100%", "min_width": "1200px", "table_layout": "fixed"},
+                        ),
+                        type="always",
+                        scrollbars="horizontal",
                         style={
                             "width": "100%",
-                            "min_width": "1000px",
+                            "height": "500px",
+                            "overflow_y": "auto",
+                            "border": "1px solid #e2e8f0",
+                            "border_radius": "10px",
                         }
                     ),
-                    type="always",
-                    scrollbars="horizontal",
-                    style={
-                        "width": "100%",
-                        "height": "500px",
-                        "overflow_y": "auto",
-                        "border": "1px solid #e2e8f0",
-                        "border_radius": "10px",
-                        "box_shadow": "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                    }
+                    # --- Controles de paginación ---
+                    rx.box(
+                        rx.hstack(
+                            rx.text(
+                                rx.cond(
+                                    AdminDashboardState.registro_filtered.length() > 0,
+                                    rx.text(
+                                        "Mostrando ",
+                                        rx.cond(
+                                            AdminDashboardState.current_page_registro == 1,
+                                            "1",
+                                            (AdminDashboardState.current_page_registro - 1) * AdminDashboardState.items_per_page_registro + 1
+                                        ),
+                                        " a ",
+                                        rx.cond(
+                                            AdminDashboardState.current_page_registro * AdminDashboardState.items_per_page_registro > AdminDashboardState.registro_filtered.length(),
+                                            AdminDashboardState.registro_filtered.length(),
+                                            AdminDashboardState.current_page_registro * AdminDashboardState.items_per_page_registro
+                                        ),
+                                        " de ",
+                                        AdminDashboardState.registro_filtered.length(),
+                                        " resultados"
+                                    ),
+                                    "Mostrando 0 a 0 de 0 resultados"
+                                ),
+                                size="2",
+                                color="#64748b",
+                                font_weight="500"
+                            ),
+                            rx.spacer(),
+                            render_pagination(),
+                            width="100%",
+                            align="center",
+                            spacing="4",
+                            wrap="wrap"
+                        ),
+                        padding="1.5rem 1rem",
+                        border_top="1px solid #e2e8f0",
+                        background="#f8fafc"
+                    ),
+                    spacing="0",
+                    width="100%"
                 )
             ),
             width="100%"
@@ -518,6 +662,41 @@ def admin_dashboard() -> rx.Component:
             on_open_change=AdminDashboardState.set_show_rechazar_dialog,
         )
     
+    def almacen_content():
+        """Contenido de la pestaña de productos en almacén"""
+        return rx.vstack(
+            rx.box(
+                rx.hstack(
+                    rx.vstack(
+                        rx.heading("📦 Productos en Almacén", size="5", color="#1e293b"),
+                        rx.text("Visualización de todos los productos disponibles", size="2", color="#64748b"),
+                        align="start",
+                        spacing="1"
+                    ),
+                    rx.spacer(),
+                    rx.badge(
+                        f"{AlmacenViewState.total_productos} productos",
+                        color_scheme="blue",
+                        variant="soft",
+                        size="2"
+                    ),
+                    width="100%",
+                    align="center"
+                ),
+                width="100%",
+                padding_bottom="1.5rem",
+                border_bottom="1px solid #e2e8f0",
+                margin_bottom="1.5rem"
+            ),
+            
+            # Tabla de productos en modo solo lectura
+            almacen_readonly_table(),
+            
+            spacing="3",
+            align="start",
+            width="100%"
+        )
+    
     def dashboard_content():
         return rx.box(
             navbar("Panel de Administración"),
@@ -590,6 +769,20 @@ def admin_dashboard() -> rx.Component:
                         rx.tabs.trigger(
                             "📜 Historial RegistroTF", 
                             value="registro",
+                            style={
+                                "font_weight": "600", 
+                                "padding": "0.75rem 1.5rem",
+                                "color": "#1e293b",
+                                "border_bottom": "2px solid transparent",
+                                "_selected": {
+                                    "border_bottom": "2px solid #0f766e",
+                                    "color": "#0f766e"
+                                }
+                            }
+                        ),
+                        rx.tabs.trigger(
+                            "📦 Productos en Almacén", 
+                            value="almacen",
                             style={
                                 "font_weight": "600", 
                                 "padding": "0.75rem 1.5rem",
@@ -808,6 +1001,11 @@ def admin_dashboard() -> rx.Component:
                             width="100%"
                         ),
                         value="registro",
+                        style={"padding": "1.5rem 0"}
+                    ),
+                    rx.tabs.content(
+                        almacen_content(),
+                        value="almacen",
                         style={"padding": "1.5rem 0"}
                     ),
                     rx.tabs.content(

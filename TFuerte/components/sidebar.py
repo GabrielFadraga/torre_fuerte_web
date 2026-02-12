@@ -49,7 +49,7 @@ def sidebar_items() -> rx.Component:
         sidebar_item("Grupo", "user-round", Route.TEAM.value),
         sidebar_item("Taller", "pickaxe", Route.TALLER.value),
         sidebar_item("Eventos", "cctv", Route.EVENTOS.value),
-        sidebar_item("Admin", "user_check", Route.ADMIN_PAGE.value),
+        sidebar_item("Admin", "user_check", Route.ADMIN_LOGIN_PANEL.value),
         spacing="2",
         width="100%",
     )

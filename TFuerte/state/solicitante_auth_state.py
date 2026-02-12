@@ -1,3 +1,4 @@
+# TFuerte/state/solicitante_auth_state.py
 import reflex as rx
 from TFuerte.api.solicitante_auth_api import SolicitanteAuthAPI
 from TFuerte.routes import Route
@@ -9,7 +10,7 @@ class SolicitanteAuthState(rx.State):
     # Variables de estado (Vars)
     usuario: str = ""
     clave: str = ""
-    error_message: str = ""
+    error_message: str = ""  # Asegúrate de que esté definida
     success_message: str = ""
     loading: bool = False
     is_authenticated: bool = False

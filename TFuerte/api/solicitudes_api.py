@@ -146,7 +146,7 @@ class SolicitudesAPI:
             
             updates = {
                 "estado": "aprobada",
-                "admin_responsable": admin_user,
+                "aprobado_por": admin_user,  # <-- CAMBIO IMPORTANTE: usar aprobado_por
                 "fecha_resolucion": datetime.now().isoformat()
             }
             
@@ -161,7 +161,7 @@ class SolicitudesAPI:
                 .execute()
             
             if response.data:
-                print(f"✅ Solicitud {solicitud_id} aprobada")
+                print(f"✅ Solicitud {solicitud_id} aprobada por {admin_user}")
                 return response.data[0]
             else:
                 print("⚠️ No se recibieron datos en la respuesta")
@@ -226,3 +226,26 @@ class SolicitudesAPI:
         except Exception as e:
             print(f"❌ Error marcando solicitud como completada: {e}")
             return None
+    
+    # TFuerte/api/solicitudes_api.py - Agregar este método
+
+    @staticmethod
+    def get_aprobado_por_solicitud(solicitud_id: int) -> str:
+        """Obtiene el administrador que aprobó una solicitud"""
+        try:
+            if supabase_client is None:
+                return ""
+            
+            response = supabase_client.table("Solicitudes")\
+                .select("aprobado_por")\
+                .eq("id", solicitud_id)\
+                .execute()
+            
+            if response.data and len(response.data) > 0:
+                return response.data[0].get("aprobado_por", "")
+            else:
+                return ""
+                
+        except Exception as e:
+            print(f"❌ Error obteniendo aprobado_por: {e}")
+            return ""

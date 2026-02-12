@@ -18,6 +18,23 @@ from TFuerte.pages.admin_dashboard import admin_dashboard
 from TFuerte.pages.solicitante_dashboard import solicitante_dashboard
 from TFuerte.pages.panels_admin import user_selection
 
+from TFuerte.pages.solicitante_rm_form import solicitante_rm_form
+from TFuerte.pages.tecnica_login import tecnica_login
+from TFuerte.pages.tecnica_dashboard import tecnica_dashboard
+from TFuerte.pages.admin_rm_login import admin_rm_login
+from TFuerte.pages.admin_rm_dashboard import admin_rm_dashboard
+from TFuerte.pages.logistica_login import logistica_login
+from TFuerte.pages.logistica_dashboard import logistica_dashboard
+from TFuerte.pages.solicitante_rm_login import solicitante_login
+
+from TFuerte.pages.revfin_dashboard import revfin_dashboard
+from TFuerte.pages.revfin_login import revfin_login
+
+from TFuerte.pages.panels_admin import user_selection
+from TFuerte.pages.admin_tf_login import admin_tf_login
+
+from TFuerte.pages.generar_comprobante import generar_comprobante
+
 from rxconfig import config
 
 

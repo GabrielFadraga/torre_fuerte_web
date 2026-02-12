@@ -45,4 +45,40 @@
   <url>
     <loc>http://localhost:3000/admin_page</loc>
   </url>
+  <url>
+    <loc>http://localhost:3000/solicitante/rm-form</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/tecnica/login</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/tecnica/dashboard</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/admin-rm/login</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/admin/rm-dashboard</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/logistica/login</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/logistica/dashboard</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/solicitante_rm/login</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/revfin/dashboard</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/revfin/login</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/admin-tf-login</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/generar-comprobante</loc>
+  </url>
 </urlset>

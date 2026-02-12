@@ -3,6 +3,7 @@ import os
 import dotenv
 from supabase import create_client
 from typing import Dict, Any
+from TFuerte.api.solicitudes_api import SolicitudesAPI
 
 # Cargar variables de entorno
 dotenv.load_dotenv()
@@ -21,6 +22,27 @@ except Exception as e:
 
 class RegistroTFAPI:
     """API para operaciones en la tabla RegistroTF"""
+
+    def load_data(self):
+        self.loading = True
+        yield
+
+        # Cargar RegistroTF
+        registro = RegistroTFAPI.get_all_registros()
+        # Asegurar que siempre sea una lista
+        self.registro_data = registro if isinstance(registro, list) else []
+        self.registro_filtered = self.registro_data.copy()  # copia explícita
+
+        # Cargar Solicitudes
+        solicitudes = SolicitudesAPI.get_all_solicitudes()
+        self.solicitudes_data = solicitudes if isinstance(solicitudes, list) else []
+        self.solicitudes_pendientes = [
+            s for s in self.solicitudes_data
+            if s.get("estado") == "pendiente"
+        ]
+        self.calculate_solicitudes_pagination()
+
+        self.loading = False
     
     @staticmethod
     def insert_registro(registro_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -70,13 +92,15 @@ class RegistroTFAPI:
     
     @staticmethod
     def get_all_registros() -> list[Dict[str, Any]]:
-        """Obtiene todos los registros de la tabla 'RegistroTF'"""
         try:
             if supabase_client is None:
+                print("❌ RegistroTFAPI: cliente no disponible")
                 return []
-            
             response = supabase_client.table("RegistroTF").select("*").order("id", desc=True).execute()
+            print(f"✅ RegistroTFAPI: {len(response.data)} registros obtenidos")
             return response.data
         except Exception as e:
-            print(f"❌ Error obteniendo registros: {e}")
+            print(f"❌ RegistroTFAPI: error obteniendo registros - {e}")
+            import traceback
+            traceback.print_exc()
             return []

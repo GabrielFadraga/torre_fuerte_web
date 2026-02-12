@@ -15,6 +15,7 @@ class AuthState(rx.State):
     is_authenticated: bool = False
     current_user: dict = {}
     
+    
     async def on_load(self):
         """Verificar autenticación al cargar cualquier página"""
         print("🔄 Verificando autenticación en on_load...")
