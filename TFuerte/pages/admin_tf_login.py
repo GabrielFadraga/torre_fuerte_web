@@ -172,7 +172,7 @@ def admin_tf_login() -> rx.Component:
     
     def main_content():
         return rx.box(
-            navbar("Login - Panel Administrativo"),
+            navbar("Acceso seguro"),
             
             rx.vstack(
                 # Encabezado

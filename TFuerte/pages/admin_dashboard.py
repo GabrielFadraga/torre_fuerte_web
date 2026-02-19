@@ -1,4 +1,3 @@
-# TFuerte/pages/admin_dashboard.py - VERSIÓN CORREGIDA CON PAGINACIÓN
 import reflex as rx
 from TFuerte.state.admin_auth_state import AdminAuthState
 from TFuerte.state.admin_dashboard_state import AdminDashboardState
@@ -15,7 +14,8 @@ from TFuerte.routes import Route
 )
 def admin_dashboard() -> rx.Component:
     """Dashboard para administradores"""
-    
+
+    # ==================== TABLA DE REGISTROS CON PAGINACIÓN UNIFICADA ====================
     def registro_table() -> rx.Component:
         header_style = {
             "background": "linear-gradient(135deg, #0f766e 0%, #115e59 100%)",
@@ -51,8 +51,8 @@ def admin_dashboard() -> rx.Component:
                 rx.table.cell(rx.text(item.get("Cliente", "")), style=cell_style),
             )
 
-        # --- Función para crear botón de página (igual que en solicitudes) ---
-        def create_page_button(page_num):
+        # --- Botón de página individual ---
+        def create_page_button_registro(page_num: int):
             return rx.button(
                 rx.text(page_num, size="2", font_weight="500"),
                 on_click=lambda: AdminDashboardState.go_to_page_registro(page_num),
@@ -64,7 +64,10 @@ def admin_dashboard() -> rx.Component:
                         "background": "#0f766e",
                         "color": "white",
                         "border": "1px solid #0f766e",
-                        "_hover": {"background": "#115e59"}
+                        "_hover": {"background": "#115e59"},
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
                     },
                     {
                         "background": "white",
@@ -73,17 +76,20 @@ def admin_dashboard() -> rx.Component:
                         "_hover": {
                             "background": "#f8fafc",
                             "border": "1px solid #cbd5e1"
-                        }
+                        },
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
                     }
                 )
             )
 
-        # --- Renderizado de la paginación ---
-        def render_pagination():
+        # --- Controles de paginación (estilo unificado) ---
+        def render_pagination_registro():
             return rx.hstack(
-                # Anterior
+                # Botón anterior
                 rx.button(
-                    "Anterior",
+                    rx.icon("chevron-left", size=16),
                     on_click=AdminDashboardState.previous_page_registro,
                     variant="soft",
                     size="2",
@@ -92,16 +98,74 @@ def admin_dashboard() -> rx.Component:
                         "background": "white",
                         "border": "1px solid #e2e8f0",
                         "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
                     }
                 ),
-                # Números de página
-                rx.foreach(
-                    AdminDashboardState.page_numbers_registro,
-                    lambda page_num: create_page_button(page_num)
+                # Contenedor de números
+                rx.box(
+                    rx.hstack(
+                        # Primera página + "..." si estamos lejos del inicio
+                        rx.cond(
+                            (AdminDashboardState.current_page_registro > 3) &
+                            (AdminDashboardState.total_pages_registro > 4),
+                            rx.hstack(
+                                create_page_button_registro(1),
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        # Páginas del rango calculado (máximo 4)
+                        rx.cond(
+                            AdminDashboardState.page_numbers_registro.length() > 0,
+                            rx.hstack(
+                                rx.foreach(
+                                    AdminDashboardState.page_numbers_registro,
+                                    create_page_button_registro
+                                ),
+                                spacing="1",
+                                wrap="nowrap",
+                                flex_shrink=0,
+                            ),
+                            rx.text(
+                                f"Pág. {AdminDashboardState.current_page_registro}",
+                                size="2",
+                                color="#64748b",
+                                padding_x="2",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        # Última página + "..." si estamos lejos del final
+                        rx.cond(
+                            (AdminDashboardState.current_page_registro < AdminDashboardState.total_pages_registro - 2) &
+                            (AdminDashboardState.total_pages_registro > 4),
+                            rx.hstack(
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                create_page_button_registro(AdminDashboardState.total_pages_registro),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        spacing="1",
+                        wrap="nowrap",
+                        align="center",
+                    ),
+                    overflow_x="auto",
+                    flex_grow=0,
+                    flex_shrink=1,
+                    max_width="100%",
                 ),
-                # Siguiente
+                # Botón siguiente
                 rx.button(
-                    "Siguiente",
+                    rx.hstack(
+                        rx.icon("chevron-right", size=16),
+                        width="100%",
+                        spacing="0",
+                        justify="end",
+                        align="end",
+                    ),
                     on_click=AdminDashboardState.next_page_registro,
                     variant="soft",
                     size="2",
@@ -110,17 +174,21 @@ def admin_dashboard() -> rx.Component:
                         "background": "white",
                         "border": "1px solid #e2e8f0",
                         "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
                     }
                 ),
-                spacing="1",
+                spacing="2",
+                wrap="nowrap",
                 align="center",
-                wrap="wrap"
+                justify="end",
+                width="100%",
             )
 
         return rx.box(
             rx.cond(
                 AdminDashboardState.registro_filtered.length() == 0,
-                # --- Sin datos ---
                 rx.center(
                     rx.vstack(
                         rx.icon("database", size=32, color="#cbd5e1"),
@@ -129,7 +197,6 @@ def admin_dashboard() -> rx.Component:
                     ),
                     padding="3rem",
                 ),
-                # --- Con datos: tabla + paginación ---
                 rx.vstack(
                     # Tabla
                     rx.scroll_area(
@@ -159,51 +226,58 @@ def admin_dashboard() -> rx.Component:
                         scrollbars="horizontal",
                         style={
                             "width": "100%",
-                            "height": "500px",
+                            "max_height": "600px",
+                            "height": "auto",
                             "overflow_y": "auto",
                             "border": "1px solid #e2e8f0",
                             "border_radius": "10px",
                         }
                     ),
-                    # --- Controles de paginación ---
-                    rx.box(
-                        rx.hstack(
-                            rx.text(
-                                rx.cond(
-                                    AdminDashboardState.registro_filtered.length() > 0,
-                                    rx.text(
-                                        "Mostrando ",
+                    # Controles de paginación
+                    rx.cond(
+                        AdminDashboardState.registro_filtered.length() > AdminDashboardState.items_per_page_registro,
+                        rx.box(
+                            rx.hstack(
+                                rx.text(
+                                    rx.cond(
+                                        AdminDashboardState.registro_filtered.length() > 0,
                                         rx.cond(
                                             AdminDashboardState.current_page_registro == 1,
-                                            "1",
-                                            (AdminDashboardState.current_page_registro - 1) * AdminDashboardState.items_per_page_registro + 1
+                                            "Mostrando 1 a " + rx.cond(
+                                                AdminDashboardState.items_per_page_registro > AdminDashboardState.registro_filtered.length(),
+                                                AdminDashboardState.registro_filtered.length().to(str),
+                                                AdminDashboardState.items_per_page_registro.to(str)
+                                            ) + " de " + AdminDashboardState.registro_filtered.length().to(str) + " resultados",
+                                            "Mostrando " + ((AdminDashboardState.current_page_registro - 1) * AdminDashboardState.items_per_page_registro + 1).to(str) + " a " + rx.cond(
+                                                AdminDashboardState.current_page_registro * AdminDashboardState.items_per_page_registro > AdminDashboardState.registro_filtered.length(),
+                                                AdminDashboardState.registro_filtered.length().to(str),
+                                                (AdminDashboardState.current_page_registro * AdminDashboardState.items_per_page_registro).to(str)
+                                            ) + " de " + AdminDashboardState.registro_filtered.length().to(str) + " resultados"
                                         ),
-                                        " a ",
-                                        rx.cond(
-                                            AdminDashboardState.current_page_registro * AdminDashboardState.items_per_page_registro > AdminDashboardState.registro_filtered.length(),
-                                            AdminDashboardState.registro_filtered.length(),
-                                            AdminDashboardState.current_page_registro * AdminDashboardState.items_per_page_registro
-                                        ),
-                                        " de ",
-                                        AdminDashboardState.registro_filtered.length(),
-                                        " resultados"
+                                        "Mostrando 0 a 0 de 0 resultados"
                                     ),
-                                    "Mostrando 0 a 0 de 0 resultados"
+                                    size="2",
+                                    color="#64748b",
+                                    font_weight="500",
+                                    flex_shrink=0,
+                                    margin_right="13rem",
                                 ),
-                                size="2",
-                                color="#64748b",
-                                font_weight="500"
+                                rx.spacer(),
+                                rx.box(
+                                    render_pagination_registro(),
+                                    flex_shrink=0,
+                                    margin_left="0.5rem",
+                                ),
+                                width="100%",
+                                align="center",
+                                spacing="6",
+                                wrap="wrap",
                             ),
-                            rx.spacer(),
-                            render_pagination(),
-                            width="100%",
-                            align="center",
-                            spacing="4",
-                            wrap="wrap"
+                            padding="1.5rem 1rem",
+                            border_top="1px solid #e2e8f0",
+                            background="#f8fafc",
                         ),
-                        padding="1.5rem 1rem",
-                        border_top="1px solid #e2e8f0",
-                        background="#f8fafc"
+                        rx.box(height="1rem")
                     ),
                     spacing="0",
                     width="100%"
@@ -211,9 +285,9 @@ def admin_dashboard() -> rx.Component:
             ),
             width="100%"
         )
-    
+
+    # ==================== TABLA DE SOLICITUDES CON PAGINACIÓN UNIFICADA ====================
     def solicitudes_table() -> rx.Component:
-        # Estilo mejorado para la tabla de solicitudes - CON ANCHOS FIJOS
         header_style = {
             "background": "linear-gradient(135deg, #0f766e 0%, #115e59 100%)",
             "color": "white",
@@ -227,7 +301,6 @@ def admin_dashboard() -> rx.Component:
             "overflow": "hidden",
             "text_overflow": "ellipsis",
         }
-        
         cell_style = {
             "padding": "12px 8px",
             "border_bottom": "1px solid #e2e8f0",
@@ -239,22 +312,18 @@ def admin_dashboard() -> rx.Component:
             "overflow": "hidden",
             "text_overflow": "ellipsis",
         }
-        
+
         def solicitud_row(solicitud):
-            # Manejo de observaciones vacías
             observacion_cell = rx.cond(
                 solicitud["Observacion"] == "",
                 rx.text("-", color="#94a3b8", font_style="italic", style={"white_space": "nowrap", "overflow": "hidden", "text_overflow": "ellipsis"}),
                 rx.text(solicitud["Observacion"], color="#1e293b", style={"white_space": "nowrap", "overflow": "hidden", "text_overflow": "ellipsis"})
             )
-            
-            # Celda de destino con ancho fijo
             destino_cell = rx.text(
-                solicitud["Destino"], 
+                solicitud["Destino"],
                 color="#1e293b",
                 style={"white_space": "nowrap", "overflow": "hidden", "text_overflow": "ellipsis"}
             )
-            
             return rx.table.row(
                 rx.table.cell(
                     rx.text(solicitud["id"], color="#1e293b", font_weight="600"),
@@ -266,8 +335,8 @@ def admin_dashboard() -> rx.Component:
                 ),
                 rx.table.cell(
                     rx.text(
-                        solicitud["Cantidad"], 
-                        color="#1e293b", 
+                        solicitud["Cantidad"],
+                        color="#1e293b",
                         font_weight="600",
                         style={"text_align": "center"}
                     ),
@@ -321,29 +390,10 @@ def admin_dashboard() -> rx.Component:
                     "background_color": "#f8fafc",
                 },
             )
-        
-        # Calcular índices para mostrar - USANDO .length() EN LUGAR DE len()
-        total_items = AdminDashboardState.solicitudes_pendientes.length()
-        current_page = AdminDashboardState.current_page_solicitudes
-        items_per_page = AdminDashboardState.items_per_page_solicitudes
-        
-        # Cálculo de índices usando operadores de Reflex
-        start_idx = (current_page - 1) * items_per_page
-        end_idx = rx.cond(
-            total_items > 0,
-            rx.cond(
-                start_idx + items_per_page > total_items,
-                total_items,
-                start_idx + items_per_page
-            ),
-            0
-        )
-        
-        # Función auxiliar para crear botones de página
-        def create_page_button(page_num):
-            """Crea un botón de página individual"""
+
+        # --- Botón de página individual ---
+        def create_page_button_solicitudes(page_num: int):
             return rx.button(
-                # Usamos page_num directamente sin str() - Reflex maneja la conversión
                 rx.text(page_num, size="2", font_weight="500"),
                 on_click=lambda: AdminDashboardState.go_to_page_solicitudes(page_num),
                 variant="soft",
@@ -354,7 +404,10 @@ def admin_dashboard() -> rx.Component:
                         "background": "#0f766e",
                         "color": "white",
                         "border": "1px solid #0f766e",
-                        "_hover": {"background": "#115e59"}
+                        "_hover": {"background": "#115e59"},
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
                     },
                     {
                         "background": "white",
@@ -363,21 +416,20 @@ def admin_dashboard() -> rx.Component:
                         "_hover": {
                             "background": "#f8fafc",
                             "border": "1px solid #cbd5e1"
-                        }
+                        },
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
                     }
                 )
             )
-        
-        # Renderizar la paginación usando los números de página del estado
-        def render_pagination():
-            """Renderiza la paginación completa"""
-            # Obtener números de página del estado
-            page_numbers = AdminDashboardState.page_numbers_solicitudes
-            
+
+        # --- Controles de paginación (estilo unificado) ---
+        def render_pagination_solicitudes():
             return rx.hstack(
-                # Botón "Previous"
+                # Botón anterior
                 rx.button(
-                    "Anterior",
+                    rx.icon("chevron-left", size=16),
                     on_click=AdminDashboardState.previous_page_solicitudes,
                     variant="soft",
                     size="2",
@@ -386,22 +438,74 @@ def admin_dashboard() -> rx.Component:
                         "background": "white",
                         "border": "1px solid #e2e8f0",
                         "color": "#1e293b",
-                        "_hover": {
-                            "background": "#f8fafc",
-                            "border": "1px solid #cbd5e1"
-                        }
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
                     }
                 ),
-                
-                # Botones de números de página
-                rx.foreach(
-                    page_numbers,
-                    lambda page_num: create_page_button(page_num)
+                # Contenedor de números
+                rx.box(
+                    rx.hstack(
+                        # Primera página + "..." si estamos lejos del inicio
+                        rx.cond(
+                            (AdminDashboardState.current_page_solicitudes > 3) &
+                            (AdminDashboardState.total_pages_solicitudes > 4),
+                            rx.hstack(
+                                create_page_button_solicitudes(1),
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        # Páginas del rango calculado (máximo 4)
+                        rx.cond(
+                            AdminDashboardState.page_numbers_solicitudes.length() > 0,
+                            rx.hstack(
+                                rx.foreach(
+                                    AdminDashboardState.page_numbers_solicitudes,
+                                    create_page_button_solicitudes
+                                ),
+                                spacing="1",
+                                wrap="nowrap",
+                                flex_shrink=0,
+                            ),
+                            rx.text(
+                                f"Pág. {AdminDashboardState.current_page_solicitudes}",
+                                size="2",
+                                color="#64748b",
+                                padding_x="2",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        # Última página + "..." si estamos lejos del final
+                        rx.cond(
+                            (AdminDashboardState.current_page_solicitudes < AdminDashboardState.total_pages_solicitudes - 2) &
+                            (AdminDashboardState.total_pages_solicitudes > 4),
+                            rx.hstack(
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                create_page_button_solicitudes(AdminDashboardState.total_pages_solicitudes),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        spacing="1",
+                        wrap="nowrap",
+                        align="center",
+                    ),
+                    overflow_x="auto",
+                    flex_grow=0,
+                    flex_shrink=1,
+                    max_width="100%",
                 ),
-                
-                # Botón "Next"
+                # Botón siguiente
                 rx.button(
-                    "Siguiente",
+                    rx.hstack(
+                        rx.icon("chevron-right", size=16),
+                        width="100%",
+                        spacing="0",
+                        justify="end",
+                        align="end",
+                    ),
                     on_click=AdminDashboardState.next_page_solicitudes,
                     variant="soft",
                     size="2",
@@ -410,26 +514,26 @@ def admin_dashboard() -> rx.Component:
                         "background": "white",
                         "border": "1px solid #e2e8f0",
                         "color": "#1e293b",
-                        "_hover": {
-                            "background": "#f8fafc",
-                            "border": "1px solid #cbd5e1"
-                        }
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
                     }
                 ),
-                
-                spacing="1",
+                spacing="2",
+                wrap="nowrap",
                 align="center",
-                wrap="wrap"
+                justify="end",
+                width="100%",
             )
-        
+
         return rx.box(
             rx.cond(
                 AdminDashboardState.solicitudes_pendientes.length() == 0,
                 rx.center(
                     rx.vstack(
                         rx.icon("file_text", size=32, color="#cbd5e1"),
-                        rx.text("No hay solicitudes pendientes", 
-                            size="3", 
+                        rx.text("No hay solicitudes pendientes",
+                            size="3",
                             color="#64748b",
                             font_weight="500"),
                         spacing="2",
@@ -469,70 +573,68 @@ def admin_dashboard() -> rx.Component:
                         scrollbars="horizontal",
                         style={
                             "width": "100%",
-                            "height": "500px",
+                            "max_height": "600px",
+                            "height": "auto",
                             "overflow_y": "auto",
                             "border": "1px solid #e2e8f0",
                             "border_radius": "10px",
                             "box_shadow": "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
                         }
                     ),
-                    
-                    # PAGINACIÓN
-                    rx.box(
-                        rx.hstack(
-                            # Texto de resultados
-                            rx.text(
-                                # Versión corregida usando string interpolation con rx.cond
-                                rx.cond(
-                                    AdminDashboardState.solicitudes_pendientes.length() > 0,
-                                    rx.text(
-                                        "Mostrando ",
+                    # Controles de paginación
+                    rx.cond(
+                        AdminDashboardState.solicitudes_pendientes.length() > AdminDashboardState.items_per_page_solicitudes,
+                        rx.box(
+                            rx.hstack(
+                                rx.text(
+                                    rx.cond(
+                                        AdminDashboardState.solicitudes_pendientes.length() > 0,
                                         rx.cond(
                                             AdminDashboardState.current_page_solicitudes == 1,
-                                            "1",
-                                            rx.text(
-                                                (AdminDashboardState.current_page_solicitudes - 1) * AdminDashboardState.items_per_page_solicitudes + 1
-                                            )
+                                            "Mostrando 1 a " + rx.cond(
+                                                AdminDashboardState.items_per_page_solicitudes > AdminDashboardState.solicitudes_pendientes.length(),
+                                                AdminDashboardState.solicitudes_pendientes.length().to(str),
+                                                AdminDashboardState.items_per_page_solicitudes.to(str)
+                                            ) + " de " + AdminDashboardState.solicitudes_pendientes.length().to(str) + " resultados",
+                                            "Mostrando " + ((AdminDashboardState.current_page_solicitudes - 1) * AdminDashboardState.items_per_page_solicitudes + 1).to(str) + " a " + rx.cond(
+                                                AdminDashboardState.current_page_solicitudes * AdminDashboardState.items_per_page_solicitudes > AdminDashboardState.solicitudes_pendientes.length(),
+                                                AdminDashboardState.solicitudes_pendientes.length().to(str),
+                                                (AdminDashboardState.current_page_solicitudes * AdminDashboardState.items_per_page_solicitudes).to(str)
+                                            ) + " de " + AdminDashboardState.solicitudes_pendientes.length().to(str) + " resultados"
                                         ),
-                                        " a ",
-                                        rx.cond(
-                                            AdminDashboardState.current_page_solicitudes * AdminDashboardState.items_per_page_solicitudes > AdminDashboardState.solicitudes_pendientes.length(),
-                                            AdminDashboardState.solicitudes_pendientes.length(),
-                                            AdminDashboardState.current_page_solicitudes * AdminDashboardState.items_per_page_solicitudes
-                                        ),
-                                        " de ",
-                                        AdminDashboardState.solicitudes_pendientes.length(),
-                                        " resultados"
+                                        "Mostrando 0 a 0 de 0 resultados"
                                     ),
-                                    "Mostrando 0 a 0 de 0 resultados"
+                                    size="2",
+                                    color="#64748b",
+                                    font_weight="500",
+                                    flex_shrink=0,
+                                    margin_right="8rem",
                                 ),
-                                size="2",
-                                color="#64748b",
-                                font_weight="500"
+                                rx.spacer(),
+                                rx.box(
+                                    render_pagination_solicitudes(),
+                                    flex_shrink=0,
+                                    margin_left="0.5rem",
+                                ),
+                                width="100%",
+                                align="center",
+                                spacing="6",
+                                wrap="wrap",
                             ),
-                            
-                            rx.spacer(),
-                            
-                            # Botones de paginación
-                            render_pagination(),
-                            
-                            width="100%",
-                            align="center",
-                            spacing="4",
-                            wrap="wrap"
+                            padding="1.5rem 1rem",
+                            border_top="1px solid #e2e8f0",
+                            background="#f8fafc",
                         ),
-                        padding="1.5rem 1rem",
-                        border_top="1px solid #e2e8f0",
-                        background="#f8fafc"
+                        rx.box(height="1rem")
                     ),
-                    
                     spacing="0",
                     width="100%"
                 )
             ),
             width="100%"
         )
-    
+
+    # ==================== DIÁLOGOS (sin cambios) ====================
     def aprobar_dialog():
         return rx.dialog.root(
             rx.dialog.content(
@@ -622,7 +724,7 @@ def admin_dashboard() -> rx.Component:
             open=AdminDashboardState.show_aprobar_dialog,
             on_open_change=AdminDashboardState.set_show_aprobar_dialog,
         )
-    
+
     def rechazar_dialog():
         return rx.dialog.root(
             rx.dialog.content(
@@ -661,9 +763,9 @@ def admin_dashboard() -> rx.Component:
             open=AdminDashboardState.show_rechazar_dialog,
             on_open_change=AdminDashboardState.set_show_rechazar_dialog,
         )
-    
+
+    # ==================== CONTENIDO DE ALMACÉN (sin cambios) ====================
     def almacen_content():
-        """Contenido de la pestaña de productos en almacén"""
         return rx.vstack(
             rx.box(
                 rx.hstack(
@@ -688,15 +790,13 @@ def admin_dashboard() -> rx.Component:
                 border_bottom="1px solid #e2e8f0",
                 margin_bottom="1.5rem"
             ),
-            
-            # Tabla de productos en modo solo lectura
             almacen_readonly_table(),
-            
             spacing="3",
             align="start",
             width="100%"
         )
-    
+
+    # ==================== CONTENIDO PRINCIPAL DEL DASHBOARD ====================
     def dashboard_content():
         return rx.box(
             navbar("Panel de Administración"),
@@ -748,7 +848,7 @@ def admin_dashboard() -> rx.Component:
                     padding_bottom="1.5rem",
                     border_bottom="1px solid #e2e8f0"
                 ),
-                
+
                 # Tabs principales
                 rx.tabs.root(
                     rx.tabs.list(
@@ -809,9 +909,9 @@ def admin_dashboard() -> rx.Component:
                             }
                         ),
                     ),
+                    # Pestaña Solicitudes
                     rx.tabs.content(
                         rx.vstack(
-                            # Barra de búsqueda - RESPONSIVA
                             rx.box(
                                 rx.vstack(
                                     rx.hstack(
@@ -826,7 +926,7 @@ def admin_dashboard() -> rx.Component:
                                                 "border_radius": "8px",
                                                 "color": "#1e293b",
                                                 "flex": "1",
-                                                "min_width": "0"  # Importante para flexbox
+                                                "min_width": "0"
                                             }
                                         ),
                                         rx.hstack(
@@ -849,8 +949,6 @@ def admin_dashboard() -> rx.Component:
                                 width="100%",
                                 padding_bottom="1.5rem"
                             ),
-                            
-                            # Contenido de solicitudes
                             rx.cond(
                                 AdminDashboardState.loading,
                                 rx.center(
@@ -867,8 +965,6 @@ def admin_dashboard() -> rx.Component:
                                 ),
                                 solicitudes_table()
                             ),
-                            
-                            # Info de búsqueda
                             rx.cond(
                                 AdminDashboardState.search_solicitudes != "",
                                 rx.box(
@@ -898,7 +994,6 @@ def admin_dashboard() -> rx.Component:
                                     margin_top="1rem",
                                 ),
                             ),
-                            
                             spacing="3",
                             align="start",
                             width="100%"
@@ -906,9 +1001,9 @@ def admin_dashboard() -> rx.Component:
                         value="solicitudes",
                         style={"padding": "1.5rem 0"}
                     ),
+                    # Pestaña Registros
                     rx.tabs.content(
                         rx.vstack(
-                            # Barra de búsqueda para registros - RESPONSIVA
                             rx.box(
                                 rx.vstack(
                                     rx.hstack(
@@ -946,8 +1041,6 @@ def admin_dashboard() -> rx.Component:
                                 width="100%",
                                 padding_bottom="1.5rem"
                             ),
-                            
-                            # Contenido de registros
                             rx.cond(
                                 AdminDashboardState.loading,
                                 rx.center(
@@ -964,8 +1057,6 @@ def admin_dashboard() -> rx.Component:
                                 ),
                                 registro_table()
                             ),
-                            
-                            # Info de búsqueda
                             rx.cond(
                                 AdminDashboardState.search_registro != "",
                                 rx.box(
@@ -995,7 +1086,6 @@ def admin_dashboard() -> rx.Component:
                                     margin_top="1rem",
                                 ),
                             ),
-                            
                             spacing="3",
                             align="start",
                             width="100%"
@@ -1003,14 +1093,15 @@ def admin_dashboard() -> rx.Component:
                         value="registro",
                         style={"padding": "1.5rem 0"}
                     ),
+                    # Pestaña Almacén
                     rx.tabs.content(
                         almacen_content(),
                         value="almacen",
                         style={"padding": "1.5rem 0"}
                     ),
+                    # Pestaña Perfil
                     rx.tabs.content(
                         rx.vstack(
-                            # Perfil del administrador
                             rx.card(
                                 rx.vstack(
                                     rx.hstack(
@@ -1061,8 +1152,6 @@ def admin_dashboard() -> rx.Component:
                                     "border": "1px solid #e2e8f0"
                                 }
                             ),
-                            
-                            # Acciones
                             rx.card(
                                 rx.vstack(
                                     rx.text("🔒 Acciones de Cuenta", size="3", font_weight="600", color="#1e293b"),
@@ -1097,8 +1186,6 @@ def admin_dashboard() -> rx.Component:
                                     "border": "1px solid #e2e8f0"
                                 }
                             ),
-                            
-                            # Estadísticas
                             rx.card(
                                 rx.vstack(
                                     rx.text("📈 Estadísticas del Sistema", size="3", font_weight="600", color="#1e293b"),
@@ -1147,7 +1234,6 @@ def admin_dashboard() -> rx.Component:
                                             rx.vstack(
                                                 rx.text("Total de Registros", size="2", color="#64748b"),
                                                 rx.text(
-                                                    # MOSTRAMOS EL TOTAL DE REGISTROS (sin filtrar)
                                                     AdminDashboardState.registro_data.length(),
                                                     size="4",
                                                     font_weight="700",
@@ -1199,7 +1285,6 @@ def admin_dashboard() -> rx.Component:
                                     "border": "1px solid #e2e8f0"
                                 }
                             ),
-                            
                             spacing="4",
                             align="start",
                             width="100%"
@@ -1216,12 +1301,10 @@ def admin_dashboard() -> rx.Component:
                         "padding": "1rem"
                     }
                 ),
-                
-                # Diálogos modales
+
                 aprobar_dialog(),
                 rechazar_dialog(),
-                
-                # Pie de página
+
                 rx.box(
                     rx.hstack(
                         rx.text("© 2026 Sistema de Gestión de Almacén", 
@@ -1240,9 +1323,9 @@ def admin_dashboard() -> rx.Component:
                     width="100%",
                     margin_top="2rem"
                 ),
-                
+
                 spacing="4",
-                padding=["1rem", "1.5rem", "2rem", "3rem"],  # Padding más conservador
+                padding=["1rem", "1.5rem", "2rem", "3rem"],
                 width="100%",
                 max_width="none",
                 align="start",
@@ -1254,7 +1337,7 @@ def admin_dashboard() -> rx.Component:
                 "min_height": "100vh",
             }
         )
-    
+
     return rx.cond(
         AdminAuthState.is_authenticated,
         dashboard_content(),

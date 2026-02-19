@@ -1,4 +1,3 @@
-# TFuerte/pages/admin_rm_dashboard.py
 import reflex as rx
 from TFuerte.state.admin_rm_state import AdminRMState
 from TFuerte.components.navbar import navbar
@@ -7,7 +6,7 @@ from TFuerte.routes import Route
 @rx.page(
     route=Route.ADMIN_RM_DASHBOARD.value,
     title="Dashboard - Administración RM",
-    on_load=[AdminRMState.load_data, AdminRMState.load_data_fin]
+    on_load=[AdminRMState.reset_loading_states, AdminRMState.load_data, AdminRMState.load_data_fin]
 )
 def admin_rm_dashboard() -> rx.Component:
     """Dashboard para Administrador/Presidente (Maikel)"""
@@ -34,11 +33,137 @@ def admin_rm_dashboard() -> rx.Component:
             )
         )
     
+    # ==================== TABLA DE RECURSOS CON PAGINACIÓN ====================
     def solicitudes_table() -> rx.Component:
-        """Tabla de solicitudes RM pendientes para administrador"""
+        """Tabla de solicitudes RM pendientes con paginación."""
+        
+        # Botón de página individual
+        def create_page_button_recursos(page_num: int):
+            return rx.button(
+                rx.text(page_num, size="2", font_weight="500"),
+                on_click=lambda: AdminRMState.go_to_page_recursos(page_num),
+                variant="soft",
+                size="2",
+                style=rx.cond(
+                    AdminRMState.recursos_current_page == page_num,
+                    {
+                        "background": "#7c3aed",
+                        "color": "white",
+                        "border": "1px solid #7c3aed",
+                        "_hover": {"background": "#6d28d9"},
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    },
+                    {
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "_hover": {
+                            "background": "#f8fafc",
+                            "border": "1px solid #cbd5e1"
+                        },
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                )
+            )
+        
+        def render_pagination_recursos():
+            return rx.hstack(
+                rx.button(
+                    rx.icon("chevron-left", size=16),
+                    on_click=AdminRMState.previous_page_recursos,
+                    variant="soft",
+                    size="2",
+                    is_disabled=AdminRMState.recursos_current_page == 1,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                rx.box(
+                    rx.hstack(
+                        rx.cond(
+                            (AdminRMState.recursos_current_page > 3) & (AdminRMState.recursos_total_pages > 4),
+                            rx.hstack(
+                                create_page_button_recursos(1),
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        rx.cond(
+                            AdminRMState.recursos_page_numbers.length() > 0,
+                            rx.hstack(
+                                rx.foreach(
+                                    AdminRMState.recursos_page_numbers,
+                                    create_page_button_recursos
+                                ),
+                                spacing="1",
+                                wrap="nowrap",
+                                flex_shrink=0,
+                            ),
+                            rx.text(
+                                f"Pág. {AdminRMState.recursos_current_page}",
+                                size="2",
+                                color="#64748b",
+                                padding_x="2",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        rx.cond(
+                            (AdminRMState.recursos_current_page < AdminRMState.recursos_total_pages - 2) & (AdminRMState.recursos_total_pages > 4),
+                            rx.hstack(
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                create_page_button_recursos(AdminRMState.recursos_total_pages),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        spacing="1",
+                        wrap="nowrap",
+                        align="center",
+                    ),
+                    overflow_x="auto",
+                    flex_grow=0,
+                    flex_shrink=1,
+                    max_width="100%",
+                ),
+                rx.button(
+                    rx.hstack(
+                        rx.icon("chevron-right", size=16),
+                        width="100%",
+                        spacing="0",
+                        justify="end",
+                        align="end",
+                    ),
+                    on_click=AdminRMState.next_page_recursos,
+                    variant="soft",
+                    size="2",
+                    is_disabled=AdminRMState.recursos_current_page == AdminRMState.recursos_total_pages,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                spacing="2",
+                wrap="nowrap",
+                align="center",
+                justify="end",
+                width="100%",
+            )
         
         def solicitud_row(solicitud):
-            # Función para mostrar fecha formateada
             fecha_aprobacion = rx.cond(
                 (solicitud.get("fecha_aprobacion_tecnica") != None) & (solicitud.get("fecha_aprobacion_tecnica") != ""),
                 rx.text(solicitud.get("fecha_aprobacion_tecnica"), color="#070E0C"),
@@ -140,51 +265,227 @@ def admin_rm_dashboard() -> rx.Component:
                 padding="3rem",
                 width="100%"
             ),
-            rx.box(
-                rx.scroll_area(
-                    rx.table.root(
-                        rx.table.header(
-                            rx.table.row(
-                                rx.table.column_header_cell("ID", style=header_style),
-                                rx.table.column_header_cell("Centro Costo", style=header_style),
-                                rx.table.column_header_cell("Fecha", style=header_style),
-                                rx.table.column_header_cell("Orden Trabajo", style=header_style),
-                                rx.table.column_header_cell("Descripción", style=header_style),
-                                rx.table.column_header_cell("Cantidad", style=header_style),
-                                rx.table.column_header_cell("UM", style=header_style),
-                                rx.table.column_header_cell("Aprobado Técnica", style=header_style),
-                                rx.table.column_header_cell("Estado", style=header_style),
-                                rx.table.column_header_cell("Acciones", style=header_style),
-                            )
+            rx.vstack(
+                rx.box(
+                    rx.scroll_area(
+                        rx.table.root(
+                            rx.table.header(
+                                rx.table.row(
+                                    rx.table.column_header_cell("ID", style=header_style),
+                                    rx.table.column_header_cell("Centro Costo", style=header_style),
+                                    rx.table.column_header_cell("Fecha", style=header_style),
+                                    rx.table.column_header_cell("Orden Trabajo", style=header_style),
+                                    rx.table.column_header_cell("Descripción", style=header_style),
+                                    rx.table.column_header_cell("Cantidad", style=header_style),
+                                    rx.table.column_header_cell("UM", style=header_style),
+                                    rx.table.column_header_cell("Aprobado Técnica", style=header_style),
+                                    rx.table.column_header_cell("Estado", style=header_style),
+                                    rx.table.column_header_cell("Acciones", style=header_style),
+                                )
+                            ),
+                            rx.table.body(
+                                rx.foreach(
+                                    AdminRMState.recursos_paginated,
+                                    solicitud_row
+                                )
+                            ),
+                            style={
+                                "width": "100%",
+                                "min_width": "1100px",
+                                "table_layout": "auto"
+                            }
                         ),
-                        rx.table.body(
-                            rx.foreach(
-                                AdminRMState.solicitudes_pendientes,
-                                solicitud_row
-                            )
-                        ),
+                        type="always",
+                        scrollbars="horizontal",
                         style={
                             "width": "100%",
-                            "min_width": "1100px",
-                            "table_layout": "auto"
+                            "max_height": "650px",
+                            "height": "auto",
+                            "overflow_y": "auto",
+                            "border": "1px solid #e2e8f0",
+                            "border_radius": "8px"
                         }
                     ),
-                    type="always",
-                    scrollbars="horizontal",
-                    style={
-                        "width": "100%",
-                        "height": "500px",
-                        "border": "1px solid #e2e8f0",
-                        "border_radius": "8px"
-                    }
+                    width="100%",
                 ),
-                width="100%",
-                overflow_x="auto"
+                rx.cond(
+                    AdminRMState.solicitudes_pendientes.length() > AdminRMState.recursos_items_per_page,
+                    rx.box(
+                        rx.hstack(
+                            rx.text(
+                                rx.cond(
+                                    AdminRMState.solicitudes_pendientes.length() > 0,
+                                    rx.cond(
+                                        AdminRMState.recursos_current_page == 1,
+                                        "Mostrando 1 a " + rx.cond(
+                                            AdminRMState.recursos_items_per_page > AdminRMState.solicitudes_pendientes.length(),
+                                            AdminRMState.solicitudes_pendientes.length().to(str),
+                                            AdminRMState.recursos_items_per_page.to(str)
+                                        ) + " de " + AdminRMState.solicitudes_pendientes.length().to(str) + " resultados",
+                                        "Mostrando " + ((AdminRMState.recursos_current_page - 1) * AdminRMState.recursos_items_per_page + 1).to(str) + " a " + rx.cond(
+                                            AdminRMState.recursos_current_page * AdminRMState.recursos_items_per_page > AdminRMState.solicitudes_pendientes.length(),
+                                            AdminRMState.solicitudes_pendientes.length().to(str),
+                                            (AdminRMState.recursos_current_page * AdminRMState.recursos_items_per_page).to(str)
+                                        ) + " de " + AdminRMState.solicitudes_pendientes.length().to(str) + " resultados"
+                                    ),
+                                    "Mostrando 0 a 0 de 0 resultados"
+                                ),
+                                size="2",
+                                color="#64748b",
+                                font_weight="500",
+                                flex_shrink=0,
+                                margin_right="8rem",
+                            ),
+                            rx.spacer(),
+                            rx.box(
+                                render_pagination_recursos(),
+                                flex_shrink=0,
+                                margin_left="0.5rem",
+                            ),
+                            width="100%",
+                            align="center",
+                            spacing="6",
+                            wrap="wrap",
+                        ),
+                        padding="1.5rem 1rem",
+                        border_top="1px solid #e2e8f0",
+                        background="#f8fafc",
+                    ),
+                    rx.box(height="1rem")
+                ),
+                spacing="0",
+                width="100%"
             )
         )
     
+    # ==================== TABLA DE FINANCIAMIENTO CON PAGINACIÓN ====================
     def solicitudes_fin_table() -> rx.Component:
-        """Tabla de solicitudes de financiamiento pendientes para admin"""
+        """Tabla de solicitudes de financiamiento pendientes con paginación."""
+        
+        def create_page_button_fin(page_num: int):
+            return rx.button(
+                rx.text(page_num, size="2", font_weight="500"),
+                on_click=lambda: AdminRMState.go_to_page_fin(page_num),
+                variant="soft",
+                size="2",
+                style=rx.cond(
+                    AdminRMState.fin_current_page == page_num,
+                    {
+                        "background": "#059669",
+                        "color": "white",
+                        "border": "1px solid #059669",
+                        "_hover": {"background": "#047857"},
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    },
+                    {
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "_hover": {
+                            "background": "#f8fafc",
+                            "border": "1px solid #cbd5e1"
+                        },
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                )
+            )
+        
+        def render_pagination_fin():
+            return rx.hstack(
+                rx.button(
+                    rx.icon("chevron-left", size=16),
+                    on_click=AdminRMState.previous_page_fin,
+                    variant="soft",
+                    size="2",
+                    is_disabled=AdminRMState.fin_current_page == 1,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                rx.box(
+                    rx.hstack(
+                        rx.cond(
+                            (AdminRMState.fin_current_page > 3) & (AdminRMState.fin_total_pages > 4),
+                            rx.hstack(
+                                create_page_button_fin(1),
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        rx.cond(
+                            AdminRMState.fin_page_numbers.length() > 0,
+                            rx.hstack(
+                                rx.foreach(
+                                    AdminRMState.fin_page_numbers,
+                                    create_page_button_fin
+                                ),
+                                spacing="1",
+                                wrap="nowrap",
+                                flex_shrink=0,
+                            ),
+                            rx.text(
+                                f"Pág. {AdminRMState.fin_current_page}",
+                                size="2",
+                                color="#64748b",
+                                padding_x="2",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        rx.cond(
+                            (AdminRMState.fin_current_page < AdminRMState.fin_total_pages - 2) & (AdminRMState.fin_total_pages > 4),
+                            rx.hstack(
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                create_page_button_fin(AdminRMState.fin_total_pages),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        spacing="1",
+                        wrap="nowrap",
+                        align="center",
+                    ),
+                    overflow_x="auto",
+                    flex_grow=0,
+                    flex_shrink=1,
+                    max_width="100%",
+                ),
+                rx.button(
+                    rx.hstack(
+                        rx.icon("chevron-right", size=16),
+                        width="100%",
+                        spacing="0",
+                        justify="end",
+                        align="end",
+                    ),
+                    on_click=AdminRMState.next_page_fin,
+                    variant="soft",
+                    size="2",
+                    is_disabled=AdminRMState.fin_current_page == AdminRMState.fin_total_pages,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                spacing="2",
+                wrap="nowrap",
+                align="center",
+                justify="end",
+                width="100%",
+            )
         
         def solicitud_row(solicitud):
             return rx.table.row(
@@ -276,47 +577,98 @@ def admin_rm_dashboard() -> rx.Component:
                 padding="3rem",
                 width="100%"
             ),
-            rx.box(
-                rx.scroll_area(
-                    rx.table.root(
-                        rx.table.header(
-                            rx.table.row(
-                                rx.table.column_header_cell("N° Solicitud", style=header_style),
-                                rx.table.column_header_cell("Área", style=header_style),
-                                rx.table.column_header_cell("Fecha", style=header_style),
-                                rx.table.column_header_cell("Orden Trabajo", style=header_style),
-                                rx.table.column_header_cell("Productos", style=header_style),
-                                rx.table.column_header_cell("Total", style=header_style),
-                                rx.table.column_header_cell("Estado", style=header_style),
-                                rx.table.column_header_cell("Acciones", style=header_style),
-                            )
+            rx.vstack(
+                rx.box(
+                    rx.scroll_area(
+                        rx.table.root(
+                            rx.table.header(
+                                rx.table.row(
+                                    rx.table.column_header_cell("N° Solicitud", style=header_style),
+                                    rx.table.column_header_cell("Área", style=header_style),
+                                    rx.table.column_header_cell("Fecha", style=header_style),
+                                    rx.table.column_header_cell("Orden Trabajo", style=header_style),
+                                    rx.table.column_header_cell("Productos", style=header_style),
+                                    rx.table.column_header_cell("Total", style=header_style),
+                                    rx.table.column_header_cell("Estado", style=header_style),
+                                    rx.table.column_header_cell("Acciones", style=header_style),
+                                )
+                            ),
+                            rx.table.body(
+                                rx.foreach(
+                                    AdminRMState.financiamiento_paginated,
+                                    solicitud_row
+                                )
+                            ),
+                            style={
+                                "width": "100%",
+                                "min_width": "900px",
+                                "table_layout": "auto"
+                            }
                         ),
-                        rx.table.body(
-                            rx.foreach(
-                                AdminRMState.solicitudes_fin_pendientes,
-                                solicitud_row
-                            )
-                        ),
+                        type="always",
+                        scrollbars="horizontal",
                         style={
                             "width": "100%",
-                            "min_width": "900px",
-                            "table_layout": "auto"
+                            "max_height": "700px",
+                            "height": "auto",
+                            "overflow_y": "auto",
+                            "border": "1px solid #e2e8f0",
+                            "border_radius": "8px"
                         }
                     ),
-                    type="always",
-                    scrollbars="horizontal",
-                    style={
-                        "width": "100%",
-                        "height": "500px",
-                        "border": "1px solid #e2e8f0",
-                        "border_radius": "8px"
-                    }
+                    width="100%",
                 ),
-                width="100%",
-                overflow_x="auto"
+                rx.cond(
+                    AdminRMState.solicitudes_fin_pendientes.length() > AdminRMState.fin_items_per_page,
+                    rx.box(
+                        rx.hstack(
+                            rx.text(
+                                rx.cond(
+                                    AdminRMState.solicitudes_fin_pendientes.length() > 0,
+                                    rx.cond(
+                                        AdminRMState.fin_current_page == 1,
+                                        "Mostrando 1 a " + rx.cond(
+                                            AdminRMState.fin_items_per_page > AdminRMState.solicitudes_fin_pendientes.length(),
+                                            AdminRMState.solicitudes_fin_pendientes.length().to(str),
+                                            AdminRMState.fin_items_per_page.to(str)
+                                        ) + " de " + AdminRMState.solicitudes_fin_pendientes.length().to(str) + " resultados",
+                                        "Mostrando " + ((AdminRMState.fin_current_page - 1) * AdminRMState.fin_items_per_page + 1).to(str) + " a " + rx.cond(
+                                            AdminRMState.fin_current_page * AdminRMState.fin_items_per_page > AdminRMState.solicitudes_fin_pendientes.length(),
+                                            AdminRMState.solicitudes_fin_pendientes.length().to(str),
+                                            (AdminRMState.fin_current_page * AdminRMState.fin_items_per_page).to(str)
+                                        ) + " de " + AdminRMState.solicitudes_fin_pendientes.length().to(str) + " resultados"
+                                    ),
+                                    "Mostrando 0 a 0 de 0 resultados"
+                                ),
+                                size="2",
+                                color="#64748b",
+                                font_weight="500",
+                                flex_shrink=0,
+                                margin_right="8rem",
+                            ),
+                            rx.spacer(),
+                            rx.box(
+                                render_pagination_fin(),
+                                flex_shrink=0,
+                                margin_left="0.5rem",
+                            ),
+                            width="100%",
+                            align="center",
+                            spacing="6",
+                            wrap="wrap",
+                        ),
+                        padding="1.5rem 1rem",
+                        border_top="1px solid #e2e8f0",
+                        background="#f8fafc",
+                    ),
+                    rx.box(height="1rem")
+                ),
+                spacing="0",
+                width="100%"
             )
         )
     
+    # ==================== DIÁLOGOS (sin cambios) ====================
     def aprobar_dialog():
         return rx.dialog.root(
             rx.dialog.content(
@@ -814,17 +1166,17 @@ def admin_rm_dashboard() -> rx.Component:
                     border_bottom="1px solid #e2e8f0"
                 ),
                 
-                # Tabs para cambiar entre recursos y financiamiento
+                # Tabs
                 rx.tabs.root(
                     rx.tabs.list(
                         rx.tabs.trigger("📦 Recursos y Materiales", value="recursos", color="#1e293b"),
                         rx.tabs.trigger("💰 Financiamiento", value="financiamiento", color="#1e293b"),
                     ),
                     
-                    # Pestaña de Recursos RM
+                    # Pestaña de Recursos
                     rx.tabs.content(
                         rx.vstack(
-                            # Búsqueda recursos
+                            # Búsqueda
                             rx.box(
                                 rx.hstack(
                                     rx.input(
@@ -841,7 +1193,7 @@ def admin_rm_dashboard() -> rx.Component:
                                 padding_bottom="1.5rem"
                             ),
                             
-                            # Contenido principal recursos
+                            # Tabla
                             rx.cond(
                                 AdminRMState.loading,
                                 rx.center(
@@ -857,19 +1209,14 @@ def admin_rm_dashboard() -> rx.Component:
                                 solicitudes_table()
                             ),
                             
-                            # Información de búsqueda recursos
+                            # Información de búsqueda
                             rx.cond(
                                 AdminRMState.search_value != "",
                                 rx.box(
                                     rx.hstack(
                                         rx.icon("search", size=16, color="#7c3aed"),
                                         rx.text(
-                                            rx.hstack(
-                                                rx.text("Filtrando por: '"),
-                                                rx.text(AdminRMState.search_value),
-                                                rx.text("'"),
-                                                spacing="0"
-                                            ),
+                                            f"Filtrando por: '{AdminRMState.search_value}'",
                                             size="2",
                                             color="#64748b"
                                         ),
@@ -902,7 +1249,7 @@ def admin_rm_dashboard() -> rx.Component:
                     # Pestaña de Financiamiento
                     rx.tabs.content(
                         rx.vstack(
-                            # Búsqueda financiamiento
+                            # Búsqueda
                             rx.box(
                                 rx.hstack(
                                     rx.input(
@@ -919,7 +1266,7 @@ def admin_rm_dashboard() -> rx.Component:
                                 padding_bottom="1.5rem"
                             ),
                             
-                            # Contenido principal financiamiento
+                            # Tabla
                             rx.cond(
                                 AdminRMState.loading_fin,
                                 rx.center(
@@ -935,19 +1282,14 @@ def admin_rm_dashboard() -> rx.Component:
                                 solicitudes_fin_table()
                             ),
                             
-                            # Información de búsqueda financiamiento
+                            # Información de búsqueda
                             rx.cond(
                                 AdminRMState.search_value_fin != "",
                                 rx.box(
                                     rx.hstack(
                                         rx.icon("search", size=16, color="#059669"),
                                         rx.text(
-                                            rx.hstack(
-                                                rx.text("Filtrando por: '"),
-                                                rx.text(AdminRMState.search_value_fin),
-                                                rx.text("'"),
-                                                spacing="0"
-                                            ),
+                                            f"Filtrando por: '{AdminRMState.search_value_fin}'",
                                             size="2",
                                             color="#64748b"
                                         ),
@@ -981,16 +1323,14 @@ def admin_rm_dashboard() -> rx.Component:
                     width="100%",
                 ),
                 
-                # Diálogos para recursos RM
+                # Diálogos
                 aprobar_dialog(),
                 rechazar_dialog(),
-                
-                # Diálogos para financiamiento
                 aprobar_dialog_fin(),
                 rechazar_dialog_fin(),
                 generar_dialog_fin(),
                 
-                # Pie de página responsivo
+                # Pie de página
                 rx.box(
                     rx.vstack(
                         rx.hstack(

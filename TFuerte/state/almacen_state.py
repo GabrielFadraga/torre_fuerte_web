@@ -1,4 +1,3 @@
-# TFuerte/state/almacen_state.py
 import reflex as rx
 import csv
 import io
@@ -28,6 +27,15 @@ class AlmacenState(rx.State):
     # Nuevos atributos para los formularios de entrada/salida
     entrada_form_data: dict = {}
     salida_form_data: dict = {}
+    
+    # ==================================================
+    # PAGINACIÓN
+    # ==================================================
+    current_page: int = 1
+    items_per_page: int = 10
+    total_pages: int = 1
+    page_numbers: List[int] = []
+    paginated_data: List[dict] = []
     
     def load_data(self):
         """Carga los datos desde Supabase"""
@@ -94,6 +102,7 @@ class AlmacenState(rx.State):
         
         self.filtered_data = result
         self.calcular_estadisticas()
+        self.reset_pagination()  # Recalcular paginación después de filtrar
     
     @rx.event
     def sort_values(self, sort_value: str):
@@ -826,398 +835,468 @@ class AlmacenState(rx.State):
         return False
     
     # TFuerte/state/almacen_state.py - AGREGAR ESTOS MÉTODOS
-def open_salida_dialog(self):
-    """Abre el diálogo para dar salida a un producto con solicitud aprobada"""
-    # Verificar que haya un producto seleccionado
-    if len(self.selected_items) != 1:
-        return rx.toast.error(
-            "❌ Selecciona exactamente un producto para dar salida",
-            position="top-right",
-            duration=3000
-        )
-    
-    # Verificar que el producto tenga solicitudes aprobadas
-    if not self.producto_tiene_solicitudes_aprobadas:
-        return rx.toast.error(
-            "❌ El producto seleccionado no tiene solicitudes aprobadas",
-            position="top-right",
-            duration=3000
-        )
-    
-    item_numero = self.selected_items[0]
-    item = next((item for item in self.almacen_data if item.get("Numero") == item_numero), None)
-    
-    if item:
-        self.editing_item_numero = item_numero
-        self.operation_type = "salida"
-        self.edit_form_data = {
-            "codigo": item.get("Codigo", ""),
-            "descripcion": item.get("Descripcion del producto", ""),
-            "fecha_salida": item.get("Fecha de salida", "") or "",
-            "cantidad_s": str(item.get("Cantidad S", 0)),
-            "precio": str(item.get("Precio", 0))
-        }
-        # Inicializar datos adicionales para RegistroTF
-        self.salida_form_data = {
-            "recibe": "",
-            "destino": "",
-            "cliente": ""
-        }
-        self.show_salida_dialog = True
-        print(f"📝 Datos para salida: {self.edit_form_data}")
-    else:
-        return rx.toast.error(
-            "❌ No se encontró el producto",
-            position="top-right",
-            duration=3000
-        )
-
-def dar_salida_para_solicitud_aprobada(self, form_data: dict):
-    """Da salida para una solicitud previamente aprobada"""
-    print(f"📤 Procesando salida para solicitud aprobada")
-    
-    if len(self.selected_items) != 1:
-        return rx.toast.error(
-            "❌ Selecciona exactamente un producto para dar salida",
-            position="top-right",
-            duration=3000
-        )
-    
-    item_numero = self.selected_items[0]
-    item = next((item for item in self.almacen_data if item.get("Numero") == item_numero), None)
-    
-    if not item:
-        return rx.toast.error(
-            "❌ No se encontró el producto",
-            position="top-right",
-            duration=3000
-        )
-    
-    # 1. Buscar solicitud aprobada para este producto
-    from TFuerte.api.solicitudes_api import SolicitudesAPI
-    solicitudes = SolicitudesAPI.get_all_solicitudes()
-    solicitud_aprobada = None
-    
-    for solicitud in solicitudes:
-        if (solicitud.get("estado") == "aprobada" and
-            solicitud.get("Descripcion", "").lower() in item.get("Descripcion del producto", "").lower()):
-            solicitud_aprobada = solicitud
-            break
-    
-    if not solicitud_aprobada:
-        return rx.toast.error(
-            "❌ No hay solicitudes aprobadas para este producto",
-            position="top-right",
-            duration=4000
-        )
-    
-    # 2. Validar cantidad
-    cantidad_solicitada = solicitud_aprobada.get("Cantidad", 0)
-    cantidad_s = int(form_data["cantidad_s"]) if form_data["cantidad_s"] else 0
-    
-    if cantidad_s != cantidad_solicitada:
-        return rx.toast.error(
-            f"❌ La cantidad de salida ({cantidad_s}) debe coincidir con la cantidad solicitada ({cantidad_solicitada})",
-            position="top-right",
-            duration=4000
-        )
-    
-    # 3. Validar saldo disponible
-    saldo_actual = item.get("Saldo", 0) or 0
-    if cantidad_s > saldo_actual:
-        return rx.toast.error(
-            f"❌ Cantidad de salida ({cantidad_s}) no puede ser mayor que el saldo disponible ({saldo_actual})",
-            position="top-right",
-            duration=4000
-        )
-    
-    # 4. Actualizar tabla Almacen
-    item_data = {
-        "Fecha de salida": form_data["fecha_salida"],
-        "Cantidad S": cantidad_s,
-        "Precio": float(form_data.get("precio", item.get("Precio", 0))),
-        "Fecha de entrada": None,
-        "Cantidad E": 0,
-    }
-    
-    print(f"📦 Datos para actualizar salida en Almacen: {item_data}")
-    result = AlmacenAPI.update_item(item_numero, item_data)
-    
-    if not result:
-        return rx.toast.error(
-            "❌ Error al actualizar salida en Almacen",
-            position="top-right",
-            duration=4000
-        )
-    
-    # 5. Registrar en tabla RegistroTF
-    registro_data = {
-        "Producto": item.get("Descripcion del producto", ""),
-        "Fecha E": None,
-        "Cant E": 0,
-        "Fecha S": form_data["fecha_salida"],
-        "Cant S": cantidad_s,
-        "Recibe": form_data["recibe"],
-        "Destino": form_data["destino"],
-        "Cliente": form_data["cliente"],
-    }
-    
-    from TFuerte.api.registrotf_api import RegistroTFAPI
-    registro_result = RegistroTFAPI.insert_registro(registro_data)
-    
-    if not registro_result:
-        print("⚠️  No se pudo insertar en RegistroTF")
-    
-    # 6. Actualizar estado de la solicitud a "completada"
-    SolicitudesAPI.completar_solicitud(solicitud_aprobada["id"])
-    
-    # 7. Limpiar y recargar
-    self.selected_items = []
-    self.editing_item_numero = 0
-    self.edit_form_data = {}
-    self.salida_form_data = {}
-    self.show_salida_dialog = False
-    
-    # Recargar datos
-    self.loading = True
-    yield
-    
-    data = AlmacenAPI.get_all_items()
-    if data:
-        for item in data:
-            if "Fecha de salida" in item:
-                item["Fecha de salida"] = item["Fecha de salida"]
+    def open_salida_dialog(self):
+        """Abre el diálogo para dar salida a un producto con solicitud aprobada"""
+        # Verificar que haya un producto seleccionado
+        if len(self.selected_items) != 1:
+            return rx.toast.error(
+                "❌ Selecciona exactamente un producto para dar salida",
+                position="top-right",
+                duration=3000
+            )
         
-        data.sort(key=lambda x: x.get('Numero', 0))
-        self.almacen_data = data
-        self.load_entries()
-        self.calcular_estadisticas()
-    
-    self.loading = False
-    
-    return rx.toast.success(
-        "✅ Salida realizada correctamente para solicitud aprobada",
-        position="top-right",
-        duration=3000
-    )
+        # Verificar que el producto tenga solicitudes aprobadas
+        if not self.producto_tiene_solicitudes_aprobadas:
+            return rx.toast.error(
+                "❌ El producto seleccionado no tiene solicitudes aprobadas",
+                position="top-right",
+                duration=3000
+            )
+        
+        item_numero = self.selected_items[0]
+        item = next((item for item in self.almacen_data if item.get("Numero") == item_numero), None)
+        
+        if item:
+            self.editing_item_numero = item_numero
+            self.operation_type = "salida"
+            self.edit_form_data = {
+                "codigo": item.get("Codigo", ""),
+                "descripcion": item.get("Descripcion del producto", ""),
+                "fecha_salida": item.get("Fecha de salida", "") or "",
+                "cantidad_s": str(item.get("Cantidad S", 0)),
+                "precio": str(item.get("Precio", 0))
+            }
+            # Inicializar datos adicionales para RegistroTF
+            self.salida_form_data = {
+                "recibe": "",
+                "destino": "",
+                "cliente": ""
+            }
+            self.show_salida_dialog = True
+            print(f"📝 Datos para salida: {self.edit_form_data}")
+        else:
+            return rx.toast.error(
+                "❌ No se encontró el producto",
+                position="top-right",
+                duration=3000
+            )
 
-@rx.var
-def producto_tiene_solicitudes_aprobadas(self) -> bool:
-    """Variable computada que verifica si el producto seleccionado tiene solicitudes aprobadas"""
-    # Primero verificar que haya un producto seleccionado
-    if len(self.selected_items) != 1:
-        return False
-    
-    item_numero = self.selected_items[0]
-    
-    # Buscar el producto en los datos
-    producto = None
-    for item in self.almacen_data:
-        if item.get("Numero") == item_numero:
-            producto = item
-            break
-    
-    if not producto:
-        return False
-    
-    # Buscar solicitudes aprobadas para este producto
-    from TFuerte.api.solicitudes_api import SolicitudesAPI
-    try:
+    def dar_salida_para_solicitud_aprobada(self, form_data: dict):
+        """Da salida para una solicitud previamente aprobada"""
+        print(f"📤 Procesando salida para solicitud aprobada")
+        
+        if len(self.selected_items) != 1:
+            return rx.toast.error(
+                "❌ Selecciona exactamente un producto para dar salida",
+                position="top-right",
+                duration=3000
+            )
+        
+        item_numero = self.selected_items[0]
+        item = next((item for item in self.almacen_data if item.get("Numero") == item_numero), None)
+        
+        if not item:
+            return rx.toast.error(
+                "❌ No se encontró el producto",
+                position="top-right",
+                duration=3000
+            )
+        
+        # 1. Buscar solicitud aprobada para este producto
+        from TFuerte.api.solicitudes_api import SolicitudesAPI
         solicitudes = SolicitudesAPI.get_all_solicitudes()
-        descripcion_producto = producto.get("Descripcion del producto", "").lower()
+        solicitud_aprobada = None
         
+        descripcion_producto = item.get("Descripcion del producto", "").lower()
         for solicitud in solicitudes:
-            if (solicitud.get("estado") == "aprobada" and 
+            if (solicitud.get("estado") == "aprobada" and
                 solicitud.get("Descripcion", "").lower() in descripcion_producto):
-                return True
-    except Exception as e:
-        print(f"Error verificando solicitudes aprobadas: {e}")
-    
-    return False
-
-def open_salida_dialog(self):
-    """Abre el diálogo para dar salida a un producto con solicitud aprobada"""
-    # Verificar que haya un producto seleccionado
-    if len(self.selected_items) != 1:
-        return rx.toast.error(
-            "❌ Selecciona exactamente un producto para dar salida",
-            position="top-right",
-            duration=3000
-        )
-    
-    # Verificar que el producto tenga solicitudes aprobadas
-    # Usamos la variable computada
-    if not self.producto_tiene_solicitudes_aprobadas:
-        return rx.toast.error(
-            "❌ El producto seleccionado no tiene solicitudes aprobadas",
-            position="top-right",
-            duration=3000
-        )
-    
-    item_numero = self.selected_items[0]
-    item = next((item for item in self.almacen_data if item.get("Numero") == item_numero), None)
-    
-    if item:
-        self.editing_item_numero = item_numero
-        self.operation_type = "salida"
-        self.edit_form_data = {
-            "codigo": item.get("Codigo", ""),
-            "descripcion": item.get("Descripcion del producto", ""),
-            "fecha_salida": item.get("Fecha de salida", "") or "",
-            "cantidad_s": str(item.get("Cantidad S", 0)),
-            "precio": str(item.get("Precio", 0))
-        }
-        # Inicializar datos adicionales para RegistroTF
-        self.salida_form_data = {
-            "recibe": "",
-            "destino": "",
-            "cliente": ""
-        }
-        self.show_salida_dialog = True
-        print(f"📝 Datos para salida: {self.edit_form_data}")
-    else:
-        return rx.toast.error(
-            "❌ No se encontró el producto",
-            position="top-right",
-            duration=3000
-        )
-
-def dar_salida_para_solicitud_aprobada(self, form_data: dict):
-    """Da salida para una solicitud previamente aprobada"""
-    print(f"📤 Procesando salida para solicitud aprobada")
-    
-    if len(self.selected_items) != 1:
-        return rx.toast.error(
-            "❌ Selecciona exactamente un producto para dar salida",
-            position="top-right",
-            duration=3000
-        )
-    
-    item_numero = self.selected_items[0]
-    item = next((item for item in self.almacen_data if item.get("Numero") == item_numero), None)
-    
-    if not item:
-        return rx.toast.error(
-            "❌ No se encontró el producto",
-            position="top-right",
-            duration=3000
-        )
-    
-    # 1. Buscar solicitud aprobada para este producto
-    from TFuerte.api.solicitudes_api import SolicitudesAPI
-    solicitudes = SolicitudesAPI.get_all_solicitudes()
-    solicitud_aprobada = None
-    
-    descripcion_producto = item.get("Descripcion del producto", "").lower()
-    for solicitud in solicitudes:
-        if (solicitud.get("estado") == "aprobada" and
-            solicitud.get("Descripcion", "").lower() in descripcion_producto):
-            solicitud_aprobada = solicitud
-            break
-    
-    if not solicitud_aprobada:
-        return rx.toast.error(
-            "❌ No hay solicitudes aprobadas para este producto",
-            position="top-right",
-            duration=4000
-        )
-    
-    # 2. Validar cantidad
-    cantidad_solicitada = solicitud_aprobada.get("Cantidad", 0)
-    cantidad_s = int(form_data["cantidad_s"]) if form_data["cantidad_s"] else 0
-    
-    if cantidad_s != cantidad_solicitada:
-        return rx.toast.error(
-            f"❌ La cantidad de salida ({cantidad_s}) debe coincidir con la cantidad solicitada ({cantidad_solicitada})",
-            position="top-right",
-            duration=4000
-        )
-    
-    # 3. Validar saldo disponible
-    saldo_actual = item.get("Saldo", 0) or 0
-    if cantidad_s > saldo_actual:
-        return rx.toast.error(
-            f"❌ Cantidad de salida ({cantidad_s}) no puede ser mayor que el saldo disponible ({saldo_actual})",
-            position="top-right",
-            duration=4000
-        )
-    
-    # 4. Actualizar tabla Almacen
-    item_data = {
-        "Fecha de salida": form_data["fecha_salida"],
-        "Cantidad S": cantidad_s,
-        "Precio": float(form_data.get("precio", item.get("Precio", 0))),
-        "Fecha de entrada": None,
-        "Cantidad E": 0,
-    }
-    
-    print(f"📦 Datos para actualizar salida en Almacen: {item_data}")
-    result = AlmacenAPI.update_item(item_numero, item_data)
-    
-    if not result:
-        return rx.toast.error(
-            "❌ Error al actualizar salida en Almacen",
-            position="top-right",
-            duration=4000
-        )
-    
-    # 5. Registrar en tabla RegistroTF
-    registro_data = {
-        "Producto": item.get("Descripcion del producto", ""),
-        "Fecha E": None,
-        "Cant E": 0,
-        "Fecha S": form_data["fecha_salida"],
-        "Cant S": cantidad_s,
-        "Recibe": form_data["recibe"],
-        "Destino": form_data["destino"],
-        "Cliente": form_data["cliente"],
-    }
-    
-    from TFuerte.api.registrotf_api import RegistroTFAPI
-    registro_result = RegistroTFAPI.insert_registro(registro_data)
-    
-    if not registro_result:
-        print("⚠️  No se pudo insertar en RegistroTF")
-    
-    # 6. Actualizar estado de la solicitud a "completada"
-    SolicitudesAPI.completar_solicitud(solicitud_aprobada["id"])
-    
-    # 7. Limpiar y recargar
-    self.selected_items = []
-    self.editing_item_numero = 0
-    self.edit_form_data = {}
-    self.salida_form_data = {}
-    self.show_salida_dialog = False
-    
-    # Recargar datos
-    self.loading = True
-    yield
-    
-    data = AlmacenAPI.get_all_items()
-    if data:
-        for item in data:
-            if "Fecha de salida" in item:
-                item["Fecha de salida"] = item["Fecha de salida"]
+                solicitud_aprobada = solicitud
+                break
         
-        data.sort(key=lambda x: x.get('Numero', 0))
-        self.almacen_data = data
-        self.load_entries()
-        self.calcular_estadisticas()
-    
-    self.loading = False
-    
-    return rx.toast.success(
-        "✅ Salida realizada correctamente para solicitud aprobada",
-        position="top-right",
-        duration=3000
-    )
+        if not solicitud_aprobada:
+            return rx.toast.error(
+                "❌ No hay solicitudes aprobadas para este producto",
+                position="top-right",
+                duration=4000
+            )
+        
+        # 2. Validar cantidad
+        cantidad_solicitada = solicitud_aprobada.get("Cantidad", 0)
+        cantidad_s = int(form_data["cantidad_s"]) if form_data["cantidad_s"] else 0
+        
+        if cantidad_s != cantidad_solicitada:
+            return rx.toast.error(
+                f"❌ La cantidad de salida ({cantidad_s}) debe coincidir con la cantidad solicitada ({cantidad_solicitada})",
+                position="top-right",
+                duration=4000
+            )
+        
+        # 3. Validar saldo disponible
+        saldo_actual = item.get("Saldo", 0) or 0
+        if cantidad_s > saldo_actual:
+            return rx.toast.error(
+                f"❌ Cantidad de salida ({cantidad_s}) no puede ser mayor que el saldo disponible ({saldo_actual})",
+                position="top-right",
+                duration=4000
+            )
+        
+        # 4. Actualizar tabla Almacen
+        item_data = {
+            "Fecha de salida": form_data["fecha_salida"],
+            "Cantidad S": cantidad_s,
+            "Precio": float(form_data.get("precio", item.get("Precio", 0))),
+            "Fecha de entrada": None,
+            "Cantidad E": 0,
+        }
+        
+        print(f"📦 Datos para actualizar salida en Almacen: {item_data}")
+        result = AlmacenAPI.update_item(item_numero, item_data)
+        
+        if not result:
+            return rx.toast.error(
+                "❌ Error al actualizar salida en Almacen",
+                position="top-right",
+                duration=4000
+            )
+        
+        # 5. Registrar en tabla RegistroTF
+        registro_data = {
+            "Producto": item.get("Descripcion del producto", ""),
+            "Fecha E": None,
+            "Cant E": 0,
+            "Fecha S": form_data["fecha_salida"],
+            "Cant S": cantidad_s,
+            "Recibe": form_data["recibe"],
+            "Destino": form_data["destino"],
+            "Cliente": form_data["cliente"],
+        }
+        
+        from TFuerte.api.registrotf_api import RegistroTFAPI
+        registro_result = RegistroTFAPI.insert_registro(registro_data)
+        
+        if not registro_result:
+            print("⚠️  No se pudo insertar en RegistroTF")
+        
+        # 6. Actualizar estado de la solicitud a "completada"
+        SolicitudesAPI.completar_solicitud(solicitud_aprobada["id"])
+        
+        # 7. Limpiar y recargar
+        self.selected_items = []
+        self.editing_item_numero = 0
+        self.edit_form_data = {}
+        self.salida_form_data = {}
+        self.show_salida_dialog = False
+        
+        # Recargar datos
+        self.loading = True
+        yield
+        
+        data = AlmacenAPI.get_all_items()
+        if data:
+            for item in data:
+                if "Fecha de salida" in item:
+                    item["Fecha de salida"] = item["Fecha de salida"]
+            
+            data.sort(key=lambda x: x.get('Numero', 0))
+            self.almacen_data = data
+            self.load_entries()
+            self.calcular_estadisticas()
+        
+        self.loading = False
+        
+        return rx.toast.success(
+            "✅ Salida realizada correctamente para solicitud aprobada",
+            position="top-right",
+            duration=3000
+        )
 
-def set_show_salida_dialog(self, show: bool):
-    """Setter para show_salida_dialog"""
-    self.show_salida_dialog = show
+    @rx.var
+    def producto_tiene_solicitudes_aprobadas(self) -> bool:
+        """Variable computada que verifica si el producto seleccionado tiene solicitudes aprobadas"""
+        # Primero verificar que haya un producto seleccionado
+        if len(self.selected_items) != 1:
+            return False
+        
+        item_numero = self.selected_items[0]
+        
+        # Buscar el producto en los datos
+        producto = None
+        for item in self.almacen_data:
+            if item.get("Numero") == item_numero:
+                producto = item
+                break
+        
+        if not producto:
+            return False
+        
+        # Buscar solicitudes aprobadas para este producto
+        from TFuerte.api.solicitudes_api import SolicitudesAPI
+        try:
+            solicitudes = SolicitudesAPI.get_all_solicitudes()
+            descripcion_producto = producto.get("Descripcion del producto", "").lower()
+            
+            for solicitud in solicitudes:
+                if (solicitud.get("estado") == "aprobada" and 
+                    solicitud.get("Descripcion", "").lower() in descripcion_producto):
+                    return True
+        except Exception as e:
+            print(f"Error verificando solicitudes aprobadas: {e}")
+        
+        return False
 
-def close_salida_dialog(self):
-    """Cierra el diálogo de salida"""
-    self.show_salida_dialog = False
-    self.edit_form_data = {}
-    self.salida_form_data = {}
+    def open_salida_dialog(self):
+        """Abre el diálogo para dar salida a un producto con solicitud aprobada"""
+        # Verificar que haya un producto seleccionado
+        if len(self.selected_items) != 1:
+            return rx.toast.error(
+                "❌ Selecciona exactamente un producto para dar salida",
+                position="top-right",
+                duration=3000
+            )
+        
+        # Verificar que el producto tenga solicitudes aprobadas
+        # Usamos la variable computada
+        if not self.producto_tiene_solicitudes_aprobadas:
+            return rx.toast.error(
+                "❌ El producto seleccionado no tiene solicitudes aprobadas",
+                position="top-right",
+                duration=3000
+            )
+        
+        item_numero = self.selected_items[0]
+        item = next((item for item in self.almacen_data if item.get("Numero") == item_numero), None)
+        
+        if item:
+            self.editing_item_numero = item_numero
+            self.operation_type = "salida"
+            self.edit_form_data = {
+                "codigo": item.get("Codigo", ""),
+                "descripcion": item.get("Descripcion del producto", ""),
+                "fecha_salida": item.get("Fecha de salida", "") or "",
+                "cantidad_s": str(item.get("Cantidad S", 0)),
+                "precio": str(item.get("Precio", 0))
+            }
+            # Inicializar datos adicionales para RegistroTF
+            self.salida_form_data = {
+                "recibe": "",
+                "destino": "",
+                "cliente": ""
+            }
+            self.show_salida_dialog = True
+            print(f"📝 Datos para salida: {self.edit_form_data}")
+        else:
+            return rx.toast.error(
+                "❌ No se encontró el producto",
+                position="top-right",
+                duration=3000
+            )
+
+    def dar_salida_para_solicitud_aprobada(self, form_data: dict):
+        """Da salida para una solicitud previamente aprobada"""
+        print(f"📤 Procesando salida para solicitud aprobada")
+        
+        if len(self.selected_items) != 1:
+            return rx.toast.error(
+                "❌ Selecciona exactamente un producto para dar salida",
+                position="top-right",
+                duration=3000
+            )
+        
+        item_numero = self.selected_items[0]
+        item = next((item for item in self.almacen_data if item.get("Numero") == item_numero), None)
+        
+        if not item:
+            return rx.toast.error(
+                "❌ No se encontró el producto",
+                position="top-right",
+                duration=3000
+            )
+        
+        # 1. Buscar solicitud aprobada para este producto
+        from TFuerte.api.solicitudes_api import SolicitudesAPI
+        solicitudes = SolicitudesAPI.get_all_solicitudes()
+        solicitud_aprobada = None
+        
+        descripcion_producto = item.get("Descripcion del producto", "").lower()
+        for solicitud in solicitudes:
+            if (solicitud.get("estado") == "aprobada" and
+                solicitud.get("Descripcion", "").lower() in descripcion_producto):
+                solicitud_aprobada = solicitud
+                break
+        
+        if not solicitud_aprobada:
+            return rx.toast.error(
+                "❌ No hay solicitudes aprobadas para este producto",
+                position="top-right",
+                duration=4000
+            )
+        
+        # 2. Validar cantidad
+        cantidad_solicitada = solicitud_aprobada.get("Cantidad", 0)
+        cantidad_s = int(form_data["cantidad_s"]) if form_data["cantidad_s"] else 0
+        
+        if cantidad_s != cantidad_solicitada:
+            return rx.toast.error(
+                f"❌ La cantidad de salida ({cantidad_s}) debe coincidir con la cantidad solicitada ({cantidad_solicitada})",
+                position="top-right",
+                duration=4000
+            )
+        
+        # 3. Validar saldo disponible
+        saldo_actual = item.get("Saldo", 0) or 0
+        if cantidad_s > saldo_actual:
+            return rx.toast.error(
+                f"❌ Cantidad de salida ({cantidad_s}) no puede ser mayor que el saldo disponible ({saldo_actual})",
+                position="top-right",
+                duration=4000
+            )
+        
+        # 4. Actualizar tabla Almacen
+        item_data = {
+            "Fecha de salida": form_data["fecha_salida"],
+            "Cantidad S": cantidad_s,
+            "Precio": float(form_data.get("precio", item.get("Precio", 0))),
+            "Fecha de entrada": None,
+            "Cantidad E": 0,
+        }
+        
+        print(f"📦 Datos para actualizar salida en Almacen: {item_data}")
+        result = AlmacenAPI.update_item(item_numero, item_data)
+        
+        if not result:
+            return rx.toast.error(
+                "❌ Error al actualizar salida en Almacen",
+                position="top-right",
+                duration=4000
+            )
+        
+        # 5. Registrar en tabla RegistroTF
+        registro_data = {
+            "Producto": item.get("Descripcion del producto", ""),
+            "Fecha E": None,
+            "Cant E": 0,
+            "Fecha S": form_data["fecha_salida"],
+            "Cant S": cantidad_s,
+            "Recibe": form_data["recibe"],
+            "Destino": form_data["destino"],
+            "Cliente": form_data["cliente"],
+        }
+        
+        from TFuerte.api.registrotf_api import RegistroTFAPI
+        registro_result = RegistroTFAPI.insert_registro(registro_data)
+        
+        if not registro_result:
+            print("⚠️  No se pudo insertar en RegistroTF")
+        
+        # 6. Actualizar estado de la solicitud a "completada"
+        SolicitudesAPI.completar_solicitud(solicitud_aprobada["id"])
+        
+        # 7. Limpiar y recargar
+        self.selected_items = []
+        self.editing_item_numero = 0
+        self.edit_form_data = {}
+        self.salida_form_data = {}
+        self.show_salida_dialog = False
+        
+        # Recargar datos
+        self.loading = True
+        yield
+        
+        data = AlmacenAPI.get_all_items()
+        if data:
+            for item in data:
+                if "Fecha de salida" in item:
+                    item["Fecha de salida"] = item["Fecha de salida"]
+            
+            data.sort(key=lambda x: x.get('Numero', 0))
+            self.almacen_data = data
+            self.load_entries()
+            self.calcular_estadisticas()
+        
+        self.loading = False
+        
+        return rx.toast.success(
+            "✅ Salida realizada correctamente para solicitud aprobada",
+            position="top-right",
+            duration=3000
+        )
+
+    def set_show_salida_dialog(self, show: bool):
+        """Setter para show_salida_dialog"""
+        self.show_salida_dialog = show
+
+    def close_salida_dialog(self):
+        """Cierra el diálogo de salida"""
+        self.show_salida_dialog = False
+        self.edit_form_data = {}
+        self.salida_form_data = {}
+
+    # ==================================================
+    # MÉTODOS DE PAGINACIÓN
+    # ==================================================
+    
+    def calculate_pagination(self):
+        """Calcula la paginación para los datos filtrados."""
+        total_items = len(self.filtered_data)
+
+        if total_items == 0:
+            self.total_pages = 1
+            self.paginated_data = []
+        else:
+            self.total_pages = max(1, (total_items + self.items_per_page - 1) // self.items_per_page)
+
+        # Asegurar que la página actual esté dentro de los límites
+        if self.current_page > self.total_pages:
+            self.current_page = max(1, self.total_pages)
+
+        start_idx = (self.current_page - 1) * self.items_per_page
+        end_idx = min(start_idx + self.items_per_page, total_items)
+
+        if total_items > 0:
+            self.paginated_data = self.filtered_data[start_idx:end_idx]
+        else:
+            self.paginated_data = []
+
+        self.calculate_page_numbers()
+
+    def calculate_page_numbers(self):
+        """Calcula los números de página a mostrar (máximo 4)."""
+        max_pages_to_show = 4
+        current = self.current_page
+        total = self.total_pages
+
+        if total <= max_pages_to_show:
+            self.page_numbers = list(range(1, total + 1))
+            return
+
+        start = max(1, current - 1)
+        end = min(total, start + max_pages_to_show - 1)
+
+        if end - start + 1 < max_pages_to_show:
+            start = max(1, end - max_pages_to_show + 1)
+
+        self.page_numbers = list(range(start, end + 1))
+
+    def go_to_page(self, page_number: int):
+        """Navega a una página específica."""
+        if 1 <= page_number <= self.total_pages:
+            self.current_page = page_number
+            self.calculate_pagination()
+
+    def next_page(self):
+        """Página siguiente."""
+        if self.current_page < self.total_pages:
+            self.current_page += 1
+            self.calculate_pagination()
+
+    def previous_page(self):
+        """Página anterior."""
+        if self.current_page > 1:
+            self.current_page -= 1
+            self.calculate_pagination()
+
+    def reset_pagination(self):
+        """Resetea la paginación a la primera página."""
+        self.current_page = 1
+        self.calculate_pagination()

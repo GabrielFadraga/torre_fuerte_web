@@ -1,4 +1,3 @@
-# TFuerte/state/logistica_state.py - VERSIÓN CORREGIDA Y COMPLETA
 import reflex as rx
 from typing import List
 from datetime import datetime
@@ -53,6 +52,24 @@ class LogisticaState(rx.State):
     precio_editado_descripcion: str = ""
     precio_editado_precio: str = ""
     
+    # ==================================================
+    # PAGINACIÓN PARA PRECIOS
+    # ==================================================
+    precios_paginated: List[dict] = []
+    current_page_precios: int = 1
+    items_per_page_precios: int = 10
+    total_pages_precios: int = 1
+    page_numbers_precios: List[int] = []
+
+    # ==================================================
+    # PAGINACIÓN PARA PENDIENTES
+    # ==================================================
+    pendientes_paginated: List[dict] = []
+    pendientes_current_page: int = 1
+    pendientes_items_per_page: int = 10
+    pendientes_total_pages: int = 1
+    pendientes_page_numbers: List[int] = []
+
     # ==================================================
     # SETTERS BÁSICOS
     # ==================================================
@@ -178,6 +195,7 @@ class LogisticaState(rx.State):
             solicitudes_procesadas.append(solicitud_procesada)
         
         self.solicitudes_pendientes = solicitudes_procesadas
+        self.reset_pendientes_pagination()  # <-- Añadido
         self.loading = False
     
     @rx.event
@@ -227,24 +245,31 @@ class LogisticaState(rx.State):
         """Carga todos los precios de productos"""
         self.loading_precios = True
         yield
-        
+
         try:
             precios_data = FinanciamientoApi.get_all_precios()
             self.precios = precios_data
-            
+
             # Extraer tipos únicos
             tipos = set()
             for precio in precios_data:
                 if precio.get("Tipo"):
                     tipos.add(precio["Tipo"])
-            
+
             self.tipos_disponibles = sorted(list(tipos))
             print(f"✅ {len(self.precios)} precios cargados, {len(self.tipos_disponibles)} tipos disponibles")
+            
+            # Calcular paginación
+            self.calculate_precios_pagination()
+            
         except Exception as e:
             print(f"❌ Error cargando precios: {e}")
             self.precios = []
             self.tipos_disponibles = []
-        
+            self.precios_paginated = []
+            self.total_pages_precios = 1
+            self.current_page_precios = 1
+
         self.loading_precios = False
     
     def _formatear_fechas_solicitud(self, solicitud: dict) -> dict:
@@ -306,6 +331,7 @@ class LogisticaState(rx.State):
                 filtered.append(s)
         
         self.solicitudes_pendientes = filtered
+        self.reset_pendientes_pagination()  # <-- Añadido
     
     # ==================================================
     # DIÁLOGOS PARA SOLICITUDES
@@ -423,31 +449,34 @@ class LogisticaState(rx.State):
                 duration=4000
             )
             return
-        
+
         solicitud_id = self.selected_solicitud.get("id")
-        
-        # Usar el nombre de usuario del admin actual
         admin_usuario = self.current_admin.get("usuario", "Miguel")
-        
-        result = SolicitudesRMApi.aprobar_por_logistica(solicitud_id, admin_usuario)
-        
-        if result:
-            self.close_aprobar_dialog()
-            
-            # Recargar datos
-            self.loading = True
-            yield
-            yield self.load_data()
-            self.loading = False
-            
-            yield rx.toast.success(
-                f"✅ Solicitud aprobada por Logística",
-                position="top-right",
-                duration=3000
-            )
-        else:
+
+        try:
+            result = SolicitudesRMApi.aprobar_por_logistica(solicitud_id, admin_usuario)
+
+            if result:
+                self.close_aprobar_dialog()
+                # ✅ CORREGIDO: usar yield from para ejecutar el generador
+                yield from self.load_data()
+                yield rx.toast.success(
+                    "✅ Solicitud aprobada por Logística",
+                    position="top-right",
+                    duration=3000
+                )
+            else:
+                yield rx.toast.error(
+                    "❌ Error al aprobar la solicitud",
+                    position="top-right",
+                    duration=4000
+                )
+        except Exception as e:
+            print(f"❌ Error en aprobar_solicitud: {e}")
+            import traceback
+            traceback.print_exc()
             yield rx.toast.error(
-                "❌ Error al aprobar la solicitud",
+                f"❌ Error interno: {str(e)}",
                 position="top-right",
                 duration=4000
             )
@@ -462,31 +491,34 @@ class LogisticaState(rx.State):
                 duration=4000
             )
             return
-        
+
         solicitud_id = self.selected_solicitud.get("id")
-        
-        # Usar la variable de estado para el motivo
         motivo = self.motivo_rechazo if self.motivo_rechazo else "Rechazado por Logística"
-        
-        result = SolicitudesRMApi.rechazar_solicitud_rm(solicitud_id, motivo)
-        
-        if result:
-            self.close_rechazar_dialog()
-            
-            # Recargar datos
-            self.loading = True
-            yield
-            yield self.load_data()
-            self.loading = False
-            
-            yield rx.toast.success(
-                "✅ Solicitud rechazada",
-                position="top-right",
-                duration=3000
-            )
-        else:
+
+        try:
+            result = SolicitudesRMApi.rechazar_solicitud_rm(solicitud_id, motivo)
+
+            if result:
+                self.close_rechazar_dialog()
+                # ✅ CORREGIDO: usar yield from
+                yield from self.load_data()
+                yield rx.toast.success(
+                    "✅ Solicitud rechazada",
+                    position="top-right",
+                    duration=3000
+                )
+            else:
+                yield rx.toast.error(
+                    "❌ Error al rechazar la solicitud",
+                    position="top-right",
+                    duration=4000
+                )
+        except Exception as e:
+            print(f"❌ Error en rechazar_solicitud: {e}")
+            import traceback
+            traceback.print_exc()
             yield rx.toast.error(
-                "❌ Error al rechazar la solicitud",
+                f"❌ Error interno: {str(e)}",
                 position="top-right",
                 duration=4000
             )
@@ -501,7 +533,7 @@ class LogisticaState(rx.State):
         if not self.nuevo_tipo or not self.nueva_descripcion or not self.nuevo_precio:
             yield rx.toast.error("❌ Todos los campos son requeridos")
             return
-        
+
         try:
             precio_float = float(self.nuevo_precio)
             if precio_float <= 0:
@@ -509,24 +541,24 @@ class LogisticaState(rx.State):
         except:
             yield rx.toast.error("❌ El precio debe ser un número válido mayor a 0")
             return
-        
+
         precio_data = {
             "Tipo": self.nuevo_tipo,
             "Descripcion": self.nueva_descripcion,
             "Precio": precio_float
         }
-        
+
         result = FinanciamientoApi.create_precio(precio_data)
-        
+
         if result:
             # Limpiar formulario
             self.nuevo_tipo = ""
             self.nueva_descripcion = ""
             self.nuevo_precio = ""
-            
-            # Recargar lista
-            yield self.load_precios()
-            
+
+            # ✅ CORREGIDO: usar yield from para ejecutar el generador
+            yield from self.load_precios()
+
             yield rx.toast.success("✅ Producto agregado correctamente")
         else:
             yield rx.toast.error("❌ Error al agregar el producto")
@@ -537,14 +569,14 @@ class LogisticaState(rx.State):
         if not self.selected_precio:
             yield rx.toast.error("❌ No hay producto seleccionado")
             return
-        
+
         precio_id = self.selected_precio.get("id")
-        
+
         # Validar campos
         if not all([self.precio_editado_tipo, self.precio_editado_descripcion, self.precio_editado_precio]):
             yield rx.toast.error("❌ Todos los campos son requeridos")
             return
-        
+
         try:
             precio_float = float(self.precio_editado_precio)
             if precio_float <= 0:
@@ -552,28 +584,28 @@ class LogisticaState(rx.State):
         except:
             yield rx.toast.error("❌ El precio debe ser un número válido mayor a 0")
             return
-        
+
         precio_data = {
             "Tipo": self.precio_editado_tipo,
             "Descripcion": self.precio_editado_descripcion,
             "Precio": precio_float
         }
-        
+
         result = FinanciamientoApi.update_precio(precio_id, precio_data)
-        
+
         if result:
             # Limpiar campos editados
             self.precio_editado_tipo = ""
             self.precio_editado_descripcion = ""
             self.precio_editado_precio = ""
-            
+
             # Cerrar diálogo
             self.show_editar_precio_dialog = False
             self.selected_precio = {}
-            
-            # Recargar lista
-            yield self.load_precios()
-            
+
+            # ✅ CORREGIDO
+            yield from self.load_precios()
+
             yield rx.toast.success("✅ Producto actualizado correctamente")
         else:
             yield rx.toast.error("❌ Error al actualizar el producto")
@@ -584,19 +616,19 @@ class LogisticaState(rx.State):
         if not self.selected_precio:
             yield rx.toast.error("❌ No hay producto seleccionado")
             return
-        
+
         precio_id = self.selected_precio.get("id")
-        
+
         result = FinanciamientoApi.delete_precio(precio_id)
-        
+
         if result:
             # Cerrar diálogo
             self.show_eliminar_precio_dialog = False
             self.selected_precio = {}
-            
-            # Recargar lista
-            yield self.load_precios()
-            
+
+            # ✅ CORREGIDO
+            yield from self.load_precios()
+
             yield rx.toast.success("✅ Producto eliminado correctamente")
         else:
             yield rx.toast.error("❌ Error al eliminar el producto")
@@ -744,3 +776,148 @@ class LogisticaState(rx.State):
     def admin_cargo(self) -> str:
         """Retorna el cargo del administrador"""
         return self.current_admin.get("cargo", "Jefe Área Logística")
+    
+    def reset_loading_states(self):
+        """Resetea todos los estados de carga al cargar la página"""
+        self.loading = False
+        self.loading_completadas = False
+        self.loading_precios = False
+
+    # ==================================================
+    # MÉTODOS DE PAGINACIÓN PARA PRECIOS
+    # ==================================================
+
+    def calculate_precios_pagination(self):
+        """Calcula la paginación para la tabla de precios"""
+        total_items = len(self.precios)
+
+        if total_items == 0:
+            self.total_pages_precios = 1
+            self.precios_paginated = []
+        else:
+            self.total_pages_precios = max(1, (total_items + self.items_per_page_precios - 1) // self.items_per_page_precios)
+
+        # Asegurar que la página actual esté dentro de los límites
+        if self.current_page_precios > self.total_pages_precios:
+            self.current_page_precios = max(1, self.total_pages_precios)
+
+        start_idx = (self.current_page_precios - 1) * self.items_per_page_precios
+        end_idx = min(start_idx + self.items_per_page_precios, total_items)
+
+        if total_items > 0:
+            self.precios_paginated = self.precios[start_idx:end_idx]
+        else:
+            self.precios_paginated = []
+
+        self.calculate_precios_page_numbers()
+
+    def calculate_precios_page_numbers(self):
+        """Calcula los números de página a mostrar en los botones"""
+        max_pages_to_show = 4
+        current = self.current_page_precios
+        total = self.total_pages_precios
+
+        if total <= max_pages_to_show:
+            self.page_numbers_precios = list(range(1, total + 1))
+            return
+
+        start = max(1, current - 1)
+        end = min(total, start + max_pages_to_show - 1)
+
+        if end - start + 1 < max_pages_to_show:
+            start = max(1, end - max_pages_to_show + 1)
+
+        self.page_numbers_precios = list(range(start, end + 1))
+
+    def go_to_page_precios(self, page_number: int):
+        """Navega a una página específica de precios"""
+        if 1 <= page_number <= self.total_pages_precios:
+            self.current_page_precios = page_number
+            self.calculate_precios_pagination()
+
+    def next_page_precios(self):
+        """Página siguiente de precios"""
+        if self.current_page_precios < self.total_pages_precios:
+            self.current_page_precios += 1
+            self.calculate_precios_pagination()
+
+    def previous_page_precios(self):
+        """Página anterior de precios"""
+        if self.current_page_precios > 1:
+            self.current_page_precios -= 1
+            self.calculate_precios_pagination()
+
+    def reset_precios_pagination(self):
+        """Resetea la paginación de precios a la primera página"""
+        self.current_page_precios = 1
+        if hasattr(self, 'precios') and self.precios:
+            self.calculate_precios_pagination()
+
+    # ==================================================
+    # MÉTODOS DE PAGINACIÓN PARA PENDIENTES
+    # ==================================================
+
+    def calculate_pendientes_pagination(self):
+        """Calcula la paginación para la tabla de solicitudes pendientes"""
+        total_items = len(self.solicitudes_pendientes)
+
+        if total_items == 0:
+            self.pendientes_total_pages = 1
+            self.pendientes_paginated = []
+        else:
+            self.pendientes_total_pages = max(1, (total_items + self.pendientes_items_per_page - 1) // self.pendientes_items_per_page)
+
+        # Asegurar que la página actual esté dentro de los límites
+        if self.pendientes_current_page > self.pendientes_total_pages:
+            self.pendientes_current_page = max(1, self.pendientes_total_pages)
+
+        start_idx = (self.pendientes_current_page - 1) * self.pendientes_items_per_page
+        end_idx = min(start_idx + self.pendientes_items_per_page, total_items)
+
+        if total_items > 0:
+            self.pendientes_paginated = self.solicitudes_pendientes[start_idx:end_idx]
+        else:
+            self.pendientes_paginated = []
+
+        self.calculate_pendientes_page_numbers()
+
+    def calculate_pendientes_page_numbers(self):
+        """Calcula los números de página a mostrar en los botones"""
+        max_pages_to_show = 4
+        current = self.pendientes_current_page
+        total = self.pendientes_total_pages
+
+        if total <= max_pages_to_show:
+            self.pendientes_page_numbers = list(range(1, total + 1))
+            return
+
+        start = max(1, current - 1)
+        end = min(total, start + max_pages_to_show - 1)
+
+        if end - start + 1 < max_pages_to_show:
+            start = max(1, end - max_pages_to_show + 1)
+
+        self.pendientes_page_numbers = list(range(start, end + 1))
+
+    def go_to_page_pendientes(self, page_number: int):
+        """Navega a una página específica de solicitudes pendientes"""
+        if 1 <= page_number <= self.pendientes_total_pages:
+            self.pendientes_current_page = page_number
+            self.calculate_pendientes_pagination()
+
+    def next_page_pendientes(self):
+        """Página siguiente de solicitudes pendientes"""
+        if self.pendientes_current_page < self.pendientes_total_pages:
+            self.pendientes_current_page += 1
+            self.calculate_pendientes_pagination()
+
+    def previous_page_pendientes(self):
+        """Página anterior de solicitudes pendientes"""
+        if self.pendientes_current_page > 1:
+            self.pendientes_current_page -= 1
+            self.calculate_pendientes_pagination()
+
+    def reset_pendientes_pagination(self):
+        """Resetea la paginación de solicitudes pendientes a la primera página"""
+        self.pendientes_current_page = 1
+        self.calculate_pendientes_pagination()

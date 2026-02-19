@@ -6,7 +6,7 @@ from TFuerte.routes import Route
 @rx.page(
     route=Route.SOLICITANTE_RM_FORM.value,
     title="Solicitud de Recursos - Solicitante",
-    on_load=SolicitanteRMState.load_mis_solicitudes_rm
+    on_load=[SolicitanteRMState.reset_loading_states, SolicitanteRMState.load_mis_solicitudes_rm]
 )
 def solicitante_rm_form() -> rx.Component:
     """Página para crear solicitudes de recursos"""
@@ -286,8 +286,197 @@ def solicitante_rm_form() -> rx.Component:
             reset_on_submit=True
         )
     
-    # Tabla de historial de Recursos RM
+    # Tabla de historial de Recursos RM (con paginación)
     def historial_solicitudes():
+        """Tabla de historial de solicitudes RM con paginación."""
+        
+        # Botón de página individual
+        def create_page_button_rm(page_num: int):
+            return rx.button(
+                rx.text(page_num, size="2", font_weight="500"),
+                on_click=lambda: SolicitanteRMState.go_to_page_rm(page_num),
+                variant="soft",
+                size="2",
+                style=rx.cond(
+                    SolicitanteRMState.rm_current_page == page_num,
+                    {
+                        "background": "#3b82f6",
+                        "color": "white",
+                        "border": "1px solid #3b82f6",
+                        "_hover": {"background": "#1d4ed8"},
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    },
+                    {
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "_hover": {
+                            "background": "#f8fafc",
+                            "border": "1px solid #cbd5e1"
+                        },
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                )
+            )
+        
+        # Controles de paginación
+        def render_pagination_rm():
+            return rx.hstack(
+                # Botón anterior
+                rx.button(
+                    rx.icon("chevron-left", size=16),
+                    on_click=SolicitanteRMState.previous_page_rm,
+                    variant="soft",
+                    size="2",
+                    is_disabled=SolicitanteRMState.rm_current_page == 1,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                # Contenedor de números
+                rx.box(
+                    rx.hstack(
+                        rx.cond(
+                            (SolicitanteRMState.rm_current_page > 3) & (SolicitanteRMState.rm_total_pages > 4),
+                            rx.hstack(
+                                create_page_button_rm(1),
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        rx.cond(
+                            SolicitanteRMState.rm_page_numbers.length() > 0,
+                            rx.hstack(
+                                rx.foreach(
+                                    SolicitanteRMState.rm_page_numbers,
+                                    create_page_button_rm
+                                ),
+                                spacing="1",
+                                wrap="nowrap",
+                                flex_shrink=0,
+                            ),
+                            rx.text(
+                                f"Pág. {SolicitanteRMState.rm_current_page}",
+                                size="2",
+                                color="#64748b",
+                                padding_x="2",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        rx.cond(
+                            (SolicitanteRMState.rm_current_page < SolicitanteRMState.rm_total_pages - 2) & (SolicitanteRMState.rm_total_pages > 4),
+                            rx.hstack(
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                create_page_button_rm(SolicitanteRMState.rm_total_pages),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        spacing="1",
+                        wrap="nowrap",
+                        align="center",
+                    ),
+                    overflow_x="auto",
+                    flex_grow=0,
+                    flex_shrink=1,
+                    max_width="100%",
+                ),
+                # Botón siguiente
+                rx.button(
+                    rx.hstack(
+                        rx.icon("chevron-right", size=16),
+                        width="100%",
+                        spacing="0",
+                        justify="end",
+                        align="end",
+                    ),
+                    on_click=SolicitanteRMState.next_page_rm,
+                    variant="soft",
+                    size="2",
+                    is_disabled=SolicitanteRMState.rm_current_page == SolicitanteRMState.rm_total_pages,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                spacing="2",
+                wrap="nowrap",
+                align="center",
+                justify="end",
+                width="100%",
+            )
+        
+        # Fila de solicitud RM
+        def solicitud_row_rm(solicitud):
+            return rx.table.row(
+                rx.table.cell(
+                    rx.text(solicitud["id"], color="#1F1F1F"),
+                    style={"padding": "8px 4px"}
+                ),
+                rx.table.cell(
+                    rx.text(
+                        rx.cond(solicitud["centro_costo"] != "", solicitud["centro_costo"], "-"),
+                        color="#1F1F1F"
+                    ),
+                    style={"padding": "8px 4px"}
+                ),
+                rx.table.cell(
+                    rx.text(
+                        rx.cond(solicitud["fecha"] != "", solicitud["fecha"], "-"),
+                        color="#1F1F1F"
+                    ),
+                    style={"padding": "8px 4px"}
+                ),
+                rx.table.cell(
+                    rx.text(
+                        rx.cond(solicitud["orden_trabajo"] != "", solicitud["orden_trabajo"], "-"),
+                        color="#1F1F1F"
+                    ),
+                    style={"padding": "8px 4px"}
+                ),
+                rx.table.cell(
+                    rx.text(
+                        rx.cond(solicitud["num_recursos"] != 0, f"{solicitud['num_recursos']} recursos", "-"),
+                        color="#1F1F1F"
+                    ),
+                    style={"padding": "8px 4px"}
+                ),
+                rx.table.cell(
+                    estado_badge(solicitud["estado"]),
+                    style={"padding": "8px 4px"}
+                ),
+                rx.table.cell(
+                    rx.text(
+                        rx.cond(solicitud["fecha_creacion_display"] != "", solicitud["fecha_creacion_display"], "-"),
+                        color="#1F1F1F"
+                    ),
+                    style={"padding": "8px 4px"}
+                ),
+            )
+        
+        header_style = {
+            "background": "#3b82f6",
+            "color": "white",
+            "font_weight": "600",
+            "padding": "12px 4px",
+            "text_align": "left",
+            "white_space": "nowrap"
+        }
+        
         return rx.vstack(
             rx.hstack(
                 rx.button(
@@ -319,95 +508,97 @@ def solicitante_rm_form() -> rx.Component:
                         ),
                         padding="3rem",
                     ),
-                    rx.box(
-                        rx.scroll_area(
-                            rx.table.root(
-                                rx.table.header(
-                                    rx.table.row(
-                                        rx.table.column_header_cell("ID", color="#1F1F1F"),
-                                        rx.table.column_header_cell("Centro Costo", color="#1F1F1F"),
-                                        rx.table.column_header_cell("Fecha", color="#1F1F1F"),
-                                        rx.table.column_header_cell("Orden Trabajo", color="#1F1F1F"),
-                                        rx.table.column_header_cell("Recursos", color="#1F1F1F"),
-                                        rx.table.column_header_cell("Estado", color="#1F1F1F"),
-                                        rx.table.column_header_cell("Fecha Creación", color="#1F1F1F"),
-                                    )
-                                ),
-                                rx.table.body(
-                                    rx.foreach(
-                                        SolicitanteRMState.mis_solicitudes_rm,
-                                        lambda solicitud: rx.table.row(
-                                            rx.table.cell(
-                                                rx.text(solicitud["id"]),
-                                                color="#1F1F1F"
-                                            ),
-                                            rx.table.cell(
-                                                rx.text(
-                                                    rx.cond(
-                                                        solicitud["centro_costo"] != "",
-                                                        solicitud["centro_costo"],
-                                                        "-"
-                                                    )
-                                                ), 
-                                                color="#1F1F1F"
-                                            ),
-                                            rx.table.cell(
-                                                rx.text(
-                                                    rx.cond(
-                                                        solicitud["fecha"] != "",
-                                                        solicitud["fecha"],
-                                                        "-"
-                                                    )
-                                                ), 
-                                                color="#1F1F1F"
-                                            ),
-                                            rx.table.cell(
-                                                rx.text(
-                                                    rx.cond(
-                                                        solicitud["orden_trabajo"] != "",
-                                                        solicitud["orden_trabajo"],
-                                                        "-"
-                                                    )
-                                                ), 
-                                                color="#1F1F1F"
-                                            ),
-                                            rx.table.cell(
-                                                rx.text(
-                                                    rx.cond(
-                                                        solicitud["num_recursos"] != 0,
-                                                        rx.text(solicitud["num_recursos"], " recursos"),
-                                                        "-"
-                                                    )
-                                                ),
-                                                color="#1F1F1F"
-                                            ),
-                                            rx.table.cell(estado_badge(solicitud["estado"]), color="#1F1F1F"),
-                                            rx.table.cell(
-                                                rx.text(
-                                                    rx.cond(
-                                                        solicitud["fecha_creacion_display"] != "",
-                                                        solicitud["fecha_creacion_display"],
-                                                        "-"
-                                                    )
-                                                ), 
-                                                color="#1F1F1F"
-                                            ),
+                    rx.vstack(
+                        # Tabla con scroll horizontal
+                        rx.box(
+                            rx.scroll_area(
+                                rx.table.root(
+                                    rx.table.header(
+                                        rx.table.row(
+                                            rx.table.column_header_cell("ID", style=header_style),
+                                            rx.table.column_header_cell("Centro Costo", style=header_style),
+                                            rx.table.column_header_cell("Fecha", style=header_style),
+                                            rx.table.column_header_cell("Orden Trabajo", style=header_style),
+                                            rx.table.column_header_cell("Recursos", style=header_style),
+                                            rx.table.column_header_cell("Estado", style=header_style),
+                                            rx.table.column_header_cell("Fecha Creación", style=header_style),
                                         )
-                                    )
+                                    ),
+                                    rx.table.body(
+                                        rx.foreach(
+                                            SolicitanteRMState.rm_solicitudes_paginated,
+                                            solicitud_row_rm
+                                        )
+                                    ),
+                                    variant="surface",
+                                    size="3",
+                                    style={
+                                        "width": "100%",
+                                        "min_width": "800px",
+                                        "table_layout": "auto"
+                                    }
                                 ),
-                                variant="surface",
-                                size="3"
+                                type="always",
+                                scrollbars="horizontal",
+                                style={
+                                    "width": "100%",
+                                    "max_height": "600px",
+                                    "height": "auto",
+                                    "overflow_y": "auto",
+                                    "border": "1px solid #e2e8f0",
+                                    "border_radius": "8px"
+                                }
                             ),
-                            type="always",
-                            scrollbars="horizontal",
-                            style={
-                                "width": "100%",
-                                "border": "1px solid #e2e8f0",
-                                "border_radius": "8px"
-                            }
+                            width="100%"
                         ),
-                        width="100%",
-                        overflow_x="auto"
+                        # Controles de paginación
+                        rx.cond(
+                            SolicitanteRMState.total_solicitudes > SolicitanteRMState.rm_items_per_page,
+                            rx.box(
+                                rx.hstack(
+                                    rx.text(
+                                        rx.cond(
+                                            SolicitanteRMState.total_solicitudes > 0,
+                                            rx.cond(
+                                                SolicitanteRMState.rm_current_page == 1,
+                                                "Mostrando 1 a " + rx.cond(
+                                                    SolicitanteRMState.rm_items_per_page > SolicitanteRMState.total_solicitudes,
+                                                    SolicitanteRMState.total_solicitudes.to(str),
+                                                    SolicitanteRMState.rm_items_per_page.to(str)
+                                                ) + " de " + SolicitanteRMState.total_solicitudes.to(str) + " resultados",
+                                                "Mostrando " + ((SolicitanteRMState.rm_current_page - 1) * SolicitanteRMState.rm_items_per_page + 1).to(str) + " a " + rx.cond(
+                                                    SolicitanteRMState.rm_current_page * SolicitanteRMState.rm_items_per_page > SolicitanteRMState.total_solicitudes,
+                                                    SolicitanteRMState.total_solicitudes.to(str),
+                                                    (SolicitanteRMState.rm_current_page * SolicitanteRMState.rm_items_per_page).to(str)
+                                                ) + " de " + SolicitanteRMState.total_solicitudes.to(str) + " resultados"
+                                            ),
+                                            "Mostrando 0 a 0 de 0 resultados"
+                                        ),
+                                        size="2",
+                                        color="#64748b",
+                                        font_weight="500",
+                                        flex_shrink=0,
+                                        margin_right="8rem",
+                                    ),
+                                    rx.spacer(),
+                                    rx.box(
+                                        render_pagination_rm(),
+                                        flex_shrink=0,
+                                        margin_left="0.5rem",
+                                    ),
+                                    width="100%",
+                                    align="center",
+                                    spacing="6",
+                                    wrap="wrap",
+                                ),
+                                padding="1.5rem 1rem",
+                                border_top="1px solid #e2e8f0",
+                                background="#f8fafc",
+                            ),
+                            rx.box(height="1rem")
+                        ),
+                        spacing="0",
+                        width="100%"
                     )
                 )
             ),
@@ -415,7 +606,7 @@ def solicitante_rm_form() -> rx.Component:
             width="100%",
         )
     
-    # FUNCIONES PARA FINANCIAMIENTO (corregidas también)
+    # FUNCIONES PARA FINANCIAMIENTO
     def estado_badge_fin(estado):
         """Muestra un badge para el estado de la solicitud de financiamiento"""
         return rx.match(
@@ -429,7 +620,7 @@ def solicitante_rm_form() -> rx.Component:
     def formulario_financiamiento():
         """Formulario para solicitud de financiamiento con múltiples recursos"""
         return rx.vstack(
-            rx.heading("💰 Nueva Solicitud de Financiamiento", size="4", color="#1F1F1F"),
+            rx.heading("    Complete el formulario", size="4", color="#1F1F1F"),
             
             # Datos de cabecera
             rx.box(
@@ -621,11 +812,12 @@ def solicitante_rm_form() -> rx.Component:
                                                     ), 
                                                     color="#1F1F1F"
                                                 ),
+                                                # CELDA DE CANTIDAD CORREGIDA
                                                 rx.table.cell(
                                                     rx.text(
                                                         rx.cond(
                                                             recurso["cantidad"] != "",
-                                                            str(recurso["cantidad"]),
+                                                            recurso["cantidad"].to(str),  # <--- CORRECCIÓN AQUÍ
                                                             "-"
                                                         )
                                                     ), 
@@ -704,8 +896,183 @@ def solicitante_rm_form() -> rx.Component:
             width="100%",
         )
 
+    # Tabla de historial de financiamiento (con paginación)
     def historial_financiamiento():
-        """Tabla de historial de financiamiento"""
+        """Tabla de historial de financiamiento con paginación."""
+        
+        # Botón de página individual
+        def create_page_button_fin(page_num: int):
+            return rx.button(
+                rx.text(page_num, size="2", font_weight="500"),
+                on_click=lambda: SolicitanteRMState.go_to_page_fin(page_num),
+                variant="soft",
+                size="2",
+                style=rx.cond(
+                    SolicitanteRMState.fin_current_page == page_num,
+                    {
+                        "background": "#10b981",
+                        "color": "white",
+                        "border": "1px solid #10b981",
+                        "_hover": {"background": "#059669"},
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    },
+                    {
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "_hover": {
+                            "background": "#f8fafc",
+                            "border": "1px solid #cbd5e1"
+                        },
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                )
+            )
+        
+        # Controles de paginación
+        def render_pagination_fin():
+            return rx.hstack(
+                # Botón anterior
+                rx.button(
+                    rx.icon("chevron-left", size=16),
+                    on_click=SolicitanteRMState.previous_page_fin,
+                    variant="soft",
+                    size="2",
+                    is_disabled=SolicitanteRMState.fin_current_page == 1,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                # Contenedor de números
+                rx.box(
+                    rx.hstack(
+                        rx.cond(
+                            (SolicitanteRMState.fin_current_page > 3) & (SolicitanteRMState.fin_total_pages > 4),
+                            rx.hstack(
+                                create_page_button_fin(1),
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        rx.cond(
+                            SolicitanteRMState.fin_page_numbers.length() > 0,
+                            rx.hstack(
+                                rx.foreach(
+                                    SolicitanteRMState.fin_page_numbers,
+                                    create_page_button_fin
+                                ),
+                                spacing="1",
+                                wrap="nowrap",
+                                flex_shrink=0,
+                            ),
+                            rx.text(
+                                f"Pág. {SolicitanteRMState.fin_current_page}",
+                                size="2",
+                                color="#64748b",
+                                padding_x="2",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        rx.cond(
+                            (SolicitanteRMState.fin_current_page < SolicitanteRMState.fin_total_pages - 2) & (SolicitanteRMState.fin_total_pages > 4),
+                            rx.hstack(
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                create_page_button_fin(SolicitanteRMState.fin_total_pages),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        spacing="1",
+                        wrap="nowrap",
+                        align="center",
+                    ),
+                    overflow_x="auto",
+                    flex_grow=0,
+                    flex_shrink=1,
+                    max_width="100%",
+                ),
+                # Botón siguiente
+                rx.button(
+                    rx.hstack(
+                        rx.icon("chevron-right", size=16),
+                        width="100%",
+                        spacing="0",
+                        justify="end",
+                        align="end",
+                    ),
+                    on_click=SolicitanteRMState.next_page_fin,
+                    variant="soft",
+                    size="2",
+                    is_disabled=SolicitanteRMState.fin_current_page == SolicitanteRMState.fin_total_pages,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                spacing="2",
+                wrap="nowrap",
+                align="center",
+                justify="end",
+                width="100%",
+            )
+        
+        # Fila de solicitud de financiamiento
+        def solicitud_row_fin(solicitud):
+            return rx.table.row(
+                rx.table.cell(
+                    rx.text(
+                        rx.cond(solicitud["numero_solicitud"] != "", solicitud["numero_solicitud"], "-"),
+                        color="#1F1F1F"
+                    ),
+                    style={"padding": "8px 4px"}
+                ),
+                rx.table.cell(
+                    rx.text(
+                        rx.cond(solicitud["Area solicitante"] != "", solicitud["Area solicitante"], "-"),
+                        color="#1F1F1F"
+                    ),
+                    style={"padding": "8px 4px"}
+                ),
+                rx.table.cell(
+                    rx.text(
+                        rx.cond(solicitud["Fecha"] != "", solicitud["Fecha"], "-"),
+                        color="#1F1F1F"
+                    ),
+                    style={"padding": "8px 4px"}
+                ),
+                rx.table.cell(
+                    rx.text(f"${solicitud['Total']:.2f}", color="#1F1F1F"),
+                    style={"padding": "8px 4px"}
+                ),
+                rx.table.cell(
+                    estado_badge_fin(solicitud["estado"]),
+                    style={"padding": "8px 4px"}
+                ),
+            )
+        
+        header_style = {
+            "background": "#10b981",
+            "color": "white",
+            "font_weight": "600",
+            "padding": "12px 4px",
+            "text_align": "left",
+            "white_space": "nowrap"
+        }
+        
         return rx.vstack(
             rx.hstack(
                 rx.button(
@@ -737,73 +1104,95 @@ def solicitante_rm_form() -> rx.Component:
                         ),
                         padding="3rem",
                     ),
-                    rx.box(
-                        rx.scroll_area(
-                            rx.table.root(
-                                rx.table.header(
-                                    rx.table.row(
-                                        rx.table.column_header_cell("N° Solicitud", color="#1F1F1F"),
-                                        rx.table.column_header_cell("Área", color="#1F1F1F"),
-                                        rx.table.column_header_cell("Fecha", color="#1F1F1F"),
-                                        rx.table.column_header_cell("Total", color="#1F1F1F"),
-                                        rx.table.column_header_cell("Estado", color="#1F1F1F"),
-                                    )
-                                ),
-                                rx.table.body(
-                                    rx.foreach(
-                                        SolicitanteRMState.mis_solicitudes_fin,
-                                        lambda solicitud: rx.table.row(
-                                            rx.table.cell(
-                                                rx.text(
-                                                    rx.cond(
-                                                        solicitud["numero_solicitud"] != "",
-                                                        solicitud["numero_solicitud"],
-                                                        "-"
-                                                    )
-                                                ),
-                                                color="#1F1F1F"
-                                            ),
-                                            rx.table.cell(
-                                                rx.text(
-                                                    rx.cond(
-                                                        solicitud["Area solicitante"] != "",
-                                                        solicitud["Area solicitante"],
-                                                        "-"
-                                                    )
-                                                ), 
-                                                color="#1F1F1F"
-                                            ),
-                                            rx.table.cell(
-                                                rx.text(
-                                                    rx.cond(
-                                                        solicitud["Fecha"] != "",
-                                                        solicitud["Fecha"],
-                                                        "-"
-                                                    )
-                                                ), 
-                                                color="#1F1F1F"
-                                            ),
-                                            rx.table.cell(
-                                                rx.text(f"${solicitud['Total']:.2f}"), 
-                                                color="#1F1F1F"
-                                            ),
-                                            rx.table.cell(estado_badge_fin(solicitud["estado"]), color="#1F1F1F"),
+                    rx.vstack(
+                        # Tabla con scroll horizontal
+                        rx.box(
+                            rx.scroll_area(
+                                rx.table.root(
+                                    rx.table.header(
+                                        rx.table.row(
+                                            rx.table.column_header_cell("N° Solicitud", style=header_style),
+                                            rx.table.column_header_cell("Área", style=header_style),
+                                            rx.table.column_header_cell("Fecha", style=header_style),
+                                            rx.table.column_header_cell("Total", style=header_style),
+                                            rx.table.column_header_cell("Estado", style=header_style),
                                         )
-                                    )
+                                    ),
+                                    rx.table.body(
+                                        rx.foreach(
+                                            SolicitanteRMState.fin_solicitudes_paginated,
+                                            solicitud_row_fin
+                                        )
+                                    ),
+                                    variant="surface",
+                                    size="3",
+                                    style={
+                                        "width": "100%",
+                                        "min_width": "600px",
+                                        "table_layout": "auto"
+                                    }
                                 ),
-                                variant="surface",
-                                size="3"
+                                type="always",
+                                scrollbars="horizontal",
+                                style={
+                                    "width": "100%",
+                                    "max_height": "600px",
+                                    "height": "auto",
+                                    "overflow_y": "auto",
+                                    "border": "1px solid #e2e8f0",
+                                    "border_radius": "8px"
+                                }
                             ),
-                            type="always",
-                            scrollbars="horizontal",
-                            style={
-                                "width": "100%",
-                                "border": "1px solid #e2e8f0",
-                                "border_radius": "8px"
-                            }
+                            width="100%"
                         ),
-                        width="100%",
-                        overflow_x="auto"
+                        # Controles de paginación
+                        rx.cond(
+                            SolicitanteRMState.total_solicitudes_fin > SolicitanteRMState.fin_items_per_page,
+                            rx.box(
+                                rx.hstack(
+                                    rx.text(
+                                        rx.cond(
+                                            SolicitanteRMState.total_solicitudes_fin > 0,
+                                            rx.cond(
+                                                SolicitanteRMState.fin_current_page == 1,
+                                                "Mostrando 1 a " + rx.cond(
+                                                    SolicitanteRMState.fin_items_per_page > SolicitanteRMState.total_solicitudes_fin,
+                                                    SolicitanteRMState.total_solicitudes_fin.to(str),
+                                                    SolicitanteRMState.fin_items_per_page.to(str)
+                                                ) + " de " + SolicitanteRMState.total_solicitudes_fin.to(str) + " resultados",
+                                                "Mostrando " + ((SolicitanteRMState.fin_current_page - 1) * SolicitanteRMState.fin_items_per_page + 1).to(str) + " a " + rx.cond(
+                                                    SolicitanteRMState.fin_current_page * SolicitanteRMState.fin_items_per_page > SolicitanteRMState.total_solicitudes_fin,
+                                                    SolicitanteRMState.total_solicitudes_fin.to(str),
+                                                    (SolicitanteRMState.fin_current_page * SolicitanteRMState.fin_items_per_page).to(str)
+                                                ) + " de " + SolicitanteRMState.total_solicitudes_fin.to(str) + " resultados"
+                                            ),
+                                            "Mostrando 0 a 0 de 0 resultados"
+                                        ),
+                                        size="2",
+                                        color="#64748b",
+                                        font_weight="500",
+                                        flex_shrink=0,
+                                        margin_right="8rem",
+                                    ),
+                                    rx.spacer(),
+                                    rx.box(
+                                        render_pagination_fin(),
+                                        flex_shrink=0,
+                                        margin_left="0.5rem",
+                                    ),
+                                    width="100%",
+                                    align="center",
+                                    spacing="6",
+                                    wrap="wrap",
+                                ),
+                                padding="1.5rem 1rem",
+                                border_top="1px solid #e2e8f0",
+                                background="#f8fafc",
+                            ),
+                            rx.box(height="1rem")
+                        ),
+                        spacing="0",
+                        width="100%"
                     )
                 )
             ),
@@ -811,8 +1200,286 @@ def solicitante_rm_form() -> rx.Component:
             width="100%",
         )
 
+    # Pestaña de financiamiento completa
     def financiamiento_tab():
         """Pestaña completa de financiamiento con subtabs"""
+        
+        # --- Helper interno para la tabla de precios con paginación (estilo logística) ---
+        def precios_table() -> rx.Component:
+            """Tabla de precios con paginación estilo logística."""
+            
+            # Botón de página individual
+            def create_page_button_precios(page_num: int):
+                return rx.button(
+                    rx.text(page_num, size="2", font_weight="500"),
+                    on_click=lambda: SolicitanteRMState.go_to_page_precios(page_num),
+                    variant="soft",
+                    size="2",
+                    style=rx.cond(
+                        SolicitanteRMState.current_page_precios == page_num,
+                        {
+                            "background": "#10b981",
+                            "color": "white",
+                            "border": "1px solid #10b981",
+                            "_hover": {"background": "#059669"},
+                            "flex_shrink": 0,
+                            "min_width": "32px",
+                            "padding": "0 8px",
+                        },
+                        {
+                            "background": "white",
+                            "border": "1px solid #e2e8f0",
+                            "color": "#1e293b",
+                            "_hover": {
+                                "background": "#f8fafc",
+                                "border": "1px solid #cbd5e1"
+                            },
+                            "flex_shrink": 0,
+                            "min_width": "32px",
+                            "padding": "0 8px",
+                        }
+                    )
+                )
+            
+            # Controles de paginación
+            def render_pagination_precios():
+                return rx.hstack(
+                    # Botón anterior
+                    rx.button(
+                        rx.icon("chevron-left", size=16),
+                        on_click=SolicitanteRMState.previous_page_precios,
+                        variant="soft",
+                        size="2",
+                        is_disabled=SolicitanteRMState.current_page_precios == 1,
+                        style={
+                            "background": "white",
+                            "border": "1px solid #e2e8f0",
+                            "color": "#1e293b",
+                            "flex_shrink": 0,
+                            "min_width": "32px",
+                            "padding": "0 8px",
+                        }
+                    ),
+                    # Contenedor de números
+                    rx.box(
+                        rx.hstack(
+                            rx.cond(
+                                (SolicitanteRMState.current_page_precios > 3) & (SolicitanteRMState.total_pages_precios > 4),
+                                rx.hstack(
+                                    create_page_button_precios(1),
+                                    rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                    spacing="1",
+                                    flex_shrink=0,
+                                ),
+                            ),
+                            rx.cond(
+                                SolicitanteRMState.page_numbers_precios.length() > 0,
+                                rx.hstack(
+                                    rx.foreach(
+                                        SolicitanteRMState.page_numbers_precios,
+                                        create_page_button_precios
+                                    ),
+                                    spacing="1",
+                                    wrap="nowrap",
+                                    flex_shrink=0,
+                                ),
+                                rx.text(
+                                    f"Pág. {SolicitanteRMState.current_page_precios}",
+                                    size="2",
+                                    color="#64748b",
+                                    padding_x="2",
+                                    flex_shrink=0,
+                                ),
+                            ),
+                            rx.cond(
+                                (SolicitanteRMState.current_page_precios < SolicitanteRMState.total_pages_precios - 2) & (SolicitanteRMState.total_pages_precios > 4),
+                                rx.hstack(
+                                    rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                    create_page_button_precios(SolicitanteRMState.total_pages_precios),
+                                    spacing="1",
+                                    flex_shrink=0,
+                                ),
+                            ),
+                            spacing="1",
+                            wrap="nowrap",
+                            align="center",
+                        ),
+                        overflow_x="auto",
+                        flex_grow=0,
+                        flex_shrink=1,
+                        max_width="100%",
+                    ),
+                    # Botón siguiente
+                    rx.button(
+                        rx.hstack(
+                            rx.icon("chevron-right", size=16),
+                            width="100%",
+                            spacing="0",
+                            justify="end",
+                            align="end",
+                        ),
+                        on_click=SolicitanteRMState.next_page_precios,
+                        variant="soft",
+                        size="2",
+                        is_disabled=SolicitanteRMState.current_page_precios == SolicitanteRMState.total_pages_precios,
+                        style={
+                            "background": "white",
+                            "border": "1px solid #e2e8f0",
+                            "color": "#1e293b",
+                            "flex_shrink": 0,
+                            "min_width": "32px",
+                            "padding": "0 8px",
+                        }
+                    ),
+                    spacing="2",
+                    wrap="nowrap",
+                    align="center",
+                    justify="end",
+                    width="100%",
+                )
+            
+            # Fila de precio
+            def precio_row(precio):
+                return rx.table.row(
+                    rx.table.cell(
+                        rx.text(precio.get("Tipo", "-"), color="#1F1F1F"),
+                        style={"padding": "8px 4px"}
+                    ),
+                    rx.table.cell(
+                        rx.text(
+                            precio.get("Descripcion", "-"),
+                            color="#1F1F1F",
+                            style={
+                                "max_width": "200px",
+                                "overflow": "hidden",
+                                "text_overflow": "ellipsis",
+                                "white_space": "nowrap"
+                            }
+                        ),
+                        style={"padding": "8px 4px", "min_width": "200px"}
+                    ),
+                    rx.table.cell(
+                        rx.text(f"${precio.get('Precio_str', '0.00')}", color="#1F1F1F"),
+                        style={"padding": "8px 4px", "min_width": "100px"}
+                    ),
+                    rx.table.cell(
+                        rx.text(f"${precio.get('Precio_final_str', '0.00')}", color="#1F1F1F", font_weight="600"),
+                        style={"padding": "8px 4px", "min_width": "100px"}
+                    ),
+                )
+            
+            header_style = {
+                "background": "#10b981",
+                "color": "white",
+                "font_weight": "600",
+                "padding": "12px 4px",
+                "text_align": "left",
+                "white_space": "nowrap"
+            }
+            
+            return rx.cond(
+                SolicitanteRMState.precios_loading,
+                rx.center(rx.spinner(size="3"), padding="3rem"),
+                rx.cond(
+                    SolicitanteRMState.precios_disponibles.length() == 0,
+                    rx.center(
+                        rx.vstack(
+                            rx.icon("package", size=32, color="#cbd5e1"),
+                            rx.text("No hay productos disponibles", size="3", color="#64748b"),
+                            spacing="2",
+                        ),
+                        padding="3rem",
+                    ),
+                    rx.vstack(
+                        # Tabla con scroll horizontal
+                        rx.box(
+                            rx.scroll_area(
+                                rx.table.root(
+                                    rx.table.header(
+                                        rx.table.row(
+                                            rx.table.column_header_cell("Tipo", style=header_style),
+                                            rx.table.column_header_cell("Descripción", style=header_style),
+                                            rx.table.column_header_cell("Precio Base", style=header_style),
+                                            rx.table.column_header_cell("Precio Final", style=header_style),
+                                        )
+                                    ),
+                                    rx.table.body(
+                                        rx.foreach(
+                                            SolicitanteRMState.precios_paginated,
+                                            precio_row
+                                        )
+                                    ),
+                                    style={
+                                        "width": "100%",
+                                        "min_width": "600px",
+                                        "table_layout": "auto"
+                                    }
+                                ),
+                                type="always",
+                                scrollbars="horizontal",
+                                style={
+                                    "width": "100%",
+                                    "height": "400px",
+                                    "border": "1px solid #e2e8f0",
+                                    "border_radius": "8px"
+                                }
+                            ),
+                            width="100%",
+                            overflow_x="auto"
+                        ),
+                        # Paginación
+                        rx.cond(
+                            SolicitanteRMState.precios_disponibles.length() > SolicitanteRMState.items_per_page_precios,
+                            rx.box(
+                                rx.hstack(
+                                    rx.text(
+                                        rx.cond(
+                                            SolicitanteRMState.precios_disponibles.length() > 0,
+                                            rx.cond(
+                                                SolicitanteRMState.current_page_precios == 1,
+                                                "Mostrando 1 a " + rx.cond(
+                                                    SolicitanteRMState.items_per_page_precios > SolicitanteRMState.precios_disponibles.length(),
+                                                    SolicitanteRMState.precios_disponibles.length().to(str),
+                                                    SolicitanteRMState.items_per_page_precios.to(str)
+                                                ) + " de " + SolicitanteRMState.precios_disponibles.length().to(str) + " resultados",
+                                                "Mostrando " + ((SolicitanteRMState.current_page_precios - 1) * SolicitanteRMState.items_per_page_precios + 1).to(str) + " a " + rx.cond(
+                                                    SolicitanteRMState.current_page_precios * SolicitanteRMState.items_per_page_precios > SolicitanteRMState.precios_disponibles.length(),
+                                                    SolicitanteRMState.precios_disponibles.length().to(str),
+                                                    (SolicitanteRMState.current_page_precios * SolicitanteRMState.items_per_page_precios).to(str)
+                                                ) + " de " + SolicitanteRMState.precios_disponibles.length().to(str) + " resultados"
+                                            ),
+                                            "Mostrando 0 a 0 de 0 resultados"
+                                        ),
+                                        size="2",
+                                        color="#64748b",
+                                        font_weight="500",
+                                        flex_shrink=0,
+                                        margin_right="8rem",
+                                    ),
+                                    rx.spacer(),
+                                    rx.box(
+                                        render_pagination_precios(),
+                                        flex_shrink=0,
+                                        margin_left="0.5rem",
+                                    ),
+                                    width="100%",
+                                    align="center",
+                                    spacing="6",
+                                    wrap="wrap",
+                                ),
+                                padding="1.5rem 1rem",
+                                border_top="1px solid #e2e8f0",
+                                background="#f8fafc",
+                            ),
+                            rx.box(height="1rem")
+                        ),
+                        spacing="0",
+                        width="100%",
+                    )
+                )
+            )
+        
+        # --- Estructura de la pestaña con subtabs ---
         return rx.vstack(
             rx.tabs.root(
                 rx.tabs.list(
@@ -891,82 +1558,8 @@ def solicitante_rm_form() -> rx.Component:
                                     width="100%"
                                 ),
                                 
-                                rx.cond(
-                                    SolicitanteRMState.precios_loading,
-                                    rx.center(rx.spinner(size="3"), padding="3rem"),
-                                    rx.cond(
-                                        SolicitanteRMState.precios_disponibles.length() == 0,
-                                        rx.center(
-                                            rx.vstack(
-                                                rx.icon("package", size=32, color="#cbd5e1"),
-                                                rx.text("No hay productos disponibles", size="3", color="#64748b"),
-                                                spacing="2",
-                                            ),
-                                            padding="3rem",
-                                        ),
-                                        rx.box(
-                                            rx.scroll_area(
-                                                rx.table.root(
-                                                    rx.table.header(
-                                                        rx.table.row(
-                                                            rx.table.column_header_cell("Tipo", color="#1F1F1F"),
-                                                            rx.table.column_header_cell("Descripción", color="#1F1F1F"),
-                                                            rx.table.column_header_cell("Precio Base", color="#1F1F1F"),
-                                                            rx.table.column_header_cell("Precio Final", color="#1F1F1F"),
-                                                        )
-                                                    ),
-                                                    rx.table.body(
-                                                        rx.foreach(
-                                                            SolicitanteRMState.precios_disponibles,
-                                                            lambda precio: rx.table.row(
-                                                                rx.table.cell(
-                                                                    rx.text(
-                                                                        rx.cond(
-                                                                            precio["Tipo"] != "",
-                                                                            precio["Tipo"],
-                                                                            "-"
-                                                                        )
-                                                                    ),
-                                                                    color="#1F1F1F"
-                                                                ),
-                                                                rx.table.cell(
-                                                                    rx.text(
-                                                                        rx.cond(
-                                                                            precio["Descripcion"] != "",
-                                                                            precio["Descripcion"],
-                                                                            "-"
-                                                                        )
-                                                                    ), 
-                                                                    color="#1F1F1F"
-                                                                ),
-                                                                rx.table.cell(
-                                                                    rx.text(f"${precio['Precio_str']}"), 
-                                                                    color="#1F1F1F"
-                                                                ),
-                                                                rx.table.cell(
-                                                                    rx.text(f"${precio['Precio_final_str']}"), 
-                                                                    color="#1F1F1F",
-                                                                    font_weight="600"
-                                                                ),
-                                                            )
-                                                        )
-                                                    ),
-                                                    variant="surface",
-                                                    size="3"
-                                                ),
-                                                type="always",
-                                                scrollbars="horizontal",
-                                                style={
-                                                    "width": "100%",
-                                                    "border": "1px solid #e2e8f0",
-                                                    "border_radius": "8px"
-                                                }
-                                            ),
-                                            width="100%",
-                                            overflow_x="auto"
-                                        )
-                                    )
-                                ),
+                                precios_table(),
+                                
                                 spacing="3",
                             ),
                             width="100%"

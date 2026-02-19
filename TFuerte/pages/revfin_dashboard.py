@@ -1,4 +1,3 @@
-# TFuerte/pages/revfin_dashboard.py
 import reflex as rx
 from TFuerte.state.financiamiento_state import FinanciamientoState
 from TFuerte.components.navbar import navbar
@@ -7,7 +6,7 @@ from TFuerte.routes import Route
 @rx.page(
     route=Route.REVFIN_DASHBOARD.value,
     title="Dashboard - Revisor Financiero",
-    on_load=FinanciamientoState.load_data_revfin
+    on_load=[FinanciamientoState.reset_loading_revfin, FinanciamientoState.load_data_revfin]
 )
 def revfin_dashboard() -> rx.Component:
     """Dashboard para Revisor Financiero"""
@@ -24,7 +23,132 @@ def revfin_dashboard() -> rx.Component:
         )
     
     def solicitudes_table() -> rx.Component:
-        """Tabla de solicitudes de financiamiento pendientes"""
+        """Tabla de solicitudes de financiamiento pendientes con paginación."""
+        
+        def create_page_button(page_num: int):
+            return rx.button(
+                rx.text(page_num, size="2", font_weight="500"),
+                on_click=lambda: FinanciamientoState.go_to_page_revfin(page_num),
+                variant="soft",
+                size="2",
+                style=rx.cond(
+                    FinanciamientoState.revfin_current_page == page_num,
+                    {
+                        "background": "#0d9488",
+                        "color": "white",
+                        "border": "1px solid #0d9488",
+                        "_hover": {"background": "#0f766e"},
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    },
+                    {
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "_hover": {
+                            "background": "#f8fafc",
+                            "border": "1px solid #cbd5e1"
+                        },
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                )
+            )
+        
+        def render_pagination():
+            return rx.hstack(
+                rx.button(
+                    rx.icon("chevron-left", size=16),
+                    on_click=FinanciamientoState.previous_page_revfin,
+                    variant="soft",
+                    size="2",
+                    is_disabled=FinanciamientoState.revfin_current_page == 1,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                rx.box(
+                    rx.hstack(
+                        rx.cond(
+                            (FinanciamientoState.revfin_current_page > 3) & (FinanciamientoState.revfin_total_pages > 4),
+                            rx.hstack(
+                                create_page_button(1),
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        rx.cond(
+                            FinanciamientoState.revfin_page_numbers.length() > 0,
+                            rx.hstack(
+                                rx.foreach(
+                                    FinanciamientoState.revfin_page_numbers,
+                                    create_page_button
+                                ),
+                                spacing="1",
+                                wrap="nowrap",
+                                flex_shrink=0,
+                            ),
+                            rx.text(
+                                f"Pág. {FinanciamientoState.revfin_current_page}",
+                                size="2",
+                                color="#64748b",
+                                padding_x="2",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        rx.cond(
+                            (FinanciamientoState.revfin_current_page < FinanciamientoState.revfin_total_pages - 2) & (FinanciamientoState.revfin_total_pages > 4),
+                            rx.hstack(
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                create_page_button(FinanciamientoState.revfin_total_pages),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        spacing="1",
+                        wrap="nowrap",
+                        align="center",
+                    ),
+                    overflow_x="auto",
+                    flex_grow=0,
+                    flex_shrink=1,
+                    max_width="100%",
+                ),
+                rx.button(
+                    rx.hstack(
+                        rx.icon("chevron-right", size=16),
+                        width="100%",
+                        spacing="0",
+                        justify="end",
+                        align="end",
+                    ),
+                    on_click=FinanciamientoState.next_page_revfin,
+                    variant="soft",
+                    size="2",
+                    is_disabled=FinanciamientoState.revfin_current_page == FinanciamientoState.revfin_total_pages,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                spacing="2",
+                wrap="nowrap",
+                align="center",
+                justify="end",
+                width="100%",
+            )
         
         def solicitud_row(solicitud):
             return rx.table.row(
@@ -122,46 +246,96 @@ def revfin_dashboard() -> rx.Component:
                 padding="3rem",
                 width="100%"
             ),
-            rx.box(
-                rx.scroll_area(
-                    rx.table.root(
-                        rx.table.header(
-                            rx.table.row(
-                                rx.table.column_header_cell("ID", style=header_style),
-                                rx.table.column_header_cell("Área", style=header_style),
-                                rx.table.column_header_cell("Fecha", style=header_style),
-                                rx.table.column_header_cell("Servicio", style=header_style),
-                                rx.table.column_header_cell("Descripción", style=header_style),
-                                rx.table.column_header_cell("Cantidad", style=header_style),
-                                rx.table.column_header_cell("Precio Unit.", style=header_style),
-                                rx.table.column_header_cell("Total", style=header_style),
-                                rx.table.column_header_cell("Estado", style=header_style),
-                                rx.table.column_header_cell("Acciones", style=header_style),
-                            )
+            rx.vstack(
+                rx.box(
+                    rx.scroll_area(
+                        rx.table.root(
+                            rx.table.header(
+                                rx.table.row(
+                                    rx.table.column_header_cell("ID", style=header_style),
+                                    rx.table.column_header_cell("Área", style=header_style),
+                                    rx.table.column_header_cell("Fecha", style=header_style),
+                                    rx.table.column_header_cell("Servicio", style=header_style),
+                                    rx.table.column_header_cell("Descripción", style=header_style),
+                                    rx.table.column_header_cell("Cantidad", style=header_style),
+                                    rx.table.column_header_cell("Precio Unit.", style=header_style),
+                                    rx.table.column_header_cell("Total", style=header_style),
+                                    rx.table.column_header_cell("Estado", style=header_style),
+                                    rx.table.column_header_cell("Acciones", style=header_style),
+                                )
+                            ),
+                            rx.table.body(
+                                rx.foreach(
+                                    FinanciamientoState.solicitudes_revfin_paginated,
+                                    solicitud_row
+                                )
+                            ),
+                            style={
+                                "width": "100%",
+                                "min_width": "1000px",
+                                "table_layout": "auto"
+                            }
                         ),
-                        rx.table.body(
-                            rx.foreach(
-                                FinanciamientoState.solicitudes_pendientes_revfin,
-                                solicitud_row
-                            )
-                        ),
+                        type="always",
+                        scrollbars="horizontal",
                         style={
                             "width": "100%",
-                            "min_width": "1000px",
-                            "table_layout": "auto"
+                            "max_height": "650px",
+                            "height": "auto",
+                            "overflow_y": "auto",
+                            "border": "1px solid #e2e8f0",
+                            "border_radius": "8px"
                         }
                     ),
-                    type="always",
-                    scrollbars="horizontal",
-                    style={
-                        "width": "100%",
-                        "height": "500px",
-                        "border": "1px solid #e2e8f0",
-                        "border_radius": "8px"
-                    }
+                    width="100%",
                 ),
-                width="100%",
-                overflow_x="auto"
+                rx.cond(
+                    FinanciamientoState.solicitudes_pendientes_revfin.length() > FinanciamientoState.revfin_items_per_page,
+                    rx.box(
+                        rx.hstack(
+                            rx.text(
+                                rx.cond(
+                                    FinanciamientoState.solicitudes_pendientes_revfin.length() > 0,
+                                    rx.cond(
+                                        FinanciamientoState.revfin_current_page == 1,
+                                        "Mostrando 1 a " + rx.cond(
+                                            FinanciamientoState.revfin_items_per_page > FinanciamientoState.solicitudes_pendientes_revfin.length(),
+                                            FinanciamientoState.solicitudes_pendientes_revfin.length().to(str),
+                                            FinanciamientoState.revfin_items_per_page.to(str)
+                                        ) + " de " + FinanciamientoState.solicitudes_pendientes_revfin.length().to(str) + " resultados",
+                                        "Mostrando " + ((FinanciamientoState.revfin_current_page - 1) * FinanciamientoState.revfin_items_per_page + 1).to(str) + " a " + rx.cond(
+                                            FinanciamientoState.revfin_current_page * FinanciamientoState.revfin_items_per_page > FinanciamientoState.solicitudes_pendientes_revfin.length(),
+                                            FinanciamientoState.solicitudes_pendientes_revfin.length().to(str),
+                                            (FinanciamientoState.revfin_current_page * FinanciamientoState.revfin_items_per_page).to(str)
+                                        ) + " de " + FinanciamientoState.solicitudes_pendientes_revfin.length().to(str) + " resultados"
+                                    ),
+                                    "Mostrando 0 a 0 de 0 resultados"
+                                ),
+                                size="2",
+                                color="#64748b",
+                                font_weight="500",
+                                flex_shrink=0,
+                                margin_right="8rem",
+                            ),
+                            rx.spacer(),
+                            rx.box(
+                                render_pagination(),
+                                flex_shrink=0,
+                                margin_left="0.5rem",
+                            ),
+                            width="100%",
+                            align="center",
+                            spacing="6",
+                            wrap="wrap",
+                        ),
+                        padding="1.5rem 1rem",
+                        border_top="1px solid #e2e8f0",
+                        background="#f8fafc",
+                    ),
+                    rx.box(height="1rem")
+                ),
+                spacing="0",
+                width="100%"
             )
         )
     
@@ -329,7 +503,6 @@ def revfin_dashboard() -> rx.Component:
         return rx.box(
             navbar("Panel de Revisor Financiero"),
             rx.vstack(
-                # Encabezado responsivo
                 rx.box(
                     rx.vstack(
                         rx.hstack(
@@ -393,7 +566,6 @@ def revfin_dashboard() -> rx.Component:
                     border_bottom="1px solid #e2e8f0"
                 ),
                 
-                # Búsqueda responsiva
                 rx.box(
                     rx.hstack(
                         rx.input(
@@ -410,7 +582,6 @@ def revfin_dashboard() -> rx.Component:
                     padding_bottom="1.5rem"
                 ),
                 
-                # Contenido principal
                 rx.cond(
                     FinanciamientoState.loading_revfin,
                     rx.center(
@@ -426,7 +597,6 @@ def revfin_dashboard() -> rx.Component:
                     solicitudes_table()
                 ),
                 
-                # Información de búsqueda
                 rx.cond(
                     FinanciamientoState.search_value_revfin != "",
                     rx.box(
@@ -457,11 +627,9 @@ def revfin_dashboard() -> rx.Component:
                     ),
                 ),
                 
-                # Diálogos
                 aprobar_dialog(),
                 rechazar_dialog(),
                 
-                # Pie de página responsivo
                 rx.box(
                     rx.vstack(
                         rx.hstack(

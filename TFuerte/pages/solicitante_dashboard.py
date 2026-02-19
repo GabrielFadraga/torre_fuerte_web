@@ -1,4 +1,3 @@
-# TFuerte/pages/solicitante_dashboard.py
 import reflex as rx
 from TFuerte.state.solicitante_dashboard_state import SolicitanteDashboardState
 from TFuerte.state.almacen_state import AlmacenState
@@ -35,7 +34,7 @@ def solicitante_dashboard() -> rx.Component:
                                 "height": "28px",
                                 "min_width": "70px",
                                 "width": "auto",
-                                "flex_shrink": "0",  # evitar que se estire
+                                "flex_shrink": "0",
                             }
                         ),
                         width="100%",
@@ -246,33 +245,174 @@ def solicitante_dashboard() -> rx.Component:
         )
     
     def mis_solicitudes_section():
-        """Sección de mis solicitudes"""
+        """Sección de mis solicitudes con paginación"""
         
+        # Función para el badge de estado (similar a la de otros paneles)
+        def estado_badge(estado):
+            return rx.match(
+                estado,
+                ("pendiente", rx.badge("PENDIENTE", color_scheme="amber", variant="soft")),
+                ("aprobada", rx.badge("APROBADA", color_scheme="green", variant="soft")),
+                ("rechazada", rx.badge("RECHAZADA", color_scheme="red", variant="soft")),
+                rx.badge("DESCONOCIDO", color_scheme="gray", variant="soft")
+            )
+        
+        # Función para crear botón de página individual
+        def create_page_button_mis(page_num: int):
+            return rx.button(
+                rx.text(page_num, size="2", font_weight="500"),
+                on_click=lambda: SolicitanteDashboardState.go_to_page_mis(page_num),
+                variant="soft",
+                size="2",
+                style=rx.cond(
+                    SolicitanteDashboardState.mis_current_page == page_num,
+                    {
+                        "background": "#0f766e",
+                        "color": "white",
+                        "border": "1px solid #0f766e",
+                        "_hover": {"background": "#0b5e58"},
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    },
+                    {
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "_hover": {
+                            "background": "#f8fafc",
+                            "border": "1px solid #cbd5e1"
+                        },
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                )
+            )
+        
+        # Controles de paginación (estilo unificado)
+        def render_pagination_mis():
+            return rx.hstack(
+                # Botón anterior
+                rx.button(
+                    rx.icon("chevron-left", size=16),
+                    on_click=SolicitanteDashboardState.previous_page_mis,
+                    variant="soft",
+                    size="2",
+                    is_disabled=SolicitanteDashboardState.mis_current_page == 1,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                # Contenedor de números
+                rx.box(
+                    rx.hstack(
+                        # Primera página + "..." si estamos lejos del inicio
+                        rx.cond(
+                            (SolicitanteDashboardState.mis_current_page > 3) &
+                            (SolicitanteDashboardState.mis_total_pages > 4),
+                            rx.hstack(
+                                create_page_button_mis(1),
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        # Páginas del rango calculado (máximo 4)
+                        rx.cond(
+                            SolicitanteDashboardState.mis_page_numbers.length() > 0,
+                            rx.hstack(
+                                rx.foreach(
+                                    SolicitanteDashboardState.mis_page_numbers,
+                                    create_page_button_mis
+                                ),
+                                spacing="1",
+                                wrap="nowrap",
+                                flex_shrink=0,
+                            ),
+                            rx.text(
+                                f"Pág. {SolicitanteDashboardState.mis_current_page}",
+                                size="2",
+                                color="#64748b",
+                                padding_x="2",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        # Última página + "..." si estamos lejos del final
+                        rx.cond(
+                            (SolicitanteDashboardState.mis_current_page < SolicitanteDashboardState.mis_total_pages - 2) &
+                            (SolicitanteDashboardState.mis_total_pages > 4),
+                            rx.hstack(
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                create_page_button_mis(SolicitanteDashboardState.mis_total_pages),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        spacing="1",
+                        wrap="nowrap",
+                        align="center",
+                    ),
+                    overflow_x="auto",
+                    flex_grow=0,
+                    flex_shrink=1,
+                    max_width="100%",
+                ),
+                # Botón siguiente
+                rx.button(
+                    rx.hstack(
+                        rx.icon("chevron-right", size=16),
+                        width="100%",
+                        spacing="0",
+                        justify="end",
+                        align="end",
+                    ),
+                    on_click=SolicitanteDashboardState.next_page_mis,
+                    variant="soft",
+                    size="2",
+                    is_disabled=SolicitanteDashboardState.mis_current_page == SolicitanteDashboardState.mis_total_pages,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                spacing="2",
+                wrap="nowrap",
+                align="center",
+                justify="end",
+                width="100%",
+            )
+        
+        # Tarjeta de grupo de solicitud (CORREGIDA)
         def grupo_solicitud_card(grupo):
             """Tarjeta para mostrar un grupo de solicitudes"""
-            estado_raw = grupo.get("estado", "pendiente")  # Esto está bien porque es Python puro
-            estado_str = str(estado_raw)
-            
-            estado_color = {
-                "pendiente": "amber",
-                "aprobada": "green",
-                "rechazada": "red"
-            }.get(estado_str, "gray")
-            
-            grupo_id = grupo["grupo_id"]  # <--- CAMBIO CLAVE: usar índice directo
+            grupo_id = grupo["grupo_id"]
+            destino = grupo.get("destino", "")
+            fecha = grupo.get("fecha_formateada", "")
+            num_recursos = grupo.get("num_recursos", 0)
+            estado_expr = grupo.get("estado", "pendiente")  # <- Esto es una expresión Reflex, no un string
             
             return rx.card(
                 rx.vstack(
                     rx.hstack(
                         rx.vstack(
                             rx.text(
-                                f"Solicitud #{grupo_id}",  # <--- ahora es el valor real
+                                f"Solicitud #{grupo_id}",
                                 size="3",
                                 font_weight="600",
                                 color="#1e293b"
                             ),
                             rx.text(
-                                f"Destino: {grupo['destino']}",  # <--- índice directo
+                                f"Destino: {destino}",
                                 size="2",
                                 color="#64748b"
                             ),
@@ -280,11 +420,8 @@ def solicitante_dashboard() -> rx.Component:
                             spacing="1"
                         ),
                         rx.spacer(),
-                        rx.badge(
-                            estado_str.upper(),
-                            color_scheme=estado_color,
-                            size="2"
-                        ),
+                        # Badge de estado usando rx.match
+                        estado_badge(estado_expr),
                         width="100%",
                         align="center"
                     ),
@@ -294,7 +431,7 @@ def solicitante_dashboard() -> rx.Component:
                             rx.hstack(
                                 rx.icon("calendar", size=14, color="#64748b"),
                                 rx.text(
-                                    f"Fecha: {grupo['fecha_formateada']}",  # <--- índice directo
+                                    f"Fecha: {fecha}",
                                     size="2",
                                     color="#64748b"
                                 ),
@@ -304,7 +441,7 @@ def solicitante_dashboard() -> rx.Component:
                             rx.hstack(
                                 rx.icon("package", size=14, color="#64748b"),
                                 rx.text(
-                                    f"Recursos: {grupo['num_recursos']}",  # <--- índice directo
+                                    f"Recursos: {num_recursos}",
                                     size="2",
                                     color="#64748b"
                                 ),
@@ -316,7 +453,7 @@ def solicitante_dashboard() -> rx.Component:
                         rx.spacer(),
                         rx.button(
                             "Ver Detalles",
-                            on_click=lambda: SolicitanteDashboardState.ver_detalle_grupo(grupo_id),  # <--- ahora pasa el string real
+                            on_click=lambda: SolicitanteDashboardState.ver_detalle_grupo(grupo_id),
                             size="1",
                             variant="soft",
                             style={
@@ -325,7 +462,7 @@ def solicitante_dashboard() -> rx.Component:
                                 "height": "28px",
                                 "min_width": "70px",
                                 "width": "auto",
-                                "flex_shrink": "0",  # evitar que se estire
+                                "flex_shrink": "0",
                             }
                         ),
                         width="100%",
@@ -341,6 +478,7 @@ def solicitante_dashboard() -> rx.Component:
         
         return rx.box(
             rx.vstack(
+                # Encabezado con badge de total
                 rx.hstack(
                     rx.vstack(
                         rx.heading("📋 Mis Solicitudes", size="5", color="#1e293b"),
@@ -363,6 +501,7 @@ def solicitante_dashboard() -> rx.Component:
                     align="center"
                 ),
                 
+                # Lista de tarjetas (solo página actual)
                 rx.cond(
                     SolicitanteDashboardState.loading,
                     rx.center(
@@ -379,7 +518,7 @@ def solicitante_dashboard() -> rx.Component:
                         SolicitanteDashboardState.mis_solicitudes.length() > 0,
                         rx.vstack(
                             rx.foreach(
-                                SolicitanteDashboardState.mis_solicitudes,
+                                SolicitanteDashboardState.mis_solicitudes_paginated,
                                 lambda grupo: grupo_solicitud_card(grupo)
                             ),
                             spacing="3",
@@ -409,6 +548,53 @@ def solicitante_dashboard() -> rx.Component:
                     )
                 ),
                 
+                # Controles de paginación
+                rx.cond(
+                    SolicitanteDashboardState.mis_solicitudes.length() > SolicitanteDashboardState.mis_items_per_page,
+                    rx.box(
+                        rx.hstack(
+                            rx.text(
+                                rx.cond(
+                                    SolicitanteDashboardState.mis_solicitudes.length() > 0,
+                                    rx.cond(
+                                        SolicitanteDashboardState.mis_current_page == 1,
+                                        "Mostrando 1 a " + rx.cond(
+                                            SolicitanteDashboardState.mis_items_per_page > SolicitanteDashboardState.mis_solicitudes.length(),
+                                            SolicitanteDashboardState.mis_solicitudes.length().to(str),
+                                            SolicitanteDashboardState.mis_items_per_page.to(str)
+                                        ) + " de " + SolicitanteDashboardState.mis_solicitudes.length().to(str) + " resultados",
+                                        "Mostrando " + ((SolicitanteDashboardState.mis_current_page - 1) * SolicitanteDashboardState.mis_items_per_page + 1).to(str) + " a " + rx.cond(
+                                            SolicitanteDashboardState.mis_current_page * SolicitanteDashboardState.mis_items_per_page > SolicitanteDashboardState.mis_solicitudes.length(),
+                                            SolicitanteDashboardState.mis_solicitudes.length().to(str),
+                                            (SolicitanteDashboardState.mis_current_page * SolicitanteDashboardState.mis_items_per_page).to(str)
+                                        ) + " de " + SolicitanteDashboardState.mis_solicitudes.length().to(str) + " resultados"
+                                    ),
+                                    "Mostrando 0 a 0 de 0 resultados"
+                                ),
+                                size="2",
+                                color="#64748b",
+                                font_weight="500",
+                                flex_shrink=0,
+                                margin_right="8rem",
+                            ),
+                            rx.spacer(),
+                            rx.box(
+                                render_pagination_mis(),
+                                flex_shrink=0,
+                                margin_left="0.5rem",
+                            ),
+                            width="100%",
+                            align="center",
+                            spacing="6",
+                            wrap="wrap",
+                        ),
+                        padding="1.5rem 1rem",
+                        border_top="1px solid #e2e8f0",
+                        background="#f8fafc",
+                    ),
+                    rx.box(height="1rem")
+                ),
+                
                 spacing="4",
                 width="100%"
             ),
@@ -421,25 +607,141 @@ def solicitante_dashboard() -> rx.Component:
         )
     
     def productos_almacen_section():
-        """Sección de productos en almacén (solo lectura para solicitantes)"""
+        """Sección de productos en almacén con paginación (sin cambios)"""
+        
+        def create_page_button(page_num: int):
+            return rx.button(
+                rx.text(page_num, size="2", font_weight="500"),
+                on_click=lambda: AlmacenState.go_to_page(page_num),
+                variant="soft",
+                size="2",
+                style=rx.cond(
+                    AlmacenState.current_page == page_num,
+                    {
+                        "background": "#0f766e",
+                        "color": "white",
+                        "border": "1px solid #0f766e",
+                        "_hover": {"background": "#0b5e58"},
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    },
+                    {
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "_hover": {
+                            "background": "#f8fafc",
+                            "border": "1px solid #cbd5e1"
+                        },
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                )
+            )
+        
+        def render_pagination():
+            return rx.hstack(
+                rx.button(
+                    rx.icon("chevron-left", size=16),
+                    on_click=AlmacenState.previous_page,
+                    variant="soft",
+                    size="2",
+                    is_disabled=AlmacenState.current_page == 1,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                rx.box(
+                    rx.hstack(
+                        rx.cond(
+                            (AlmacenState.current_page > 3) & (AlmacenState.total_pages > 4),
+                            rx.hstack(
+                                create_page_button(1),
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        rx.cond(
+                            AlmacenState.page_numbers.length() > 0,
+                            rx.hstack(
+                                rx.foreach(
+                                    AlmacenState.page_numbers,
+                                    create_page_button
+                                ),
+                                spacing="1",
+                                wrap="nowrap",
+                                flex_shrink=0,
+                            ),
+                            rx.text(
+                                f"Pág. {AlmacenState.current_page}",
+                                size="2",
+                                color="#64748b",
+                                padding_x="2",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        rx.cond(
+                            (AlmacenState.current_page < AlmacenState.total_pages - 2) & (AlmacenState.total_pages > 4),
+                            rx.hstack(
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                create_page_button(AlmacenState.total_pages),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        spacing="1",
+                        wrap="nowrap",
+                        align="center",
+                    ),
+                    overflow_x="auto",
+                    flex_grow=0,
+                    flex_shrink=1,
+                    max_width="100%",
+                ),
+                rx.button(
+                    rx.hstack(
+                        rx.icon("chevron-right", size=16),
+                        width="100%",
+                        spacing="0",
+                        justify="end",
+                        align="end",
+                    ),
+                    on_click=AlmacenState.next_page,
+                    variant="soft",
+                    size="2",
+                    is_disabled=AlmacenState.current_page == AlmacenState.total_pages,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                spacing="2",
+                wrap="nowrap",
+                align="center",
+                justify="end",
+                width="100%",
+            )
         
         def producto_row(item):
             return rx.table.row(
-                # Número
                 rx.table.cell(
-                    rx.text(
-                        item["Numero"],
-                        color="#1e293b"
-                    )
+                    rx.text(item["Numero"], color="#1e293b")
                 ),
-                # Código
                 rx.table.cell(
-                    rx.text(
-                        item["Codigo"],
-                        color="#1e293b"
-                    )
+                    rx.text(item["Codigo"], color="#1e293b")
                 ),
-                # Descripción
                 rx.table.cell(
                     rx.text(
                         item["Descripcion del producto"],
@@ -451,31 +753,20 @@ def solicitante_dashboard() -> rx.Component:
                         }
                     )
                 ),
-                # Unidad de medida
                 rx.table.cell(
-                    rx.text(
-                        item["UM"],
-                        color="#1e293b"
-                    )
+                    rx.text(item["UM"], color="#1e293b")
                 ),
-                # Saldo
                 rx.table.cell(
-                    rx.text(
-                        item["Saldo"],
-                        color="#1e293b"
-                    )
+                    rx.text(item["Saldo"], color="#1e293b")
                 ),
-                # Precio formateado
                 rx.table.cell(
-                    rx.text(
-                        f"${item['Precio']:.2f}",
-                        color="#1e293b"
-                    )
+                    rx.text(f"${item['Precio']:.2f}", color="#1e293b")
                 ),
             )
         
         return rx.box(
             rx.vstack(
+                # Encabezado
                 rx.hstack(
                     rx.vstack(
                         rx.heading("📦 Productos en Almacén", size="5", color="#1e293b"),
@@ -498,7 +789,7 @@ def solicitante_dashboard() -> rx.Component:
                     align="center"
                 ),
                 
-                # Controles de búsqueda - RESPONSIVE
+                # Controles de búsqueda
                 rx.box(
                     rx.vstack(
                         rx.hstack(
@@ -525,8 +816,10 @@ def solicitante_dashboard() -> rx.Component:
                     padding_bottom="1.5rem"
                 ),
                 
-                # Tabla de productos
-                rx.box(
+                # Tabla con datos paginados
+                rx.cond(
+                    AlmacenState.loading,
+                    rx.center(rx.spinner(size="3"), padding="3rem"),
                     rx.cond(
                         AlmacenState.filtered_data.length() == 0,
                         rx.center(
@@ -537,37 +830,96 @@ def solicitante_dashboard() -> rx.Component:
                             ),
                             padding="3rem",
                         ),
-                        rx.scroll_area(
-                            rx.table.root(
-                                rx.table.header(
-                                    rx.table.row(
-                                        rx.table.column_header_cell("Número", style={"color": "#1e293b"}),
-                                        rx.table.column_header_cell("Código", style={"color": "#1e293b"}),
-                                        rx.table.column_header_cell("Descripción", style={"color": "#1e293b"}),
-                                        rx.table.column_header_cell("UM", style={"color": "#1e293b"}),
-                                        rx.table.column_header_cell("Saldo", style={"color": "#1e293b"}),
-                                        rx.table.column_header_cell("Precio", style={"color": "#1e293b"}),
-                                    )
+                        rx.vstack(
+                            # Tabla con scroll horizontal
+                            rx.box(
+                                rx.scroll_area(
+                                    rx.table.root(
+                                        rx.table.header(
+                                            rx.table.row(
+                                                rx.table.column_header_cell("Número", style={"color": "#1e293b"}),
+                                                rx.table.column_header_cell("Código", style={"color": "#1e293b"}),
+                                                rx.table.column_header_cell("Descripción", style={"color": "#1e293b"}),
+                                                rx.table.column_header_cell("UM", style={"color": "#1e293b"}),
+                                                rx.table.column_header_cell("Saldo", style={"color": "#1e293b"}),
+                                                rx.table.column_header_cell("Precio", style={"color": "#1e293b"}),
+                                            )
+                                        ),
+                                        rx.table.body(
+                                            rx.foreach(
+                                                AlmacenState.paginated_data,
+                                                producto_row
+                                            )
+                                        ),
+                                        variant="surface",
+                                        size="3",
+                                        style={
+                                            "width": "100%",
+                                            "min_width": "800px",
+                                            "table_layout": "auto"
+                                        }
+                                    ),
+                                    type="always",
+                                    scrollbars="horizontal",
+                                    style={
+                                        "width": "100%",
+                                        "max_width": "100%",
+                                        "overflow_x": "auto"
+                                    }
                                 ),
-                                rx.table.body(
-                                    rx.foreach(
-                                        AlmacenState.filtered_data,
-                                        producto_row
-                                    )
-                                ),
-                                variant="surface",
-                                size="3"
+                                width="100%"
                             ),
-                            type="always",
-                            scrollbars="horizontal",
-                            style={
-                                "width": "100%",
-                                "max_width": "100%",
-                                "overflow_x": "auto"
-                            }
+                            
+                            # Controles de paginación
+                            rx.cond(
+                                AlmacenState.filtered_data.length() > AlmacenState.items_per_page,
+                                rx.box(
+                                    rx.hstack(
+                                        rx.text(
+                                            rx.cond(
+                                                AlmacenState.filtered_data.length() > 0,
+                                                rx.cond(
+                                                    AlmacenState.current_page == 1,
+                                                    "Mostrando 1 a " + rx.cond(
+                                                        AlmacenState.items_per_page > AlmacenState.filtered_data.length(),
+                                                        AlmacenState.filtered_data.length().to(str),
+                                                        AlmacenState.items_per_page.to(str)
+                                                    ) + " de " + AlmacenState.filtered_data.length().to(str) + " resultados",
+                                                    "Mostrando " + ((AlmacenState.current_page - 1) * AlmacenState.items_per_page + 1).to(str) + " a " + rx.cond(
+                                                        AlmacenState.current_page * AlmacenState.items_per_page > AlmacenState.filtered_data.length(),
+                                                        AlmacenState.filtered_data.length().to(str),
+                                                        (AlmacenState.current_page * AlmacenState.items_per_page).to(str)
+                                                    ) + " de " + AlmacenState.filtered_data.length().to(str) + " resultados"
+                                                ),
+                                                "Mostrando 0 a 0 de 0 resultados"
+                                            ),
+                                            size="2",
+                                            color="#64748b",
+                                            font_weight="500",
+                                            flex_shrink=0,
+                                            margin_right="8rem",
+                                        ),
+                                        rx.spacer(),
+                                        rx.box(
+                                            render_pagination(),
+                                            flex_shrink=0,
+                                            margin_left="0.5rem",
+                                        ),
+                                        width="100%",
+                                        align="center",
+                                        spacing="6",
+                                        wrap="wrap",
+                                    ),
+                                    padding="1.5rem 1rem",
+                                    border_top="1px solid #e2e8f0",
+                                    background="#f8fafc",
+                                ),
+                                rx.box(height="1rem")
+                            ),
+                            spacing="0",
+                            width="100%"
                         )
-                    ),
-                    width="100%"
+                    )
                 ),
                 
                 spacing="3",
@@ -605,18 +957,17 @@ def solicitante_dashboard() -> rx.Component:
                         rx.button(
                             "🔄 Actualizar",
                             on_click=[SolicitanteDashboardState.load_mis_solicitudes, AlmacenState.load_data],
-                            loading=SolicitanteDashboardState.loading | AlmacenState.loading,  # <-- expresión directa
+                            loading=SolicitanteDashboardState.loading | AlmacenState.loading,
                             variant="soft",
                             size="2",
-                            #width="auto"
                         ),
                         rx.button(
-                                "🚪 Cerrar Sesión",
-                                on_click=SolicitanteAuthState.sign_out,  # <-- BOTÓN DE LOGOUT
-                                variant="soft",
-                                color_scheme="red",
-                                size="2",
-                            ),
+                            "🚪 Cerrar Sesión",
+                            on_click=SolicitanteAuthState.sign_out,
+                            variant="soft",
+                            color_scheme="red",
+                            size="2",
+                        ),
                         spacing="2",
                         wrap="wrap",
                     ),
@@ -630,26 +981,11 @@ def solicitante_dashboard() -> rx.Component:
                 border_bottom="1px solid #e2e8f0"
             ),
             
-            # Contenido principal - RESPONSIVE
+            # Contenido principal
             rx.vstack(
-                # Nueva Solicitud
-                rx.box(
-                    nueva_solicitud_form(),
-                    width="100%"
-                ),
-                
-                # Productos en Almacén
-                rx.box(
-                    productos_almacen_section(),
-                    width="100%"
-                ),
-                
-                # Mis Solicitudes
-                rx.box(
-                    mis_solicitudes_section(),
-                    width="100%"
-                ),
-                
+                rx.box(nueva_solicitud_form(), width="100%"),
+                rx.box(productos_almacen_section(), width="100%"),
+                rx.box(mis_solicitudes_section(), width="100%"),
                 spacing="4",
                 width="100%"
             ),

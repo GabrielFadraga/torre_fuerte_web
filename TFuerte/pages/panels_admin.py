@@ -687,7 +687,7 @@ def user_selection() -> rx.Component:
     
     def main_content_authenticated():
         return rx.box(
-            navbar(f"Selección de Usuario - Conectado como: {AdminTFState.admin_name}"),
+            navbar("Selección de Usuario"),
             
             # Contenido principal
             rx.vstack(

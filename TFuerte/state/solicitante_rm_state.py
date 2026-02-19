@@ -59,6 +59,33 @@ class SolicitanteRMState(rx.State):
     tipos_productos: List[str] = []
     
     # ==================================================
+    # PAGINACIÓN PARA PRECIOS DISPONIBLES
+    # ==================================================
+    precios_paginated: List[dict] = []
+    current_page_precios: int = 1
+    items_per_page_precios: int = 10
+    total_pages_precios: int = 1
+    page_numbers_precios: List[int] = []
+
+    # ==================================================
+    # PAGINACIÓN PARA MIS SOLICITUDES RM
+    # ==================================================
+    rm_solicitudes_paginated: List[dict] = []
+    rm_current_page: int = 1
+    rm_items_per_page: int = 10
+    rm_total_pages: int = 1
+    rm_page_numbers: List[int] = []
+
+    # ==================================================
+    # PAGINACIÓN PARA HISTORIAL FINANCIAMIENTO
+    # ==================================================
+    fin_solicitudes_paginated: List[dict] = []
+    fin_current_page: int = 1
+    fin_items_per_page: int = 10
+    fin_total_pages: int = 1
+    fin_page_numbers: List[int] = []
+
+    # ==================================================
     # SETTERS
     # ==================================================
     
@@ -269,83 +296,103 @@ class SolicitanteRMState(rx.State):
     # CREAR SOLICITUDES
     # ==================================================
     
+    @rx.event
     def crear_solicitud_rm(self, form_data: dict):
         """Crea una solicitud con múltiples recursos"""
         if not self.is_authenticated_rm:
-            return rx.toast.error("❌ No estás autenticado")
-        
+            yield rx.toast.error("❌ No estás autenticado")
+            return
+
         if not self.recursos:
-            return rx.toast.error("❌ Debes agregar al menos un recurso")
-        
+            yield rx.toast.error("❌ Debes agregar al menos un recurso")
+            return
+
         self.loading_form_rm = True
         yield
-        
-        solicitud_data = {
-            "Centro costo": form_data.get("centro_costo", ""),
-            "Fecha": form_data.get("fecha", ""),
-            "Orden trabajo": form_data.get("orden_trabajo", ""),
-            "solicitante_id": self.current_solicitante_rm.get("id")
-        }
-        
-        recursos_api = []
-        for recurso in self.recursos:
-            recursos_api.append({
-                "descripcion": recurso["descripcion"],
-                "unidad_medida": recurso.get("unidad_medida", ""),
-                "cantidad": recurso["cantidad"],
-                "observaciones": recurso.get("observaciones", "")
-            })
-        
-        response = SolicitudesRMApi.create_solicitud_rm(solicitud_data, recursos_api)
-        
-        if response:
+
+        try:
+            solicitud_data = {
+                "Centro costo": form_data.get("centro_costo", ""),
+                "Fecha": form_data.get("fecha", ""),
+                "Orden trabajo": form_data.get("orden_trabajo", ""),
+                "solicitante_id": self.current_solicitante_rm.get("id")
+            }
+
+            recursos_api = []
+            for recurso in self.recursos:
+                recursos_api.append({
+                    "descripcion": recurso["descripcion"],
+                    "unidad_medida": recurso.get("unidad_medida", ""),
+                    "cantidad": recurso["cantidad"],
+                    "observaciones": recurso.get("observaciones", "")
+                })
+
+            response = SolicitudesRMApi.create_solicitud_rm(solicitud_data, recursos_api)
+
+            if not response:
+                yield rx.toast.error("❌ Error al crear la solicitud")
+                return
+
+            # Éxito
             self.recursos = []
             self.centro_costo = ""
             self.fecha = ""
             self.orden_trabajo = ""
             self.show_success = True
-            
-            yield self.load_mis_solicitudes_rm()
+
             yield rx.toast.success(f"✅ Solicitud creada con {len(response.get('recursos', []))} recursos")
-        else:
-            yield rx.toast.error("❌ Error al crear la solicitud")
-        
-        self.loading_form_rm = False
+            
+            yield from self.load_mis_solicitudes_rm()
+
+        except Exception as e:
+            print(f"❌ Error en crear_solicitud_rm: {e}")
+            import traceback
+            traceback.print_exc()
+            yield rx.toast.error(f"❌ Error al crear la solicitud: {str(e)}")
+        finally:
+            self.loading_form_rm = False
+            yield
     
+    @rx.event
     def crear_solicitud_fin(self, form_data: dict):
         """Crea una solicitud de financiamiento con múltiples productos"""
         if not self.is_authenticated_rm:
             yield rx.toast.error("❌ No estás autenticado")
             return
-        
+
         if not self.recursos_fin:
             yield rx.toast.error("❌ Debes agregar al menos un producto")
             return
-        
+
         if not all([self.area_solicitante_fin, self.fecha_fin, self.orden_trabajo_fin]):
             yield rx.toast.error("❌ Área solicitante, fecha y orden de trabajo son requeridos")
             return
-        
+
         self.loading_fin = True
         yield
-        
-        recursos_api = []
-        for recurso in self.recursos_fin:
-            recurso_data = {
-                "Area solicitante": self.area_solicitante_fin,
-                "Fecha": self.fecha_fin,
-                "Servicio": recurso["servicio"],
-                "Numero de contrato/suplemento": self.numero_contrato_fin,
-                "Orden de trabajo": self.orden_trabajo_fin,
-                "Descripcion": recurso["descripcion"],
-                "Cantidad": recurso["cantidad"],
-                "solicitante_id": self.current_solicitante_rm.get("id")
-            }
-            recursos_api.append(recurso_data)
-        
-        response = FinanciamientoApi.create_solicitud_fin_multi(recursos_api)
-        
-        if response:
+
+        try:
+            recursos_api = []
+            for recurso in self.recursos_fin:
+                recurso_data = {
+                    "Area solicitante": self.area_solicitante_fin,
+                    "Fecha": self.fecha_fin,
+                    "Servicio": recurso["servicio"],
+                    "Numero de contrato/suplemento": self.numero_contrato_fin,
+                    "Orden de trabajo": self.orden_trabajo_fin,
+                    "Descripcion": recurso["descripcion"],
+                    "Cantidad": recurso["cantidad"],
+                    "solicitante_id": self.current_solicitante_rm.get("id")
+                }
+                recursos_api.append(recurso_data)
+
+            response = FinanciamientoApi.create_solicitud_fin_multi(recursos_api)
+
+            if not response:
+                yield rx.toast.error("❌ Error al crear la solicitud de financiamiento")
+                return
+
+            # Éxito
             self.recursos_fin = []
             self.area_solicitante_fin = ""
             self.fecha_fin = ""
@@ -355,13 +402,19 @@ class SolicitanteRMState(rx.State):
             self.recurso_fin_descripcion = ""
             self.recurso_fin_cantidad = ""
             self.show_success_fin = True
-            
-            yield self.load_mis_solicitudes_fin()
+
             yield rx.toast.success(f"✅ Solicitud de financiamiento creada con {len(response)} productos")
-        else:
-            yield rx.toast.error("❌ Error al crear la solicitud de financiamiento")
-        
-        self.loading_fin = False
+            
+            yield from self.load_mis_solicitudes_fin()
+
+        except Exception as e:
+            print(f"❌ Error en crear_solicitud_fin: {e}")
+            import traceback
+            traceback.print_exc()
+            yield rx.toast.error(f"❌ Error al crear la solicitud de financiamiento: {str(e)}")
+        finally:
+            self.loading_fin = False
+            yield
     
     # ==================================================
     # CARGAR HISTORIALES
@@ -397,6 +450,7 @@ class SolicitanteRMState(rx.State):
                 solicitudes.append(solicitud)
             
             self.mis_solicitudes_rm = solicitudes
+            self.reset_rm_pagination()  # <-- Añadido
         
         self.loading_historial_rm = False
     
@@ -435,6 +489,7 @@ class SolicitanteRMState(rx.State):
                     solicitudes_agrupadas[numero_solicitud]["Total"] = FinanciamientoApi.get_total_solicitud_fin(numero_solicitud)
             
             self.mis_solicitudes_fin = list(solicitudes_agrupadas.values())
+            self.reset_fin_pagination()  # <-- Añadido
         
         self.loading_fin = False
     
@@ -451,11 +506,11 @@ class SolicitanteRMState(rx.State):
         self.show_success_fin = False
     
     # ==================================================
-    # PRECIOS DISPONIBLES
+    # PRECIOS DISPONIBLES (con paginación)
     # ==================================================
     
     def load_precios_disponibles(self):
-        """Carga los precios disponibles"""
+        """Carga los precios disponibles y calcula la paginación"""
         self.precios_loading = True
         yield
         
@@ -473,11 +528,202 @@ class SolicitanteRMState(rx.State):
                 precios_con_final.append(precio_modificado)
             
             self.precios_disponibles = precios_con_final
+            self.reset_precios_pagination()
         except Exception as e:
             print(f"Error cargando precios: {e}")
             self.precios_disponibles = []
+            self.reset_precios_pagination()
         
         self.precios_loading = False
+    
+    # ==================================================
+    # MÉTODOS DE PAGINACIÓN PARA PRECIOS
+    # ==================================================
+    
+    def calculate_precios_pagination(self):
+        """Calcula la paginación para la tabla de precios disponibles."""
+        total_items = len(self.precios_disponibles)
+
+        if total_items == 0:
+            self.total_pages_precios = 1
+            self.precios_paginated = []
+        else:
+            self.total_pages_precios = max(1, (total_items + self.items_per_page_precios - 1) // self.items_per_page_precios)
+
+        if self.current_page_precios > self.total_pages_precios:
+            self.current_page_precios = max(1, self.total_pages_precios)
+
+        start_idx = (self.current_page_precios - 1) * self.items_per_page_precios
+        end_idx = min(start_idx + self.items_per_page_precios, total_items)
+
+        if total_items > 0:
+            self.precios_paginated = self.precios_disponibles[start_idx:end_idx]
+        else:
+            self.precios_paginated = []
+
+        self.calculate_precios_page_numbers()
+
+    def calculate_precios_page_numbers(self):
+        max_pages_to_show = 4
+        current = self.current_page_precios
+        total = self.total_pages_precios
+
+        if total <= max_pages_to_show:
+            self.page_numbers_precios = list(range(1, total + 1))
+            return
+
+        start = max(1, current - 1)
+        end = min(total, start + max_pages_to_show - 1)
+
+        if end - start + 1 < max_pages_to_show:
+            start = max(1, end - max_pages_to_show + 1)
+
+        self.page_numbers_precios = list(range(start, end + 1))
+
+    def go_to_page_precios(self, page_number: int):
+        if 1 <= page_number <= self.total_pages_precios:
+            self.current_page_precios = page_number
+            self.calculate_precios_pagination()
+
+    def next_page_precios(self):
+        if self.current_page_precios < self.total_pages_precios:
+            self.current_page_precios += 1
+            self.calculate_precios_pagination()
+
+    def previous_page_precios(self):
+        if self.current_page_precios > 1:
+            self.current_page_precios -= 1
+            self.calculate_precios_pagination()
+
+    def reset_precios_pagination(self):
+        self.current_page_precios = 1
+        self.calculate_precios_pagination()
+
+    # ==================================================
+    # MÉTODOS DE PAGINACIÓN PARA MIS SOLICITUDES RM
+    # ==================================================
+    
+    def calculate_rm_pagination(self):
+        """Calcula la paginación para la tabla de solicitudes RM."""
+        total_items = len(self.mis_solicitudes_rm)
+
+        if total_items == 0:
+            self.rm_total_pages = 1
+            self.rm_solicitudes_paginated = []
+        else:
+            self.rm_total_pages = max(1, (total_items + self.rm_items_per_page - 1) // self.rm_items_per_page)
+
+        if self.rm_current_page > self.rm_total_pages:
+            self.rm_current_page = max(1, self.rm_total_pages)
+
+        start_idx = (self.rm_current_page - 1) * self.rm_items_per_page
+        end_idx = min(start_idx + self.rm_items_per_page, total_items)
+
+        if total_items > 0:
+            self.rm_solicitudes_paginated = self.mis_solicitudes_rm[start_idx:end_idx]
+        else:
+            self.rm_solicitudes_paginated = []
+
+        self.calculate_rm_page_numbers()
+
+    def calculate_rm_page_numbers(self):
+        max_pages_to_show = 4
+        current = self.rm_current_page
+        total = self.rm_total_pages
+
+        if total <= max_pages_to_show:
+            self.rm_page_numbers = list(range(1, total + 1))
+            return
+
+        start = max(1, current - 1)
+        end = min(total, start + max_pages_to_show - 1)
+
+        if end - start + 1 < max_pages_to_show:
+            start = max(1, end - max_pages_to_show + 1)
+
+        self.rm_page_numbers = list(range(start, end + 1))
+
+    def go_to_page_rm(self, page_number: int):
+        if 1 <= page_number <= self.rm_total_pages:
+            self.rm_current_page = page_number
+            self.calculate_rm_pagination()
+
+    def next_page_rm(self):
+        if self.rm_current_page < self.rm_total_pages:
+            self.rm_current_page += 1
+            self.calculate_rm_pagination()
+
+    def previous_page_rm(self):
+        if self.rm_current_page > 1:
+            self.rm_current_page -= 1
+            self.calculate_rm_pagination()
+
+    def reset_rm_pagination(self):
+        self.rm_current_page = 1
+        self.calculate_rm_pagination()
+
+    # ==================================================
+    # MÉTODOS DE PAGINACIÓN PARA HISTORIAL FINANCIAMIENTO
+    # ==================================================
+    
+    def calculate_fin_pagination(self):
+        """Calcula la paginación para la tabla de historial de financiamiento."""
+        total_items = len(self.mis_solicitudes_fin)
+
+        if total_items == 0:
+            self.fin_total_pages = 1
+            self.fin_solicitudes_paginated = []
+        else:
+            self.fin_total_pages = max(1, (total_items + self.fin_items_per_page - 1) // self.fin_items_per_page)
+
+        if self.fin_current_page > self.fin_total_pages:
+            self.fin_current_page = max(1, self.fin_total_pages)
+
+        start_idx = (self.fin_current_page - 1) * self.fin_items_per_page
+        end_idx = min(start_idx + self.fin_items_per_page, total_items)
+
+        if total_items > 0:
+            self.fin_solicitudes_paginated = self.mis_solicitudes_fin[start_idx:end_idx]
+        else:
+            self.fin_solicitudes_paginated = []
+
+        self.calculate_fin_page_numbers()
+
+    def calculate_fin_page_numbers(self):
+        max_pages_to_show = 4
+        current = self.fin_current_page
+        total = self.fin_total_pages
+
+        if total <= max_pages_to_show:
+            self.fin_page_numbers = list(range(1, total + 1))
+            return
+
+        start = max(1, current - 1)
+        end = min(total, start + max_pages_to_show - 1)
+
+        if end - start + 1 < max_pages_to_show:
+            start = max(1, end - max_pages_to_show + 1)
+
+        self.fin_page_numbers = list(range(start, end + 1))
+
+    def go_to_page_fin(self, page_number: int):
+        if 1 <= page_number <= self.fin_total_pages:
+            self.fin_current_page = page_number
+            self.calculate_fin_pagination()
+
+    def next_page_fin(self):
+        if self.fin_current_page < self.fin_total_pages:
+            self.fin_current_page += 1
+            self.calculate_fin_pagination()
+
+    def previous_page_fin(self):
+        if self.fin_current_page > 1:
+            self.fin_current_page -= 1
+            self.calculate_fin_pagination()
+
+    def reset_fin_pagination(self):
+        self.fin_current_page = 1
+        self.calculate_fin_pagination()
     
     # ==================================================
     # VARIABLES COMPUTADAS
@@ -507,3 +753,11 @@ class SolicitanteRMState(rx.State):
     def usuario_actual(self) -> str:
         """Nombre del usuario actual"""
         return self.current_solicitante_rm.get("usuario", "Usuario")
+    
+    def reset_loading_states(self):
+        """Resetea todos los estados de carga al cargar la página"""
+        self.loading_form_rm = False
+        self.loading_fin = False
+        self.precios_loading = False
+        self.loading_historial_rm = False
+        self.loading_auth_rm = False

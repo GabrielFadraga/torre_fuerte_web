@@ -1,4 +1,3 @@
-# TFuerte/pages/logistica_dashboard.py - VERSIÓN CORREGIDA Y COMPLETA
 import reflex as rx
 from TFuerte.state.logistica_state import LogisticaState
 from TFuerte.components.navbar import navbar
@@ -7,7 +6,7 @@ from TFuerte.routes import Route
 @rx.page(
     route=Route.LOGISTICA_DASHBOARD.value,
     title="Dashboard - Logística",
-    on_load=[LogisticaState.load_data, LogisticaState.load_completadas, LogisticaState.load_precios]
+    on_load=[LogisticaState.reset_loading_states, LogisticaState.load_data, LogisticaState.load_completadas, LogisticaState.load_precios]
 )
 def logistica_dashboard() -> rx.Component:
     """Dashboard para Jefe de Logística (Miguel)"""
@@ -24,7 +23,143 @@ def logistica_dashboard() -> rx.Component:
         )
     
     def solicitudes_table() -> rx.Component:
-        """Tabla de solicitudes RM pendientes para logística"""
+        """Tabla de solicitudes RM pendientes para logística con paginación"""
+        
+        # Botón de página individual
+        def create_page_button_pendientes(page_num: int):
+            return rx.button(
+                rx.text(page_num, size="2", font_weight="500"),
+                on_click=lambda: LogisticaState.go_to_page_pendientes(page_num),
+                variant="soft",
+                size="2",
+                style=rx.cond(
+                    LogisticaState.pendientes_current_page == page_num,
+                    {
+                        "background": "#2563eb",
+                        "color": "white",
+                        "border": "1px solid #2563eb",
+                        "_hover": {"background": "#1d4ed8"},
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    },
+                    {
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "_hover": {
+                            "background": "#f8fafc",
+                            "border": "1px solid #cbd5e1"
+                        },
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                )
+            )
+        
+        # Controles de paginación
+        def render_pagination_pendientes():
+            return rx.hstack(
+                # Botón ANTERIOR
+                rx.button(
+                    rx.icon("chevron-left", size=16),
+                    on_click=LogisticaState.previous_page_pendientes,
+                    variant="soft",
+                    size="2",
+                    is_disabled=LogisticaState.pendientes_current_page == 1,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                # Contenedor de números
+                rx.box(
+                    rx.hstack(
+                        # Primera página + "..." si estamos lejos del inicio
+                        rx.cond(
+                            (LogisticaState.pendientes_current_page > 3) &
+                            (LogisticaState.pendientes_total_pages > 4),
+                            rx.hstack(
+                                create_page_button_pendientes(1),
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        # Páginas del rango calculado (máximo 4 números)
+                        rx.cond(
+                            LogisticaState.pendientes_page_numbers.length() > 0,
+                            rx.hstack(
+                                rx.foreach(
+                                    LogisticaState.pendientes_page_numbers,
+                                    create_page_button_pendientes
+                                ),
+                                spacing="1",
+                                wrap="nowrap",
+                                flex_shrink=0,
+                            ),
+                            # Fallback
+                            rx.text(
+                                f"Pág. {LogisticaState.pendientes_current_page}",
+                                size="2",
+                                color="#64748b",
+                                padding_x="2",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        # Última página + "..." si estamos lejos del final
+                        rx.cond(
+                            (LogisticaState.pendientes_current_page < LogisticaState.pendientes_total_pages - 2) &
+                            (LogisticaState.pendientes_total_pages > 4),
+                            rx.hstack(
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                create_page_button_pendientes(LogisticaState.pendientes_total_pages),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        spacing="1",
+                        wrap="nowrap",
+                        align="center",
+                    ),
+                    overflow_x="auto",
+                    flex_grow=0,
+                    flex_shrink=1,
+                    max_width="100%",
+                ),
+                # Botón SIGUIENTE
+                rx.button(
+                    rx.hstack(
+                        rx.icon("chevron-right", size=16),
+                        width="100%",
+                        spacing="0",
+                        justify="end",
+                        align="end",
+                    ),
+                    on_click=LogisticaState.next_page_pendientes,
+                    variant="soft",
+                    size="2",
+                    is_disabled=LogisticaState.pendientes_current_page == LogisticaState.pendientes_total_pages,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                spacing="2",
+                wrap="nowrap",
+                align="center",
+                justify="end",
+                width="100%",
+            )
         
         def solicitud_row(solicitud):
             # Verificar si está completamente aprobada
@@ -144,45 +279,98 @@ def logistica_dashboard() -> rx.Component:
                 padding="3rem",
                 width="100%"
             ),
-            rx.box(
-                rx.scroll_area(
-                    rx.table.root(
-                        rx.table.header(
-                            rx.table.row(
-                                rx.table.column_header_cell("ID", style=header_style),
-                                rx.table.column_header_cell("Centro Costo", style=header_style),
-                                rx.table.column_header_cell("Orden Trabajo", style=header_style),
-                                rx.table.column_header_cell("Descripción", style=header_style),
-                                rx.table.column_header_cell("Cantidad", style=header_style),
-                                rx.table.column_header_cell("Aprob. Técnica", style=header_style),
-                                rx.table.column_header_cell("Aprob. Admin", style=header_style),
-                                rx.table.column_header_cell("Estado", style=header_style),
-                                rx.table.column_header_cell("Acciones", style=header_style),
-                            )
+            rx.vstack(
+                # Tabla con scroll horizontal
+                rx.box(
+                    rx.scroll_area(
+                        rx.table.root(
+                            rx.table.header(
+                                rx.table.row(
+                                    rx.table.column_header_cell("ID", style=header_style),
+                                    rx.table.column_header_cell("Centro Costo", style=header_style),
+                                    rx.table.column_header_cell("Orden Trabajo", style=header_style),
+                                    rx.table.column_header_cell("Descripción", style=header_style),
+                                    rx.table.column_header_cell("Cantidad", style=header_style),
+                                    rx.table.column_header_cell("Aprob. Técnica", style=header_style),
+                                    rx.table.column_header_cell("Aprob. Admin", style=header_style),
+                                    rx.table.column_header_cell("Estado", style=header_style),
+                                    rx.table.column_header_cell("Acciones", style=header_style),
+                                )
+                            ),
+                            rx.table.body(
+                                rx.foreach(
+                                    LogisticaState.pendientes_paginated,  # <-- Datos paginados
+                                    solicitud_row
+                                )
+                            ),
+                            style={
+                                "width": "100%",
+                                "min_width": "1100px",
+                                "table_layout": "auto"
+                            }
                         ),
-                        rx.table.body(
-                            rx.foreach(
-                                LogisticaState.solicitudes_pendientes,
-                                solicitud_row
-                            )
-                        ),
+                        type="always",
+                        scrollbars="horizontal",
                         style={
                             "width": "100%",
-                            "min_width": "1100px",
-                            "table_layout": "auto"
+                            "max_height": "650px",   # Ajuste para 10 filas
+                            "height": "auto",
+                            "overflow_y": "auto",
+                            "border": "1px solid #e2e8f0",
+                            "border_radius": "8px"
                         }
                     ),
-                    type="always",
-                    scrollbars="horizontal",
-                    style={
-                        "width": "100%",
-                        "height": "500px",
-                        "border": "1px solid #e2e8f0",
-                        "border_radius": "8px"
-                    }
+                    width="100%",
                 ),
-                width="100%",
-                overflow_x="auto"
+                # Controles de paginación
+                rx.cond(
+                    LogisticaState.solicitudes_pendientes.length() > LogisticaState.pendientes_items_per_page,
+                    rx.box(
+                        rx.hstack(
+                            # Texto de resultados
+                            rx.text(
+                                rx.cond(
+                                    LogisticaState.solicitudes_pendientes.length() > 0,
+                                    rx.cond(
+                                        LogisticaState.pendientes_current_page == 1,
+                                        "Mostrando 1 a " + rx.cond(
+                                            LogisticaState.pendientes_items_per_page > LogisticaState.solicitudes_pendientes.length(),
+                                            LogisticaState.solicitudes_pendientes.length().to(str),
+                                            LogisticaState.pendientes_items_per_page.to(str)
+                                        ) + " de " + LogisticaState.solicitudes_pendientes.length().to(str) + " resultados",
+                                        "Mostrando " + ((LogisticaState.pendientes_current_page - 1) * LogisticaState.pendientes_items_per_page + 1).to(str) + " a " + rx.cond(
+                                            LogisticaState.pendientes_current_page * LogisticaState.pendientes_items_per_page > LogisticaState.solicitudes_pendientes.length(),
+                                            LogisticaState.solicitudes_pendientes.length().to(str),
+                                            (LogisticaState.pendientes_current_page * LogisticaState.pendientes_items_per_page).to(str)
+                                        ) + " de " + LogisticaState.solicitudes_pendientes.length().to(str) + " resultados"
+                                    ),
+                                    "Mostrando 0 a 0 de 0 resultados"
+                                ),
+                                size="2",
+                                color="#64748b",
+                                font_weight="500",
+                                flex_shrink=0,
+                                margin_right="8rem",  # Separación del texto
+                            ),
+                            rx.spacer(),
+                            rx.box(
+                                render_pagination_pendientes(),
+                                flex_shrink=0,
+                                margin_left="0.5rem",  # Separación de los botones
+                            ),
+                            width="100%",
+                            align="center",
+                            spacing="6",
+                            wrap="wrap",
+                        ),
+                        padding="1.5rem 1rem",
+                        border_top="1px solid #e2e8f0",
+                        background="#f8fafc",
+                    ),
+                    rx.box(height="1rem")  # Espacio cuando no hay paginación
+                ),
+                spacing="0",
+                width="100%"
             )
         )
     
@@ -322,8 +510,145 @@ def logistica_dashboard() -> rx.Component:
         """Tab para gestionar precios de productos"""
         
         def precios_table() -> rx.Component:
-            """Tabla de precios de productos"""
+            """Tabla de precios con paginación compacta: flechas + números (máx 4)."""
             
+            # --- Botón de página individual (reutilizable) ---
+            def create_page_button_precios(page_num: int):
+                return rx.button(
+                    rx.text(page_num, size="2", font_weight="500"),
+                    on_click=lambda: LogisticaState.go_to_page_precios(page_num),
+                    variant="soft",
+                    size="2",
+                    style=rx.cond(
+                        LogisticaState.current_page_precios == page_num,
+                        {
+                            "background": "#f59e0b",
+                            "color": "white",
+                            "border": "1px solid #f59e0b",
+                            "_hover": {"background": "#d97706"},
+                            "flex_shrink": 0,
+                            "min_width": "32px",
+                            "padding": "0 8px",
+                        },
+                        {
+                            "background": "white",
+                            "border": "1px solid #e2e8f0",
+                            "color": "#1e293b",
+                            "_hover": {
+                                "background": "#f8fafc",
+                                "border": "1px solid #cbd5e1"
+                            },
+                            "flex_shrink": 0,
+                            "min_width": "32px",
+                            "padding": "0 8px",
+                        }
+                    )
+                )
+            
+            # --- Controles de paginación: siempre horizontales, con flechas ---
+            def render_pagination_precios():
+                return rx.hstack(
+                    # Botón ANTERIOR (icono)
+                    rx.button(
+                        rx.icon("chevron-left", size=16),
+                        on_click=LogisticaState.previous_page_precios,
+                        variant="soft",
+                        size="2",
+                        is_disabled=LogisticaState.current_page_precios == 1,
+                        style={
+                            "background": "white",
+                            "border": "1px solid #e2e8f0",
+                            "color": "#1e293b",
+                            "flex_shrink": 0,
+                            "min_width": "32px",
+                            "padding": "0 8px",
+                        }
+                    ),
+                    # Contenedor de números (con scroll horizontal solo si es necesario)
+                    rx.box(
+                        rx.hstack(
+                            # Primera página + "..." si estamos lejos del inicio
+                            rx.cond(
+                                (LogisticaState.current_page_precios > 3) &
+                                (LogisticaState.total_pages_precios > 4),
+                                rx.hstack(
+                                    create_page_button_precios(1),
+                                    rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                    spacing="1",
+                                    flex_shrink=0,
+                                ),
+                            ),
+                            # Páginas del rango calculado (máximo 4 números)
+                            rx.cond(
+                                LogisticaState.page_numbers_precios.length() > 0,
+                                rx.hstack(
+                                    rx.foreach(
+                                        LogisticaState.page_numbers_precios,
+                                        create_page_button_precios
+                                    ),
+                                    spacing="1",
+                                    wrap="nowrap",
+                                    flex_shrink=0,
+                                ),
+                                # Fallback: mostrar texto con página actual (nunca debería ocurrir)
+                                rx.text(
+                                    f"Pág. {LogisticaState.current_page_precios}",
+                                    size="2",
+                                    color="#64748b",
+                                    padding_x="2",
+                                    flex_shrink=0,
+                                ),
+                            ),
+                            # Última página + "..." si estamos lejos del final
+                            rx.cond(
+                                (LogisticaState.current_page_precios < LogisticaState.total_pages_precios - 2) &
+                                (LogisticaState.total_pages_precios > 4),
+                                rx.hstack(
+                                    rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                    create_page_button_precios(LogisticaState.total_pages_precios),
+                                    spacing="1",
+                                    flex_shrink=0,
+                                ),
+                            ),
+                            spacing="1",
+                            wrap="nowrap",      # ← NUNCA se apilan
+                            align="center",
+                        ),
+                        overflow_x="auto",      # ← Scroll horizontal solo si hay demasiados elementos
+                        flex_grow=0,           # No se expande
+                        flex_shrink=1,         # Puede encogerse si falta espacio
+                        max_width="100%",      # Respeta el ancho del padre
+                    ),
+                    # Botón SIGUIENTE (icono)
+                    rx.button(
+                        rx.hstack(
+                            rx.icon("chevron-right", size=16),
+                            width="100%",
+                            spacing="0",
+                            justify="end",
+                            align="end",
+                        ),
+                        on_click=LogisticaState.next_page_precios,
+                        variant="soft",
+                        size="2",
+                        is_disabled=LogisticaState.current_page_precios == LogisticaState.total_pages_precios,
+                        style={
+                            "background": "white",
+                            "border": "1px solid #e2e8f0",
+                            "color": "#1e293b",
+                            "flex_shrink": 0,
+                            "min_width": "32px",
+                            "padding": "0 8px",
+                        }
+                    ),
+                    spacing="2",
+                    wrap="nowrap",            # ← Todo el conjunto en una sola línea
+                    align="center",
+                    justify="end",
+                    width="100%",
+                )
+            
+            # --- Fila de precio (igual que antes) ---
             def precio_row(precio):
                 return rx.table.row(
                     rx.table.cell(
@@ -359,14 +684,31 @@ def logistica_dashboard() -> rx.Component:
                                     on_click=lambda: LogisticaState.open_editar_precio_dialog(precio),
                                     color_scheme="blue",
                                     size="1",
-                                    variant="ghost"
+                                    variant="ghost",
+                                    style={
+                                        "padding": "2px 8px",
+                                        "font_size": "11px",
+                                        "height": "28px",
+                                        "min_width": "70px",
+                                        "width": "auto",
+                                        "flex_shrink": "0",  # evitar que se estire
+                                    }
                                 ),
                                 rx.button(
                                     "🗑️",
                                     on_click=lambda: LogisticaState.open_eliminar_precio_dialog(precio),
                                     color_scheme="red",
                                     size="1",
-                                    variant="ghost"
+                                    variant="ghost",
+                                    style={
+                                        "padding": "2px 8px",
+                                        "font_size": "11px",
+                                        "height": "28px",
+                                        "min_width": "70px",
+                                        "width": "auto",
+                                        "flex_shrink": "0",  # evitar que se estire
+                                    }
+
                                 ),
                                 spacing="1"
                             ),
@@ -376,6 +718,7 @@ def logistica_dashboard() -> rx.Component:
                     ),
                 )
             
+            # --- Estilo del encabezado ---
             header_style = {
                 "background": "#f59e0b",
                 "color": "white",
@@ -385,53 +728,109 @@ def logistica_dashboard() -> rx.Component:
                 "white_space": "nowrap"
             }
             
+            # --- Renderizado final ---
             return rx.cond(
-                LogisticaState.precios.length() == 0,
-                rx.center(
-                    rx.vstack(
-                        rx.icon("package", size=32, color="#cbd5e1"),
-                        rx.text("No hay precios registrados", size="3", color="#64748b"),
-                        spacing="2",
-                        align="center"
-                    ),
-                    padding="3rem",
-                    width="100%"
-                ),
-                rx.box(
-                    rx.scroll_area(
-                        rx.table.root(
-                            rx.table.header(
-                                rx.table.row(
-                                    rx.table.column_header_cell("ID", style=header_style),
-                                    rx.table.column_header_cell("Tipo", style=header_style),
-                                    rx.table.column_header_cell("Descripción", style=header_style),
-                                    rx.table.column_header_cell("Precio", style=header_style),
-                                    rx.table.column_header_cell("Acciones", style=header_style),
-                                )
-                            ),
-                            rx.table.body(
-                                rx.foreach(
-                                    LogisticaState.precios,
-                                    precio_row
-                                )
-                            ),
-                            style={
-                                "width": "100%",
-                                "min_width": "800px",
-                                "table_layout": "auto"
-                            }
+                LogisticaState.loading_precios,
+                rx.center(rx.spinner(size="3"), padding="3rem"),
+                rx.cond(
+                    LogisticaState.precios.length() == 0,
+                    rx.center(
+                        rx.vstack(
+                            rx.icon("package", size=32, color="#cbd5e1"),
+                            rx.text("No hay precios registrados", size="3", color="#64748b"),
+                            spacing="2",
+                            align="center"
                         ),
-                        type="always",
-                        scrollbars="horizontal",
-                        style={
-                            "width": "100%",
-                            "height": "500px",
-                            "border": "1px solid #e2e8f0",
-                            "border_radius": "8px"
-                        }
+                        padding="3rem",
+                        width="100%"
                     ),
-                    width="100%",
-                    overflow_x="auto"
+                    rx.vstack(
+                        # Tabla con scroll horizontal (igual que antes)
+                        rx.box(
+                            rx.scroll_area(
+                                rx.table.root(
+                                    rx.table.header(
+                                        rx.table.row(
+                                            rx.table.column_header_cell("ID", style=header_style),
+                                            rx.table.column_header_cell("Tipo", style=header_style),
+                                            rx.table.column_header_cell("Descripción", style=header_style),
+                                            rx.table.column_header_cell("Precio", style=header_style),
+                                            rx.table.column_header_cell("Acciones", style=header_style),
+                                        )
+                                    ),
+                                    rx.table.body(
+                                        rx.foreach(
+                                            LogisticaState.precios_paginated,
+                                            precio_row
+                                        )
+                                    ),
+                                    style={
+                                        "width": "100%",
+                                        "min_width": "800px",
+                                        "table_layout": "auto"
+                                    }
+                                ),
+                                type="always",
+                                scrollbars="horizontal",
+                                style={
+                                    "width": "100%",
+                                    "height": "500px",
+                                    "border": "1px solid #e2e8f0",
+                                    "border_radius": "8px"
+                                }
+                            ),
+                            width="100%",
+                            overflow_x="auto"
+                        ),
+                        # --- PAGINACIÓN ---
+                        rx.cond(
+                            LogisticaState.precios.length() > LogisticaState.items_per_page_precios,
+                            rx.box(
+                                rx.hstack(
+                                    # Texto de resultados (siempre a la izquierda)
+                                    rx.text(
+                                        rx.cond(
+                                            LogisticaState.precios.length() > 0,
+                                            rx.cond(
+                                                LogisticaState.current_page_precios == 1,
+                                                "Mostrando 1 a " + rx.cond(
+                                                    LogisticaState.items_per_page_precios > LogisticaState.precios.length(),
+                                                    LogisticaState.precios.length().to(str),
+                                                    LogisticaState.items_per_page_precios.to(str)
+                                                ) + " de " + LogisticaState.precios.length().to(str) + " resultados",
+                                                "Mostrando " + ((LogisticaState.current_page_precios - 1) * LogisticaState.items_per_page_precios + 1).to(str) + " a " + rx.cond(
+                                                    LogisticaState.current_page_precios * LogisticaState.items_per_page_precios > LogisticaState.precios.length(),
+                                                    LogisticaState.precios.length().to(str),
+                                                    (LogisticaState.current_page_precios * LogisticaState.items_per_page_precios).to(str)
+                                                ) + " de " + LogisticaState.precios.length().to(str) + " resultados"
+                                            ),
+                                            "Mostrando 0 a 0 de 0 resultados"
+                                        ),
+                                        size="2",
+                                        color="#64748b",
+                                        font_weight="500",
+                                        flex_shrink=0,
+                                    ),
+                                    rx.spacer(),
+                                    rx.box(
+                                        render_pagination_precios(),
+                                        margin_left="10rem",   # ← SEPARACIÓN ADICIONAL hacia la derecha
+                                        flex_shrink=0,
+                                    ),   # ← Siempre horizontal, compacta, con flechas
+                                    width="100%",
+                                    align="center",
+                                    spacing="4",
+                                    wrap="wrap",          # ← Permite que el texto se mueva arriba si es necesario
+                                ),
+                                padding="1.5rem 1rem",
+                                border_top="1px solid #e2e8f0",
+                                background="#f8fafc",
+                            ),
+                            rx.box(height="1rem")  # Espacio cuando no hay paginación
+                        ),
+                        spacing="0",
+                        width="100%",
+                    )
                 )
             )
         

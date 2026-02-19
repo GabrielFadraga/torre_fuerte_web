@@ -1,4 +1,3 @@
-# TFuerte/state/tecnica_state.py
 import reflex as rx
 from typing import List
 from TFuerte.api.solicitudes_rm_api import SolicitudesRMApi
@@ -28,6 +27,15 @@ class TecnicaState(rx.State):
     password: str = ""
     error_message: str = ""
     
+    # ==================================================
+    # PAGINACIÓN
+    # ==================================================
+    solicitudes_paginated: List[dict] = []
+    current_page: int = 1
+    items_per_page: int = 10
+    total_pages: int = 1
+    page_numbers: List[int] = []
+
     # Setters (SIN CAMBIOS)
     def set_username(self, username: str):
         self.username = username
@@ -124,6 +132,7 @@ class TecnicaState(rx.State):
             solicitudes_procesadas.append(solicitud_procesada)
         
         self.solicitudes_pendientes = solicitudes_procesadas
+        self.reset_pagination()  # <-- Añadido
         self.loading = False
     
     def filter_solicitudes(self, search_value: str):
@@ -148,6 +157,7 @@ class TecnicaState(rx.State):
                 filtered.append(s)
         
         self.solicitudes_pendientes = filtered
+        self.reset_pagination()  # <-- Añadido
     
     # Diálogos (SIN CAMBIOS)
     def open_aprobar_dialog(self, solicitud: dict):
@@ -182,27 +192,44 @@ class TecnicaState(rx.State):
                 duration=4000
             )
             return
-        
+
         solicitud_id = self.selected_solicitud.get("id")
         admin_usuario = self.current_admin.get("usuario", "Alexander")
-        
-        result = SolicitudesRMApi.aprobar_por_tecnica(solicitud_id, admin_usuario)
-        
-        if result:
-            self.close_aprobar_dialog()
-            yield self.load_data()
-            
-            yield rx.toast.success(
-                "✅ Solicitud aprobada por Área Técnica",
-                position="top-right",
-                duration=3000
-            )
-        else:
+
+        # Mostrar carga
+        self.loading = True
+        yield
+
+        try:
+            result = SolicitudesRMApi.aprobar_por_tecnica(solicitud_id, admin_usuario)
+
+            if result:
+                self.close_aprobar_dialog()
+                
+                # ✅ CORREGIDO: usar yield from para ejecutar el generador load_data
+                yield from self.load_data()
+
+                yield rx.toast.success(
+                    "✅ Solicitud aprobada por Área Técnica",
+                    position="top-right",
+                    duration=3000
+                )
+            else:
+                yield rx.toast.error(
+                    "❌ Error al aprobar la solicitud",
+                    position="top-right",
+                    duration=4000
+                )
+        except Exception as e:
+            print(f"❌ Error en aprobar_solicitud: {e}")
             yield rx.toast.error(
-                "❌ Error al aprobar la solicitud",
+                f"❌ Error interno: {str(e)}",
                 position="top-right",
                 duration=4000
             )
+        finally:
+            self.loading = False
+            yield
     
     @rx.event
     def rechazar_solicitud(self):
@@ -213,29 +240,45 @@ class TecnicaState(rx.State):
                 duration=4000
             )
             return
-        
+
         solicitud_id = self.selected_solicitud.get("id")
-        
-        result = SolicitudesRMApi.rechazar_solicitud_rm(
-            solicitud_id, 
-            "Rechazado por Área Técnica"
-        )
-        
-        if result:
-            self.close_rechazar_dialog()
-            yield self.load_data()
-            
-            yield rx.toast.success(
-                "✅ Solicitud rechazada",
-                position="top-right",
-                duration=3000
+
+        self.loading = True
+        yield
+
+        try:
+            result = SolicitudesRMApi.rechazar_solicitud_rm(
+                solicitud_id,
+                "Rechazado por Área Técnica"
             )
-        else:
+
+            if result:
+                self.close_rechazar_dialog()
+                
+                # ✅ CORREGIDO: usar yield from
+                yield from self.load_data()
+
+                yield rx.toast.success(
+                    "✅ Solicitud rechazada",
+                    position="top-right",
+                    duration=3000
+                )
+            else:
+                yield rx.toast.error(
+                    "❌ Error al rechazar la solicitud",
+                    position="top-right",
+                    duration=4000
+                )
+        except Exception as e:
+            print(f"❌ Error en rechazar_solicitud: {e}")
             yield rx.toast.error(
-                "❌ Error al rechazar la solicitud",
+                f"❌ Error interno: {str(e)}",
                 position="top-right",
                 duration=4000
             )
+        finally:
+            self.loading = False
+            yield
     
     @rx.event
     def sign_out(self):
@@ -261,3 +304,76 @@ class TecnicaState(rx.State):
         for solicitud in self.solicitudes_pendientes:
             total += len(solicitud.get("recursos", []))
         return total
+    
+    def reset_loading(self):
+        """Resetea el estado de carga al cargar la página"""
+        self.loading = False
+
+    # ==================================================
+    # MÉTODOS DE PAGINACIÓN
+    # ==================================================
+    
+    def calculate_pagination(self):
+        """Calcula la paginación para la tabla de solicitudes pendientes."""
+        total_items = len(self.solicitudes_pendientes)
+
+        if total_items == 0:
+            self.total_pages = 1
+            self.solicitudes_paginated = []
+        else:
+            self.total_pages = max(1, (total_items + self.items_per_page - 1) // self.items_per_page)
+
+        # Asegurar que la página actual esté dentro de los límites
+        if self.current_page > self.total_pages:
+            self.current_page = max(1, self.total_pages)
+
+        start_idx = (self.current_page - 1) * self.items_per_page
+        end_idx = min(start_idx + self.items_per_page, total_items)
+
+        if total_items > 0:
+            self.solicitudes_paginated = self.solicitudes_pendientes[start_idx:end_idx]
+        else:
+            self.solicitudes_paginated = []
+
+        self.calculate_page_numbers()
+
+    def calculate_page_numbers(self):
+        """Calcula los números de página a mostrar (máximo 4)."""
+        max_pages_to_show = 4
+        current = self.current_page
+        total = self.total_pages
+
+        if total <= max_pages_to_show:
+            self.page_numbers = list(range(1, total + 1))
+            return
+
+        start = max(1, current - 1)
+        end = min(total, start + max_pages_to_show - 1)
+
+        if end - start + 1 < max_pages_to_show:
+            start = max(1, end - max_pages_to_show + 1)
+
+        self.page_numbers = list(range(start, end + 1))
+
+    def go_to_page(self, page_number: int):
+        """Navega a una página específica."""
+        if 1 <= page_number <= self.total_pages:
+            self.current_page = page_number
+            self.calculate_pagination()
+
+    def next_page(self):
+        """Página siguiente."""
+        if self.current_page < self.total_pages:
+            self.current_page += 1
+            self.calculate_pagination()
+
+    def previous_page(self):
+        """Página anterior."""
+        if self.current_page > 1:
+            self.current_page -= 1
+            self.calculate_pagination()
+
+    def reset_pagination(self):
+        """Resetea la paginación a la primera página."""
+        self.current_page = 1
+        self.calculate_pagination()

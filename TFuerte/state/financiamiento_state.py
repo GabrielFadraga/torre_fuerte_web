@@ -1,4 +1,3 @@
-# TFuerte/state/financiamiento_state.py
 import reflex as rx
 from typing import List
 from TFuerte.api.financiamiento_api import FinanciamientoApi
@@ -27,6 +26,15 @@ class FinanciamientoState(rx.State):
     username_revfin: str = ""
     password_revfin: str = ""
     error_message_revfin: str = ""
+    
+    # ==================================================
+    # PAGINACIÓN PARA REVFIN
+    # ==================================================
+    solicitudes_revfin_paginated: List[dict] = []
+    revfin_current_page: int = 1
+    revfin_items_per_page: int = 10
+    revfin_total_pages: int = 1
+    revfin_page_numbers: List[int] = []
     
     # Setters para RevFin
     def set_username_revfin(self, username: str):
@@ -104,6 +112,7 @@ class FinanciamientoState(rx.State):
             solicitudes_procesadas.append(solicitud_procesada)
         
         self.solicitudes_pendientes_revfin = solicitudes_procesadas
+        self.reset_revfin_pagination()
         self.loading_revfin = False
     
     # Filtrar solicitudes para RevFin
@@ -124,6 +133,7 @@ class FinanciamientoState(rx.State):
                 filtered.append(s)
         
         self.solicitudes_pendientes_revfin = filtered
+        self.reset_revfin_pagination()
     
     # Diálogos para RevFin
     def open_aprobar_dialog_revfin(self, solicitud: dict):
@@ -161,46 +171,44 @@ class FinanciamientoState(rx.State):
         if not self.selected_solicitud_revfin:
             yield rx.toast.error("❌ No hay solicitud seleccionada")
             return
-        
+
         solicitud_id = self.selected_solicitud_revfin.get("id")
         revfin_usuario = self.current_revfin.get("usuario", "Revisor Financiero")
-        
-        result = FinanciamientoApi.aprobar_por_revfin(solicitud_id, revfin_usuario)
-        
-        if result:
-            self.close_aprobar_dialog_revfin()
-            
-            self.loading_revfin = True
-            yield
-            yield self.load_data_revfin()
-            self.loading_revfin = False
-            
-            yield rx.toast.success(f"✅ Solicitud aprobada por Revisor Financiero")
-        else:
-            yield rx.toast.error("❌ Error al aprobar la solicitud")
+
+        try:
+            result = FinanciamientoApi.aprobar_por_revfin(solicitud_id, revfin_usuario)
+
+            if result:
+                self.close_aprobar_dialog_revfin()
+                yield from self.load_data_revfin()
+                yield rx.toast.success("✅ Solicitud aprobada por Revisor Financiero")
+            else:
+                yield rx.toast.error("❌ Error al aprobar la solicitud")
+        except Exception as e:
+            print(f"❌ Error en aprobar_solicitud_revfin: {e}")
+            yield rx.toast.error(f"❌ Error interno: {str(e)}")
     
     @rx.event
     def rechazar_solicitud_revfin(self):
         if not self.selected_solicitud_revfin:
             yield rx.toast.error("❌ No hay solicitud seleccionada")
             return
-        
+
         solicitud_id = self.selected_solicitud_revfin.get("id")
         motivo = self.motivo_rechazo_revfin if self.motivo_rechazo_revfin else "Rechazado por Revisor Financiero"
-        
-        result = FinanciamientoApi.rechazar_solicitud_fin(solicitud_id, motivo)
-        
-        if result:
-            self.close_rechazar_dialog_revfin()
-            
-            self.loading_revfin = True
-            yield
-            yield self.load_data_revfin()
-            self.loading_revfin = False
-            
-            yield rx.toast.success("✅ Solicitud rechazada")
-        else:
-            yield rx.toast.error("❌ Error al rechazar la solicitud")
+
+        try:
+            result = FinanciamientoApi.rechazar_solicitud_fin(solicitud_id, motivo)
+
+            if result:
+                self.close_rechazar_dialog_revfin()
+                yield from self.load_data_revfin()
+                yield rx.toast.success("✅ Solicitud rechazada")
+            else:
+                yield rx.toast.error("❌ Error al rechazar la solicitud")
+        except Exception as e:
+            print(f"❌ Error en rechazar_solicitud_revfin: {e}")
+            yield rx.toast.error(f"❌ Error interno: {str(e)}")
     
     # Cerrar sesión RevFin
     @rx.event
@@ -224,3 +232,70 @@ class FinanciamientoState(rx.State):
     @rx.var
     def revfin_name(self) -> str:
         return self.current_revfin.get("usuario", "Revisor Financiero")
+    
+    def reset_loading_revfin(self):
+        """Resetea el estado de carga al cargar la página"""
+        self.loading_revfin = False
+
+    # ==================================================
+    # MÉTODOS DE PAGINACIÓN PARA REVFIN
+    # ==================================================
+    
+    def calculate_revfin_pagination(self):
+        """Calcula la paginación para la tabla de solicitudes de financiamiento."""
+        total_items = len(self.solicitudes_pendientes_revfin)
+
+        if total_items == 0:
+            self.revfin_total_pages = 1
+            self.solicitudes_revfin_paginated = []
+        else:
+            self.revfin_total_pages = max(1, (total_items + self.revfin_items_per_page - 1) // self.revfin_items_per_page)
+
+        if self.revfin_current_page > self.revfin_total_pages:
+            self.revfin_current_page = max(1, self.revfin_total_pages)
+
+        start_idx = (self.revfin_current_page - 1) * self.revfin_items_per_page
+        end_idx = min(start_idx + self.revfin_items_per_page, total_items)
+
+        if total_items > 0:
+            self.solicitudes_revfin_paginated = self.solicitudes_pendientes_revfin[start_idx:end_idx]
+        else:
+            self.solicitudes_revfin_paginated = []
+
+        self.calculate_revfin_page_numbers()
+
+    def calculate_revfin_page_numbers(self):
+        max_pages_to_show = 4
+        current = self.revfin_current_page
+        total = self.revfin_total_pages
+
+        if total <= max_pages_to_show:
+            self.revfin_page_numbers = list(range(1, total + 1))
+            return
+
+        start = max(1, current - 1)
+        end = min(total, start + max_pages_to_show - 1)
+
+        if end - start + 1 < max_pages_to_show:
+            start = max(1, end - max_pages_to_show + 1)
+
+        self.revfin_page_numbers = list(range(start, end + 1))
+
+    def go_to_page_revfin(self, page_number: int):
+        if 1 <= page_number <= self.revfin_total_pages:
+            self.revfin_current_page = page_number
+            self.calculate_revfin_pagination()
+
+    def next_page_revfin(self):
+        if self.revfin_current_page < self.revfin_total_pages:
+            self.revfin_current_page += 1
+            self.calculate_revfin_pagination()
+
+    def previous_page_revfin(self):
+        if self.revfin_current_page > 1:
+            self.revfin_current_page -= 1
+            self.calculate_revfin_pagination()
+
+    def reset_revfin_pagination(self):
+        self.revfin_current_page = 1
+        self.calculate_revfin_pagination()

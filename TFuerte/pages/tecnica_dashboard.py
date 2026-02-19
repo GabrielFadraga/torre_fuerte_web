@@ -1,4 +1,3 @@
-# TFuerte/pages/tecnica_dashboard.py
 import reflex as rx
 from TFuerte.state.tecnica_state import TecnicaState
 from TFuerte.components.navbar import navbar
@@ -7,7 +6,7 @@ from TFuerte.routes import Route
 @rx.page(
     route=Route.TECNICA_DASHBOARD.value,
     title="Dashboard - Área Técnica",
-    on_load=TecnicaState.load_data
+    on_load=[TecnicaState.load_data, TecnicaState.reset_loading]
 )
 def tecnica_dashboard() -> rx.Component:
     """Dashboard para Jefe de Área Técnica (Alexander)"""
@@ -24,8 +23,142 @@ def tecnica_dashboard() -> rx.Component:
         )
     
     def solicitudes_table() -> rx.Component:
-        """Tabla de solicitudes RM pendientes"""
+        """Tabla de solicitudes RM pendientes con paginación."""
         
+        # Botón de página individual
+        def create_page_button(page_num: int):
+            return rx.button(
+                rx.text(page_num, size="2", font_weight="500"),
+                on_click=lambda: TecnicaState.go_to_page(page_num),
+                variant="soft",
+                size="2",
+                style=rx.cond(
+                    TecnicaState.current_page == page_num,
+                    {
+                        "background": "#059669",
+                        "color": "white",
+                        "border": "1px solid #059669",
+                        "_hover": {"background": "#047857"},
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    },
+                    {
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "_hover": {
+                            "background": "#f8fafc",
+                            "border": "1px solid #cbd5e1"
+                        },
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                )
+            )
+        
+        # Controles de paginación
+        def render_pagination():
+            return rx.hstack(
+                # Botón anterior
+                rx.button(
+                    rx.icon("chevron-left", size=16),
+                    on_click=TecnicaState.previous_page,
+                    variant="soft",
+                    size="2",
+                    is_disabled=TecnicaState.current_page == 1,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                # Contenedor de números
+                rx.box(
+                    rx.hstack(
+                        # Primera página + "..." si estamos lejos del inicio
+                        rx.cond(
+                            (TecnicaState.current_page > 3) & (TecnicaState.total_pages > 4),
+                            rx.hstack(
+                                create_page_button(1),
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        # Páginas del rango calculado (máximo 4)
+                        rx.cond(
+                            TecnicaState.page_numbers.length() > 0,
+                            rx.hstack(
+                                rx.foreach(
+                                    TecnicaState.page_numbers,
+                                    create_page_button
+                                ),
+                                spacing="1",
+                                wrap="nowrap",
+                                flex_shrink=0,
+                            ),
+                            rx.text(
+                                f"Pág. {TecnicaState.current_page}",
+                                size="2",
+                                color="#64748b",
+                                padding_x="2",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        # Última página + "..." si estamos lejos del final
+                        rx.cond(
+                            (TecnicaState.current_page < TecnicaState.total_pages - 2) & (TecnicaState.total_pages > 4),
+                            rx.hstack(
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                create_page_button(TecnicaState.total_pages),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        spacing="1",
+                        wrap="nowrap",
+                        align="center",
+                    ),
+                    overflow_x="auto",
+                    flex_grow=0,
+                    flex_shrink=1,
+                    max_width="100%",
+                ),
+                # Botón siguiente
+                rx.button(
+                    rx.hstack(
+                        rx.icon("chevron-right", size=16),
+                        width="100%",
+                        spacing="0",
+                        justify="end",
+                        align="end",
+                    ),
+                    on_click=TecnicaState.next_page,
+                    variant="soft",
+                    size="2",
+                    is_disabled=TecnicaState.current_page == TecnicaState.total_pages,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                spacing="2",
+                wrap="nowrap",
+                align="center",
+                justify="end",
+                width="100%",
+            )
+        
+        # Fila de solicitud
         def solicitud_row(solicitud):
             return rx.table.row(
                 rx.table.cell(
@@ -46,7 +179,7 @@ def tecnica_dashboard() -> rx.Component:
                 ),
                 rx.table.cell(
                     rx.text(
-                        solicitud.get("Descripcion", "-"),  # ¡Ahora funcionará!
+                        solicitud.get("Descripcion", "-"),
                         color="#070E0C",
                         style={
                             "max_width": "180px",
@@ -58,11 +191,11 @@ def tecnica_dashboard() -> rx.Component:
                     style={"padding": "8px 4px", "min_width": "180px"}
                 ),
                 rx.table.cell(
-                    rx.text(solicitud.get("Cantidad", "-"), color="#070E0C"),  # ¡Ahora funcionará!
+                    rx.text(solicitud.get("Cantidad", "-"), color="#070E0C"),
                     style={"padding": "8px 4px", "min_width": "80px"}
                 ),
                 rx.table.cell(
-                    rx.text(solicitud.get("UM", "-"), color="#070E0C"),  # ¡Ahora funcionará!
+                    rx.text(solicitud.get("UM", "-"), color="#070E0C"),
                     style={"padding": "8px 4px", "min_width": "80px"}
                 ),
                 rx.table.cell(
@@ -118,45 +251,97 @@ def tecnica_dashboard() -> rx.Component:
                 padding="3rem",
                 width="100%"
             ),
-            rx.box(
-                rx.scroll_area(
-                    rx.table.root(
-                        rx.table.header(
-                            rx.table.row(
-                                rx.table.column_header_cell("ID", style=header_style),
-                                rx.table.column_header_cell("Centro Costo", style=header_style),
-                                rx.table.column_header_cell("Fecha", style=header_style),
-                                rx.table.column_header_cell("Orden Trabajo", style=header_style),
-                                rx.table.column_header_cell("Descripción", style=header_style),
-                                rx.table.column_header_cell("Cantidad", style=header_style),
-                                rx.table.column_header_cell("UM", style=header_style),
-                                rx.table.column_header_cell("Estado", style=header_style),
-                                rx.table.column_header_cell("Acciones", style=header_style),
-                            )
+            rx.vstack(
+                # Tabla con scroll horizontal
+                rx.box(
+                    rx.scroll_area(
+                        rx.table.root(
+                            rx.table.header(
+                                rx.table.row(
+                                    rx.table.column_header_cell("ID", style=header_style),
+                                    rx.table.column_header_cell("Centro Costo", style=header_style),
+                                    rx.table.column_header_cell("Fecha", style=header_style),
+                                    rx.table.column_header_cell("Orden Trabajo", style=header_style),
+                                    rx.table.column_header_cell("Descripción", style=header_style),
+                                    rx.table.column_header_cell("Cantidad", style=header_style),
+                                    rx.table.column_header_cell("UM", style=header_style),
+                                    rx.table.column_header_cell("Estado", style=header_style),
+                                    rx.table.column_header_cell("Acciones", style=header_style),
+                                )
+                            ),
+                            rx.table.body(
+                                rx.foreach(
+                                    TecnicaState.solicitudes_paginated,  # <-- Usamos datos paginados
+                                    solicitud_row
+                                )
+                            ),
+                            style={
+                                "width": "100%",
+                                "min_width": "1000px",
+                                "table_layout": "auto"
+                            }
                         ),
-                        rx.table.body(
-                            rx.foreach(
-                                TecnicaState.solicitudes_pendientes,
-                                solicitud_row
-                            )
-                        ),
+                        type="always",
+                        scrollbars="horizontal",
                         style={
                             "width": "100%",
-                            "min_width": "1000px",
-                            "table_layout": "auto"
+                            "max_height": "650px",   # Ajuste para 10 filas
+                            "height": "auto",
+                            "overflow_y": "auto",
+                            "border": "1px solid #e2e8f0",
+                            "border_radius": "8px"
                         }
                     ),
-                    type="always",
-                    scrollbars="horizontal",
-                    style={
-                        "width": "100%",
-                        "height": "500px",
-                        "border": "1px solid #e2e8f0",
-                        "border_radius": "8px"
-                    }
+                    width="100%",
                 ),
-                width="100%",
-                overflow_x="auto"
+                # Controles de paginación
+                rx.cond(
+                    TecnicaState.solicitudes_pendientes.length() > TecnicaState.items_per_page,
+                    rx.box(
+                        rx.hstack(
+                            rx.text(
+                                rx.cond(
+                                    TecnicaState.solicitudes_pendientes.length() > 0,
+                                    rx.cond(
+                                        TecnicaState.current_page == 1,
+                                        "Mostrando 1 a " + rx.cond(
+                                            TecnicaState.items_per_page > TecnicaState.solicitudes_pendientes.length(),
+                                            TecnicaState.solicitudes_pendientes.length().to(str),
+                                            TecnicaState.items_per_page.to(str)
+                                        ) + " de " + TecnicaState.solicitudes_pendientes.length().to(str) + " resultados",
+                                        "Mostrando " + ((TecnicaState.current_page - 1) * TecnicaState.items_per_page + 1).to(str) + " a " + rx.cond(
+                                            TecnicaState.current_page * TecnicaState.items_per_page > TecnicaState.solicitudes_pendientes.length(),
+                                            TecnicaState.solicitudes_pendientes.length().to(str),
+                                            (TecnicaState.current_page * TecnicaState.items_per_page).to(str)
+                                        ) + " de " + TecnicaState.solicitudes_pendientes.length().to(str) + " resultados"
+                                    ),
+                                    "Mostrando 0 a 0 de 0 resultados"
+                                ),
+                                size="2",
+                                color="#64748b",
+                                font_weight="500",
+                                flex_shrink=0,
+                                margin_right="8rem",
+                            ),
+                            rx.spacer(),
+                            rx.box(
+                                render_pagination(),
+                                flex_shrink=0,
+                                margin_left="0.5rem",
+                            ),
+                            width="100%",
+                            align="center",
+                            spacing="6",
+                            wrap="wrap",
+                        ),
+                        padding="1.5rem 1rem",
+                        border_top="1px solid #e2e8f0",
+                        background="#f8fafc",
+                    ),
+                    rx.box(height="1rem")
+                ),
+                spacing="0",
+                width="100%"
             )
         )
     
@@ -399,7 +584,7 @@ def tecnica_dashboard() -> rx.Component:
                         height="300px", 
                         width="100%",
                     ),
-                    solicitudes_table()
+                    solicitudes_table()  # <-- Tabla con paginación
                 ),
                 
                 # Información de búsqueda

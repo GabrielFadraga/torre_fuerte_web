@@ -1,4 +1,3 @@
-# TFuerte/state/admin_rm_state.py
 import reflex as rx
 from typing import List
 from TFuerte.api.solicitudes_rm_api import SolicitudesRMApi
@@ -46,6 +45,24 @@ class AdminRMState(rx.State):
     username: str = ""
     password: str = ""
     error_message: str = ""
+    
+    # ==================================================
+    # PAGINACIÓN PARA RECURSOS RM
+    # ==================================================
+    recursos_paginated: List[dict] = []
+    recursos_current_page: int = 1
+    recursos_items_per_page: int = 10
+    recursos_total_pages: int = 1
+    recursos_page_numbers: List[int] = []
+
+    # ==================================================
+    # PAGINACIÓN PARA FINANCIAMIENTO
+    # ==================================================
+    financiamiento_paginated: List[dict] = []
+    fin_current_page: int = 1
+    fin_items_per_page: int = 10
+    fin_total_pages: int = 1
+    fin_page_numbers: List[int] = []
     
     # Setters
     def set_username(self, username: str):
@@ -101,6 +118,7 @@ class AdminRMState(rx.State):
                 )
         
         self.solicitudes_fin_pendientes = list(solicitudes_agrupadas.values())
+        self.reset_fin_pagination()
         self.loading_fin = False
     
     def filter_solicitudes_fin(self, search_value: str):
@@ -119,6 +137,7 @@ class AdminRMState(rx.State):
                 filtered.append(s)
         
         self.solicitudes_fin_pendientes = filtered
+        self.reset_fin_pagination()
     
     # Diálogos para financiamiento
     def open_aprobar_dialog_fin(self, solicitud: dict):
@@ -165,69 +184,79 @@ class AdminRMState(rx.State):
     
     @rx.event
     def aprobar_solicitud_fin(self):
-        """Aprueba una solicitud de financiamiento"""
         if not self.selected_solicitud_fin:
             yield rx.toast.error("❌ No hay solicitud seleccionada")
             return
-        
-        # Obtener todos los recursos de esta solicitud
+
         numero_solicitud = self.selected_solicitud_fin.get("numero_solicitud")
         recursos = FinanciamientoApi.get_solicitud_fin_by_numero(numero_solicitud)
-        
+
         if not recursos:
             yield rx.toast.error("❌ No se encontraron recursos para esta solicitud")
             return
-        
+
         admin_usuario = self.current_admin.get("usuario", "Maikel")
-        
-        # Aprobar cada recurso individualmente
-        for recurso in recursos:
-            result = FinanciamientoApi.aprobar_por_admin(recurso["id"], admin_usuario)
-            if not result:
-                yield rx.toast.error(f"❌ Error al aprobar recurso {recurso['id']}")
-                return
-        
-        self.close_aprobar_dialog_fin()
-        
+
         self.loading_fin = True
         yield
-        yield self.load_data_fin()
-        self.loading_fin = False
-        
-        yield rx.toast.success("✅ Solicitud de financiamiento aprobada")
+
+        try:
+            exito = True
+            for recurso in recursos:
+                result = FinanciamientoApi.aprobar_por_admin(recurso["id"], admin_usuario)
+                if not result:
+                    exito = False
+                    yield rx.toast.error(f"❌ Error al aprobar recurso {recurso['id']}")
+                    break
+
+            if exito:
+                self.close_aprobar_dialog_fin()
+                yield from self.load_data_fin()
+                yield rx.toast.success("✅ Solicitud de financiamiento aprobada")
+        except Exception as e:
+            print(f"❌ Error en aprobar_solicitud_fin: {e}")
+            yield rx.toast.error(f"❌ Error interno: {str(e)}")
+        finally:
+            self.loading_fin = False
+            yield
     
     @rx.event
     def rechazar_solicitud_fin(self):
-        """Rechaza una solicitud de financiamiento"""
         if not self.selected_solicitud_fin:
             yield rx.toast.error("❌ No hay solicitud seleccionada")
             return
-        
-        # Obtener todos los recursos de esta solicitud
+
         numero_solicitud = self.selected_solicitud_fin.get("numero_solicitud")
         recursos = FinanciamientoApi.get_solicitud_fin_by_numero(numero_solicitud)
-        
+
         if not recursos:
             yield rx.toast.error("❌ No se encontraron recursos para esta solicitud")
             return
-        
+
         motivo = self.motivo_rechazo_fin if self.motivo_rechazo_fin else "Rechazado por Administración"
-        
-        # Rechazar cada recurso individualmente
-        for recurso in recursos:
-            result = FinanciamientoApi.rechazar_solicitud_fin(recurso["id"], motivo)
-            if not result:
-                yield rx.toast.error(f"❌ Error al rechazar recurso {recurso['id']}")
-                return
-        
-        self.close_rechazar_dialog_fin()
-        
+
         self.loading_fin = True
         yield
-        yield self.load_data_fin()
-        self.loading_fin = False
-        
-        yield rx.toast.success("✅ Solicitud de financiamiento rechazada")
+
+        try:
+            exito = True
+            for recurso in recursos:
+                result = FinanciamientoApi.rechazar_solicitud_fin(recurso["id"], motivo)
+                if not result:
+                    exito = False
+                    yield rx.toast.error(f"❌ Error al rechazar recurso {recurso['id']}")
+                    break
+
+            if exito:
+                self.close_rechazar_dialog_fin()
+                yield from self.load_data_fin()
+                yield rx.toast.success("✅ Solicitud de financiamiento rechazada")
+        except Exception as e:
+            print(f"❌ Error en rechazar_solicitud_fin: {e}")
+            yield rx.toast.error(f"❌ Error interno: {str(e)}")
+        finally:
+            self.loading_fin = False
+            yield
     
     @rx.event
     def generar_documento_fin(self):
@@ -242,26 +271,20 @@ class AdminRMState(rx.State):
         yield
         
         try:
-            # Obtener datos del solicitante
-            recursos = FinanciamientoApi.get_solicitud_fin_by_numero(numero_solicitud)
-            if not recursos:
+            # Obtener datos completos (recursos + solicitante)
+            from TFuerte.api.financiamiento_api import FinanciamientoApi
+            datos_completos = FinanciamientoApi.get_solicitud_fin_con_solicitante(numero_solicitud)
+            
+            if not datos_completos.get("recursos"):
                 yield rx.toast.error("❌ No se encontraron recursos para esta solicitud")
                 self.loading_fin = False
                 return
             
-            primer_recurso = recursos[0]
-            solicitante_id = primer_recurso.get("solicitante_id")
-            
-            # Aquí necesitarías obtener el solicitante de la base de datos
-            # Por ahora usaremos datos de ejemplo
-            solicitante = {
-                "id": solicitante_id,
-                "usuario": "Solicitante",
-                "cargo": "Solicitante"
-            }
+            recursos = datos_completos["recursos"]
+            solicitante = datos_completos["solicitante"]
             
             # Generar el documento Word
-            word_content = generar_word_solicitud_fin(numero_solicitud, solicitante)
+            word_content = generar_word_solicitud_fin(numero_solicitud, recursos, solicitante)
             
             if not word_content:
                 yield rx.toast.error("❌ Error al generar el documento")
@@ -384,6 +407,7 @@ class AdminRMState(rx.State):
             solicitudes_procesadas.append(solicitud_procesada)
         
         self.solicitudes_pendientes = solicitudes_procesadas
+        self.reset_recursos_pagination()
         self.loading = False
     
     def filter_solicitudes(self, search_value: str):
@@ -403,42 +427,7 @@ class AdminRMState(rx.State):
                 filtered.append(s)
         
         self.solicitudes_pendientes = filtered
-
-    @rx.event
-    def load_data_fin(self):
-        """Carga las solicitudes de financiamiento pendientes para admin"""
-        self.loading_fin = True
-        yield
-        
-        solicitudes_pendientes = FinanciamientoApi.get_solicitudes_fin_pendientes_admin()
-        
-        # Agrupar por número de solicitud
-        solicitudes_agrupadas = {}
-        for solicitud in solicitudes_pendientes:
-            numero_solicitud = solicitud.get("numero_solicitud")
-            if not numero_solicitud:
-                continue
-            
-            if numero_solicitud not in solicitudes_agrupadas:
-                solicitudes_agrupadas[numero_solicitud] = {
-                    "id": solicitud.get("id"),
-                    "numero_solicitud": numero_solicitud,
-                    "Area solicitante": solicitud.get("Area solicitante"),
-                    "Fecha": solicitud.get("Fecha"),
-                    "Orden de trabajo": solicitud.get("Orden de trabajo"),
-                    "Total": FinanciamientoApi.get_total_solicitud_fin(numero_solicitud),
-                    "estado": solicitud.get("estado", "aprobado_revfin"),
-                    "num_recursos": 1,
-                    "recursos": [solicitud]
-                }
-            else:
-                solicitudes_agrupadas[numero_solicitud]["num_recursos"] += 1
-                solicitudes_agrupadas[numero_solicitud]["recursos"].append(solicitud)
-                # Recalcular total
-                solicitudes_agrupadas[numero_solicitud]["Total"] = FinanciamientoApi.get_total_solicitud_fin(numero_solicitud)
-        
-        self.solicitudes_fin_pendientes = list(solicitudes_agrupadas.values())
-        self.loading_fin = False
+        self.reset_recursos_pagination()
     
     # Diálogos para recursos RM
     def open_aprobar_dialog(self, solicitud: dict):
@@ -475,46 +464,56 @@ class AdminRMState(rx.State):
         if not self.selected_solicitud:
             yield rx.toast.error("❌ No hay solicitud seleccionada")
             return
-        
+
         solicitud_id = self.selected_solicitud.get("id")
         admin_usuario = self.current_admin.get("usuario", "Maikel")
-        
-        result = SolicitudesRMApi.aprobar_por_admin(solicitud_id, admin_usuario)
-        
-        if result:
-            self.close_aprobar_dialog()
-            
-            self.loading = True
-            yield
-            yield self.load_data()
+
+        self.loading = True
+        yield
+
+        try:
+            result = SolicitudesRMApi.aprobar_por_admin(solicitud_id, admin_usuario)
+
+            if result:
+                self.close_aprobar_dialog()
+                yield from self.load_data()
+                yield rx.toast.success("✅ Solicitud aprobada por Administración")
+            else:
+                yield rx.toast.error("❌ Error al aprobar la solicitud")
+        except Exception as e:
+            print(f"❌ Error en aprobar_solicitud: {e}")
+            yield rx.toast.error(f"❌ Error interno: {str(e)}")
+        finally:
             self.loading = False
-            
-            yield rx.toast.success("✅ Solicitud aprobada por Administración")
-        else:
-            yield rx.toast.error("❌ Error al aprobar la solicitud")
+            yield
     
     @rx.event
     def rechazar_solicitud(self):
         if not self.selected_solicitud:
             yield rx.toast.error("❌ No hay solicitud seleccionada")
             return
-        
+
         solicitud_id = self.selected_solicitud.get("id")
         motivo = self.motivo_rechazo if self.motivo_rechazo else "Rechazado por Administración"
-        
-        result = SolicitudesRMApi.rechazar_solicitud_rm(solicitud_id, motivo)
-        
-        if result:
-            self.close_rechazar_dialog()
-            
-            self.loading = True
-            yield
-            yield self.load_data()
+
+        self.loading = True
+        yield
+
+        try:
+            result = SolicitudesRMApi.rechazar_solicitud_rm(solicitud_id, motivo)
+
+            if result:
+                self.close_rechazar_dialog()
+                yield from self.load_data()
+                yield rx.toast.success("✅ Solicitud rechazada")
+            else:
+                yield rx.toast.error("❌ Error al rechazar la solicitud")
+        except Exception as e:
+            print(f"❌ Error en rechazar_solicitud: {e}")
+            yield rx.toast.error(f"❌ Error interno: {str(e)}")
+        finally:
             self.loading = False
-            
-            yield rx.toast.success("✅ Solicitud rechazada")
-        else:
-            yield rx.toast.error("❌ Error al rechazar la solicitud")
+            yield
     
     @rx.event
     def sign_out(self):
@@ -553,228 +552,131 @@ class AdminRMState(rx.State):
             total += len(solicitud.get("recursos", []))
         return total
     
-    @rx.event
-    def load_data_fin(self):
-        """Carga las solicitudes de financiamiento pendientes para admin"""
-        self.loading_fin = True
-        yield
-        
-        solicitudes_pendientes = FinanciamientoApi.get_solicitudes_fin_pendientes_admin()
-        
-        # Agrupar por número de solicitud
-        solicitudes_agrupadas = {}
-        for solicitud in solicitudes_pendientes:
-            numero_solicitud = solicitud.get("numero_solicitud")
-            if not numero_solicitud:
-                continue
-            
-            if numero_solicitud not in solicitudes_agrupadas:
-                solicitudes_agrupadas[numero_solicitud] = {
-                    "id": solicitud.get("id"),
-                    "numero_solicitud": numero_solicitud,
-                    "Area solicitante": solicitud.get("Area solicitante"),
-                    "Fecha": solicitud.get("Fecha"),
-                    "Orden de trabajo": solicitud.get("Orden de trabajo"),
-                    "Total": solicitud.get("Total", 0),
-                    "estado": solicitud.get("estado", "aprobado_revfin"),
-                    "num_recursos": 1,
-                    "recursos": [solicitud]
-                }
-            else:
-                solicitudes_agrupadas[numero_solicitud]["num_recursos"] += 1
-                solicitudes_agrupadas[numero_solicitud]["recursos"].append(solicitud)
-                # Sumar el total si es necesario
-                solicitudes_agrupadas[numero_solicitud]["Total"] += solicitud.get("Importe", 0)
-        
-        self.solicitudes_fin_pendientes = list(solicitudes_agrupadas.values())
+    def reset_loading_states(self):
+        """Resetea todos los estados de carga al cargar la página"""
+        self.loading = False
         self.loading_fin = False
+
+    # ==================================================
+    # MÉTODOS DE PAGINACIÓN PARA RECURSOS RM
+    # ==================================================
     
-    def filter_solicitudes_fin(self, search_value: str):
-        """Filtra las solicitudes de financiamiento por término de búsqueda"""
-        self.search_value_fin = search_value
-        
-        if not search_value:
-            return self.load_data_fin()
-        
-        search_term = search_value.lower()
-        filtered = []
-        for s in self.solicitudes_fin_pendientes:
-            if (search_term in s.get("Area solicitante", "").lower() or
-                search_term in s.get("Orden de trabajo", "").lower() or
-                search_term in str(s.get("Total", "")).lower()):
-                filtered.append(s)
-        
-        self.solicitudes_fin_pendientes = filtered
-    
-    # Diálogos para financiamiento
-    def open_aprobar_dialog_fin(self, solicitud: dict):
-        self.selected_solicitud_fin = solicitud
-        self.show_aprobar_dialog_fin = True
-    
-    def close_aprobar_dialog_fin(self):
-        self.show_aprobar_dialog_fin = False
-        self.selected_solicitud_fin = {}
-    
-    def open_rechazar_dialog_fin(self, solicitud: dict):
-        self.selected_solicitud_fin = solicitud
-        self.show_rechazar_dialog_fin = True
-        self.motivo_rechazo_fin = ""
-    
-    def close_rechazar_dialog_fin(self):
-        self.show_rechazar_dialog_fin = False
-        self.selected_solicitud_fin = {}
-        self.motivo_rechazo_fin = ""
-    
-    def open_generar_dialog_fin(self, solicitud: dict):
-        self.selected_solicitud_fin = solicitud
-        self.show_generar_dialog_fin = True
-    
-    def close_generar_dialog_fin(self):
-        self.show_generar_dialog_fin = False
-        self.selected_solicitud_fin = {}
-    
-    def set_show_aprobar_dialog_fin(self, show: bool):
-        self.show_aprobar_dialog_fin = show
-        if not show:
-            self.selected_solicitud_fin = {}
-    
-    def set_show_rechazar_dialog_fin(self, show: bool):
-        self.show_rechazar_dialog_fin = show
-        if not show:
-            self.selected_solicitud_fin = {}
-            self.motivo_rechazo_fin = ""
-    
-    def set_show_generar_dialog_fin(self, show: bool):
-        self.show_generar_dialog_fin = show
-        if not show:
-            self.selected_solicitud_fin = {}
-    
-    def set_motivo_rechazo_fin(self, motivo: str):
-        self.motivo_rechazo_fin = motivo
-    
-    @rx.event
-    def aprobar_solicitud_fin(self):
-        """Aprueba una solicitud de financiamiento"""
-        if not self.selected_solicitud_fin:
-            yield rx.toast.error("❌ No hay solicitud seleccionada")
+    def calculate_recursos_pagination(self):
+        total_items = len(self.solicitudes_pendientes)
+
+        if total_items == 0:
+            self.recursos_total_pages = 1
+            self.recursos_paginated = []
+        else:
+            self.recursos_total_pages = max(1, (total_items + self.recursos_items_per_page - 1) // self.recursos_items_per_page)
+
+        if self.recursos_current_page > self.recursos_total_pages:
+            self.recursos_current_page = max(1, self.recursos_total_pages)
+
+        start_idx = (self.recursos_current_page - 1) * self.recursos_items_per_page
+        end_idx = min(start_idx + self.recursos_items_per_page, total_items)
+
+        if total_items > 0:
+            self.recursos_paginated = self.solicitudes_pendientes[start_idx:end_idx]
+        else:
+            self.recursos_paginated = []
+
+        self.calculate_recursos_page_numbers()
+
+    def calculate_recursos_page_numbers(self):
+        max_pages_to_show = 4
+        current = self.recursos_current_page
+        total = self.recursos_total_pages
+
+        if total <= max_pages_to_show:
+            self.recursos_page_numbers = list(range(1, total + 1))
             return
-        
-        # Obtener todos los recursos de esta solicitud
-        numero_solicitud = self.selected_solicitud_fin.get("numero_solicitud")
-        recursos = FinanciamientoApi.get_solicitud_fin_by_numero(numero_solicitud)
-        
-        if not recursos:
-            yield rx.toast.error("❌ No se encontraron recursos para esta solicitud")
-            return
-        
-        admin_usuario = self.current_admin.get("usuario", "Maikel")
-        
-        # Aprobar cada recurso individualmente
-        for recurso in recursos:
-            result = FinanciamientoApi.aprobar_por_admin(recurso["id"], admin_usuario)
-            if not result:
-                yield rx.toast.error(f"❌ Error al aprobar recurso {recurso['id']}")
-                return
-        
-        self.close_aprobar_dialog_fin()
-        
-        self.loading_fin = True
-        yield
-        yield self.load_data_fin()
-        self.loading_fin = False
-        
-        yield rx.toast.success("✅ Solicitud de financiamiento aprobada")
+
+        start = max(1, current - 1)
+        end = min(total, start + max_pages_to_show - 1)
+
+        if end - start + 1 < max_pages_to_show:
+            start = max(1, end - max_pages_to_show + 1)
+
+        self.recursos_page_numbers = list(range(start, end + 1))
+
+    def go_to_page_recursos(self, page_number: int):
+        if 1 <= page_number <= self.recursos_total_pages:
+            self.recursos_current_page = page_number
+            self.calculate_recursos_pagination()
+
+    def next_page_recursos(self):
+        if self.recursos_current_page < self.recursos_total_pages:
+            self.recursos_current_page += 1
+            self.calculate_recursos_pagination()
+
+    def previous_page_recursos(self):
+        if self.recursos_current_page > 1:
+            self.recursos_current_page -= 1
+            self.calculate_recursos_pagination()
+
+    def reset_recursos_pagination(self):
+        self.recursos_current_page = 1
+        self.calculate_recursos_pagination()
+
+    # ==================================================
+    # MÉTODOS DE PAGINACIÓN PARA FINANCIAMIENTO
+    # ==================================================
     
-    @rx.event
-    def rechazar_solicitud_fin(self):
-        """Rechaza una solicitud de financiamiento"""
-        if not self.selected_solicitud_fin:
-            yield rx.toast.error("❌ No hay solicitud seleccionada")
+    def calculate_fin_pagination(self):
+        total_items = len(self.solicitudes_fin_pendientes)
+
+        if total_items == 0:
+            self.fin_total_pages = 1
+            self.financiamiento_paginated = []
+        else:
+            self.fin_total_pages = max(1, (total_items + self.fin_items_per_page - 1) // self.fin_items_per_page)
+
+        if self.fin_current_page > self.fin_total_pages:
+            self.fin_current_page = max(1, self.fin_total_pages)
+
+        start_idx = (self.fin_current_page - 1) * self.fin_items_per_page
+        end_idx = min(start_idx + self.fin_items_per_page, total_items)
+
+        if total_items > 0:
+            self.financiamiento_paginated = self.solicitudes_fin_pendientes[start_idx:end_idx]
+        else:
+            self.financiamiento_paginated = []
+
+        self.calculate_fin_page_numbers()
+
+    def calculate_fin_page_numbers(self):
+        max_pages_to_show = 4
+        current = self.fin_current_page
+        total = self.fin_total_pages
+
+        if total <= max_pages_to_show:
+            self.fin_page_numbers = list(range(1, total + 1))
             return
-        
-        # Obtener todos los recursos de esta solicitud
-        numero_solicitud = self.selected_solicitud_fin.get("numero_solicitud")
-        recursos = FinanciamientoApi.get_solicitud_fin_by_numero(numero_solicitud)
-        
-        if not recursos:
-            yield rx.toast.error("❌ No se encontraron recursos para esta solicitud")
-            return
-        
-        motivo = self.motivo_rechazo_fin if self.motivo_rechazo_fin else "Rechazado por Administración"
-        
-        # Rechazar cada recurso individualmente
-        for recurso in recursos:
-            result = FinanciamientoApi.rechazar_solicitud_fin(recurso["id"], motivo)
-            if not result:
-                yield rx.toast.error(f"❌ Error al rechazar recurso {recurso['id']}")
-                return
-        
-        self.close_rechazar_dialog_fin()
-        
-        self.loading_fin = True
-        yield
-        yield self.load_data_fin()
-        self.loading_fin = False
-        
-        yield rx.toast.success("✅ Solicitud de financiamiento rechazada")
-    
-    @rx.event
-    def generar_documento_fin(self):
-        """Genera el documento Word para la solicitud de financiamiento"""
-        if not self.selected_solicitud_fin:
-            yield rx.toast.error("❌ No hay solicitud seleccionada")
-            return
-        
-        numero_solicitud = self.selected_solicitud_fin.get("numero_solicitud")
-        
-        self.loading_fin = True
-        yield
-        
-        try:
-            # Obtener datos completos (recursos + solicitante)
-            from TFuerte.api.financiamiento_api import FinanciamientoApi
-            datos_completos = FinanciamientoApi.get_solicitud_fin_con_solicitante(numero_solicitud)
-            
-            if not datos_completos.get("recursos"):
-                yield rx.toast.error("❌ No se encontraron recursos para esta solicitud")
-                self.loading_fin = False
-                return
-            
-            recursos = datos_completos["recursos"]
-            solicitante = datos_completos["solicitante"]
-            
-            # Generar el documento Word
-            word_content = generar_word_solicitud_fin(numero_solicitud, recursos, solicitante)
-            
-            if not word_content:
-                yield rx.toast.error("❌ Error al generar el documento")
-                self.loading_fin = False
-                return
-            
-            # Crear nombre del archivo
-            from datetime import datetime
-            fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
-            nombre_archivo = f"Solicitud_Fin_{numero_solicitud}_{fecha_actual}.docx"
-            
-            self.close_generar_dialog_fin()
-            
-            yield rx.toast.success(f"✅ Documento generado: {nombre_archivo}")
-            
-            # Retornar el archivo para descarga
-            return rx.download(
-                data=word_content,
-                filename=nombre_archivo
-            )
-            
-        except Exception as e:
-            print(f"❌ Error generando documento: {e}")
-            import traceback
-            traceback.print_exc()
-            yield rx.toast.error("❌ Error al generar el documento")
-        finally:
-            self.loading_fin = False
-    
-    # Variables computadas adicionales
-    @rx.var
-    def solicitudes_fin_count(self) -> int:
-        return len(self.solicitudes_fin_pendientes)
+
+        start = max(1, current - 1)
+        end = min(total, start + max_pages_to_show - 1)
+
+        if end - start + 1 < max_pages_to_show:
+            start = max(1, end - max_pages_to_show + 1)
+
+        self.fin_page_numbers = list(range(start, end + 1))
+
+    def go_to_page_fin(self, page_number: int):
+        if 1 <= page_number <= self.fin_total_pages:
+            self.fin_current_page = page_number
+            self.calculate_fin_pagination()
+
+    def next_page_fin(self):
+        if self.fin_current_page < self.fin_total_pages:
+            self.fin_current_page += 1
+            self.calculate_fin_pagination()
+
+    def previous_page_fin(self):
+        if self.fin_current_page > 1:
+            self.fin_current_page -= 1
+            self.calculate_fin_pagination()
+
+    def reset_fin_pagination(self):
+        self.fin_current_page = 1
+        self.calculate_fin_pagination()

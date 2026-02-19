@@ -2,7 +2,7 @@ import reflex as rx
 from TFuerte.state.almacen_view_state import AlmacenViewState
 
 def almacen_readonly_table() -> rx.Component:
-    """Tabla de solo lectura para los productos en almacén"""
+    """Tabla de solo lectura para los productos en almacén con paginación (sin scroll vertical)"""
     
     # Estilos para la tabla
     header_style = {
@@ -153,7 +153,139 @@ def almacen_readonly_table() -> rx.Component:
                 style=cell_style
             ),
         )
-    
+
+    # --- Funciones de paginación (estilo unificado) ---
+    def create_page_button(page_num: int):
+        return rx.button(
+            rx.text(page_num, size="2", font_weight="500"),
+            on_click=lambda: AlmacenViewState.go_to_page(page_num),
+            variant="soft",
+            size="2",
+            style=rx.cond(
+                AlmacenViewState.current_page == page_num,
+                {
+                    "background": "#4f46e5",
+                    "color": "white",
+                    "border": "1px solid #4f46e5",
+                    "_hover": {"background": "#7c3aed"},
+                    "flex_shrink": 0,
+                    "min_width": "32px",
+                    "padding": "0 8px",
+                },
+                {
+                    "background": "white",
+                    "border": "1px solid #e2e8f0",
+                    "color": "#1e293b",
+                    "_hover": {
+                        "background": "#f8fafc",
+                        "border": "1px solid #cbd5e1"
+                    },
+                    "flex_shrink": 0,
+                    "min_width": "32px",
+                    "padding": "0 8px",
+                }
+            )
+        )
+
+    def render_pagination():
+        return rx.hstack(
+            # Botón anterior
+            rx.button(
+                rx.icon("chevron-left", size=16),
+                on_click=AlmacenViewState.previous_page,
+                variant="soft",
+                size="2",
+                is_disabled=AlmacenViewState.current_page == 1,
+                style={
+                    "background": "white",
+                    "border": "1px solid #e2e8f0",
+                    "color": "#1e293b",
+                    "flex_shrink": 0,
+                    "min_width": "32px",
+                    "padding": "0 8px",
+                }
+            ),
+            # Contenedor de números
+            rx.box(
+                rx.hstack(
+                    # Primera página + "..." si estamos lejos del inicio
+                    rx.cond(
+                        (AlmacenViewState.current_page > 3) & (AlmacenViewState.total_pages > 4),
+                        rx.hstack(
+                            create_page_button(1),
+                            rx.text("...", size="2", color="#64748b", padding_x="1"),
+                            spacing="1",
+                            flex_shrink=0,
+                        ),
+                    ),
+                    # Páginas del rango calculado (máximo 4)
+                    rx.cond(
+                        AlmacenViewState.page_numbers.length() > 0,
+                        rx.hstack(
+                            rx.foreach(
+                                AlmacenViewState.page_numbers,
+                                create_page_button
+                            ),
+                            spacing="1",
+                            wrap="nowrap",
+                            flex_shrink=0,
+                        ),
+                        rx.text(
+                            f"Pág. {AlmacenViewState.current_page}",
+                            size="2",
+                            color="#64748b",
+                            padding_x="2",
+                            flex_shrink=0,
+                        ),
+                    ),
+                    # Última página + "..." si estamos lejos del final
+                    rx.cond(
+                        (AlmacenViewState.current_page < AlmacenViewState.total_pages - 2) & (AlmacenViewState.total_pages > 4),
+                        rx.hstack(
+                            rx.text("...", size="2", color="#64748b", padding_x="1"),
+                            create_page_button(AlmacenViewState.total_pages),
+                            spacing="1",
+                            flex_shrink=0,
+                        ),
+                    ),
+                    spacing="1",
+                    wrap="nowrap",
+                    align="center",
+                ),
+                overflow_x="auto",
+                flex_grow=0,
+                flex_shrink=1,
+                max_width="100%",
+            ),
+            # Botón siguiente
+            rx.button(
+                rx.hstack(
+                    rx.icon("chevron-right", size=16),
+                    width="100%",
+                    spacing="0",
+                    justify="end",
+                    align="end",
+                ),
+                on_click=AlmacenViewState.next_page,
+                variant="soft",
+                size="2",
+                is_disabled=AlmacenViewState.current_page == AlmacenViewState.total_pages,
+                style={
+                    "background": "white",
+                    "border": "1px solid #e2e8f0",
+                    "color": "#1e293b",
+                    "flex_shrink": 0,
+                    "min_width": "32px",
+                    "padding": "0 8px",
+                }
+            ),
+            spacing="2",
+            wrap="nowrap",
+            align="center",
+            justify="end",
+            width="100%",
+        )
+
     return rx.vstack(
         # Estadísticas
         rx.box(
@@ -231,7 +363,7 @@ def almacen_readonly_table() -> rx.Component:
             margin_bottom="1rem"
         ),
         
-        # Tabla de datos
+        # Tabla de datos + paginación (sin scroll vertical)
         rx.cond(
             AlmacenViewState.loading,
             rx.center(
@@ -244,31 +376,78 @@ def almacen_readonly_table() -> rx.Component:
             ),
             rx.cond(
                 AlmacenViewState.filtered_data.length() > 0,
-                rx.scroll_area(
-                    rx.table.root(
-                        rx.table.header(table_header()),
-                        rx.table.body(
-                            rx.foreach(
-                                AlmacenViewState.filtered_data,
-                                table_row
-                            )
+                rx.vstack(
+                    # Tabla con scroll horizontal (sin scroll vertical)
+                    rx.box(
+                        rx.table.root(
+                            rx.table.header(table_header()),
+                            rx.table.body(
+                                rx.foreach(
+                                    AlmacenViewState.almacen_paginated,
+                                    table_row
+                                )
+                            ),
+                            style={
+                                "width": "100%",
+                                "min_width": "1400px",
+                                "table_layout": "fixed",
+                            }
                         ),
-                        style={
-                            "width": "100%",
-                            "min_width": "1400px",
-                            "table_layout": "fixed",
-                        }
+                        overflow_x="auto",          # Solo scroll horizontal
+                        border="1px solid #e2e8f0",
+                        border_radius="8px",
+                        box_shadow="0 2px 4px rgba(0, 0, 0, 0.05)",
+                        width="100%",
                     ),
-                    type="always",
-                    scrollbars="horizontal",
-                    style={
-                        "width": "100%",
-                        "height": "500px",
-                        "overflow_y": "auto",
-                        "border": "1px solid #e2e8f0",
-                        "border_radius": "8px",
-                        "box_shadow": "0 2px 4px rgba(0, 0, 0, 0.05)",
-                    }
+                    # Controles de paginación
+                    rx.cond(
+                        AlmacenViewState.filtered_data.length() > AlmacenViewState.items_per_page,
+                        rx.box(
+                            rx.hstack(
+                                rx.text(
+                                    rx.cond(
+                                        AlmacenViewState.filtered_data.length() > 0,
+                                        rx.cond(
+                                            AlmacenViewState.current_page == 1,
+                                            "Mostrando 1 a " + rx.cond(
+                                                AlmacenViewState.items_per_page > AlmacenViewState.filtered_data.length(),
+                                                AlmacenViewState.filtered_data.length().to(str),
+                                                AlmacenViewState.items_per_page.to(str)
+                                            ) + " de " + AlmacenViewState.filtered_data.length().to(str) + " resultados",
+                                            "Mostrando " + ((AlmacenViewState.current_page - 1) * AlmacenViewState.items_per_page + 1).to(str) + " a " + rx.cond(
+                                                AlmacenViewState.current_page * AlmacenViewState.items_per_page > AlmacenViewState.filtered_data.length(),
+                                                AlmacenViewState.filtered_data.length().to(str),
+                                                (AlmacenViewState.current_page * AlmacenViewState.items_per_page).to(str)
+                                            ) + " de " + AlmacenViewState.filtered_data.length().to(str) + " resultados"
+                                        ),
+                                        "Mostrando 0 a 0 de 0 resultados"
+                                    ),
+                                    size="2",
+                                    color="#64748b",
+                                    font_weight="500",
+                                    flex_shrink=0,
+                                    margin_right="8rem",
+                                ),
+                                rx.spacer(),
+                                rx.box(
+                                    render_pagination(),
+                                    flex_shrink=0,
+                                    margin_left="0.5rem",
+                                ),
+                                width="100%",
+                                align="center",
+                                spacing="6",
+                                wrap="wrap",
+                            ),
+                            padding="1.5rem 1rem",
+                            border_top="1px solid #e2e8f0",
+                            background="#f8fafc",
+                            width="100%",
+                        ),
+                        rx.box(height="1rem")  # Espacio cuando no hay paginación
+                    ),
+                    spacing="0",
+                    width="100%",
                 ),
                 rx.center(
                     rx.vstack(

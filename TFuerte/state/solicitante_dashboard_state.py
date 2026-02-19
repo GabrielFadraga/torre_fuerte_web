@@ -1,4 +1,3 @@
-# TFuerte/state/solicitante_dashboard_state.py
 import reflex as rx
 from typing import List
 from TFuerte.api.solicitudes_api import SolicitudesAPI
@@ -27,6 +26,15 @@ class SolicitanteDashboardState(rx.State):
     
     # ID del grupo actual para la próxima solicitud
     grupo_id_actual: str = ""
+
+    # ==================================================
+    # PAGINACIÓN PARA MIS SOLICITUDES
+    # ==================================================
+    mis_solicitudes_paginated: List[dict] = []
+    mis_current_page: int = 1
+    mis_items_per_page: int = 5          # Número de tarjetas por página
+    mis_total_pages: int = 1
+    mis_page_numbers: List[int] = []
 
     def _fetch_and_group_solicitudes(self) -> List[dict]:
         """Obtiene y agrupa las solicitudes del solicitante actual (sin eventos)."""
@@ -90,7 +98,6 @@ class SolicitanteDashboardState(rx.State):
     def is_loading(self) -> bool:
         """Combina el loading propio y el de AlmacenState."""
         from TFuerte.state.almacen_state import AlmacenState
-        # Ambas son Var[bool], el operador | funciona correctamente
         return self.loading | AlmacenState.loading
     
     def on_load(self):
@@ -108,11 +115,13 @@ class SolicitanteDashboardState(rx.State):
         
         try:
             self.mis_solicitudes = self._fetch_and_group_solicitudes()
+            self.reset_mis_pagination()
             print(f"✅ {len(self.mis_solicitudes)} grupos de solicitudes cargados")
         except Exception as e:
             print(f"❌ Error cargando solicitudes: {e}")
             traceback.print_exc()
             self.mis_solicitudes = []
+            self.reset_mis_pagination()
             yield rx.toast.error("Error al cargar solicitudes", position="top-right")
         finally:
             self.loading = False
@@ -153,7 +162,6 @@ class SolicitanteDashboardState(rx.State):
     @rx.event
     def crear_solicitud_multiple(self):
         """Crea una solicitud con múltiples recursos."""
-        # Validaciones (sin cambios)...
         if len(self.recursos_form) == 0:
             yield rx.toast.error("❌ Debe agregar al menos un recurso")
             return
@@ -181,7 +189,6 @@ class SolicitanteDashboardState(rx.State):
         
         recursos_creados = 0
         try:
-            # Crear cada solicitud
             for i, recurso in enumerate(self.recursos_form):
                 solicitud_data = {
                     "Descripcion": recurso.get("descripcion", "").strip(),
@@ -202,10 +209,9 @@ class SolicitanteDashboardState(rx.State):
                 else:
                     print(f"⚠️ Error creando recurso #{i+1}")
             
-            # Recargar datos SIN usar yield de otro evento
             self.mis_solicitudes = self._fetch_and_group_solicitudes()
+            self.reset_mis_pagination()
             
-            # Limpiar formulario
             self.recursos_form = []
             self.destino = ""
             self.grupo_id_actual = str(uuid.uuid4())[:8]
@@ -231,7 +237,6 @@ class SolicitanteDashboardState(rx.State):
         """Muestra los detalles de un grupo de solicitudes"""
         print(f"🔍 Ver detalles del grupo: {grupo_id}")
         
-        # Buscar el grupo en mis_solicitudes
         grupo_encontrado = None
         for grupo in self.mis_solicitudes:
             if grupo.get("grupo_id") == grupo_id:
@@ -251,7 +256,70 @@ class SolicitanteDashboardState(rx.State):
                 position="top-right",
                 duration=3000
             )
+    
     def limpiar_recursos_form(self):
         """Limpia todos los recursos del formulario"""
         self.recursos_form = []
         self.destino = ""
+
+    # ==================================================
+    # MÉTODOS DE PAGINACIÓN PARA MIS SOLICITUDES
+    # ==================================================
+
+    def calculate_mis_pagination(self):
+        total_items = len(self.mis_solicitudes)
+
+        if total_items == 0:
+            self.mis_total_pages = 1
+            self.mis_solicitudes_paginated = []
+        else:
+            self.mis_total_pages = max(1, (total_items + self.mis_items_per_page - 1) // self.mis_items_per_page)
+
+        if self.mis_current_page > self.mis_total_pages:
+            self.mis_current_page = max(1, self.mis_total_pages)
+
+        start_idx = (self.mis_current_page - 1) * self.mis_items_per_page
+        end_idx = min(start_idx + self.mis_items_per_page, total_items)
+
+        if total_items > 0:
+            self.mis_solicitudes_paginated = self.mis_solicitudes[start_idx:end_idx]
+        else:
+            self.mis_solicitudes_paginated = []
+
+        self.calculate_mis_page_numbers()
+
+    def calculate_mis_page_numbers(self):
+        max_pages_to_show = 4
+        current = self.mis_current_page
+        total = self.mis_total_pages
+
+        if total <= max_pages_to_show:
+            self.mis_page_numbers = list(range(1, total + 1))
+            return
+
+        start = max(1, current - 1)
+        end = min(total, start + max_pages_to_show - 1)
+
+        if end - start + 1 < max_pages_to_show:
+            start = max(1, end - max_pages_to_show + 1)
+
+        self.mis_page_numbers = list(range(start, end + 1))
+
+    def go_to_page_mis(self, page_number: int):
+        if 1 <= page_number <= self.mis_total_pages:
+            self.mis_current_page = page_number
+            self.calculate_mis_pagination()
+
+    def next_page_mis(self):
+        if self.mis_current_page < self.mis_total_pages:
+            self.mis_current_page += 1
+            self.calculate_mis_pagination()
+
+    def previous_page_mis(self):
+        if self.mis_current_page > 1:
+            self.mis_current_page -= 1
+            self.calculate_mis_pagination()
+
+    def reset_mis_pagination(self):
+        self.mis_current_page = 1
+        self.calculate_mis_pagination()

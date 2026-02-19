@@ -1,4 +1,4 @@
-# TFuerte/pages/dashboard1.py - VERSIÓN CORREGIDA
+# TFuerte/pages/dashboard1.py - VERSIÓN CON PAGINACIÓN
 import reflex as rx
 from TFuerte.state.auth_state import AuthState
 from TFuerte.state.almacen_state import AlmacenState
@@ -35,7 +35,454 @@ def admin_dashboard() -> rx.Component:
         ("18", "MEDIOS DE PROTECCIÓN")
     ]
     
-    def almacen_table() -> rx.Component:
+    # Función para la tabla con paginación
+    def productos_table() -> rx.Component:
+        """Tabla de productos con paginación estilo dashboard."""
+        
+        # Botón de página individual
+        def create_page_button(page_num: int):
+            return rx.button(
+                rx.text(page_num, size="2", font_weight="500"),
+                on_click=lambda: AlmacenState.go_to_page(page_num),
+                variant="soft",
+                size="2",
+                style=rx.cond(
+                    AlmacenState.current_page == page_num,
+                    {
+                        "background": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                        "color": "white",
+                        "border": "1px solid #667eea",
+                        "_hover": {"background": "linear-gradient(135deg, #5a67d8 0%, #6b46a0 100%)"},
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    },
+                    {
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "_hover": {
+                            "background": "#f8fafc",
+                            "border": "1px solid #cbd5e1"
+                        },
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                )
+            )
+        
+        # Controles de paginación (estilo logística)
+        def render_pagination():
+            return rx.hstack(
+                # Botón anterior
+                rx.button(
+                    rx.icon("chevron-left", size=16),
+                    on_click=AlmacenState.previous_page,
+                    variant="soft",
+                    size="2",
+                    is_disabled=AlmacenState.current_page == 1,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                # Contenedor de números
+                rx.box(
+                    rx.hstack(
+                        # Primera página + "..." si estamos lejos del inicio
+                        rx.cond(
+                            (AlmacenState.current_page > 3) & (AlmacenState.total_pages > 4),
+                            rx.hstack(
+                                create_page_button(1),
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        # Páginas del rango calculado (máximo 4)
+                        rx.cond(
+                            AlmacenState.page_numbers.length() > 0,
+                            rx.hstack(
+                                rx.foreach(
+                                    AlmacenState.page_numbers,
+                                    create_page_button
+                                ),
+                                spacing="1",
+                                wrap="nowrap",
+                                flex_shrink=0,
+                            ),
+                            rx.text(
+                                f"Pág. {AlmacenState.current_page}",
+                                size="2",
+                                color="#64748b",
+                                padding_x="2",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        # Última página + "..." si estamos lejos del final
+                        rx.cond(
+                            (AlmacenState.current_page < AlmacenState.total_pages - 2) & (AlmacenState.total_pages > 4),
+                            rx.hstack(
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                create_page_button(AlmacenState.total_pages),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        spacing="1",
+                        wrap="nowrap",
+                        align="center",
+                    ),
+                    overflow_x="auto",
+                    flex_grow=0,
+                    flex_shrink=1,
+                    max_width="100%",
+                ),
+                # Botón siguiente
+                rx.button(
+                    rx.hstack(
+                        rx.icon("chevron-right", size=16),
+                        width="100%",
+                        spacing="0",
+                        justify="end",
+                        align="end",
+                    ),
+                    on_click=AlmacenState.next_page,
+                    variant="soft",
+                    size="2",
+                    is_disabled=AlmacenState.current_page == AlmacenState.total_pages,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                spacing="2",
+                wrap="nowrap",
+                align="center",
+                justify="end",
+                width="100%",
+            )
+        
+        # Fila de producto (sin cambios, solo adaptamos para usar datos paginados)
+        def producto_row(item):
+            return rx.table.row(
+                # Checkbox usando Numero como identificador
+                rx.table.cell(
+                    rx.box(
+                        rx.checkbox(
+                            checked=AlmacenState.selected_items.contains(item.get("Numero", 0)),
+                            on_change=lambda checked, item_numero=item.get("Numero", 0): AlmacenState.toggle_item_selection(item_numero),
+                            radius="full",
+                        ),
+                        display="flex",
+                        justify_content="center",
+                        align_items="center",
+                        width="100%",
+                    ),
+                    style={"padding": "12px 4px", "border_bottom": "1px solid #f1f5f9", "vertical_align": "middle", "font_size": "14px", "color": "#475569", "transition": "all 0.2s ease", "text_align": "center", "overflow": "hidden", "box_sizing": "border-box", "width": "100px"}
+                ),
+                # NÚMERO
+                rx.table.cell(
+                    rx.box(
+                        rx.badge(
+                            item.get("Numero", "N/A"),
+                            variant="solid",
+                            color_scheme="blue",
+                            style={
+                                "background": "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
+                                "color": "white",
+                                "padding": "6px 8px",
+                                "border_radius": "20px",
+                                "font_weight": "600",
+                                "box_shadow": "0 2px 4px rgba(59, 130, 246, 0.3)",
+                                "max_width": "60px",
+                            }
+                        ),
+                        display="flex",
+                        justify_content="center",
+                        align_items="center",
+                        width="100%",
+                    ),
+                    style={"padding": "12px 4px", "border_bottom": "1px solid #f1f5f9", "vertical_align": "middle", "font_size": "14px", "color": "#475569", "transition": "all 0.2s ease", "text_align": "center", "overflow": "hidden", "box_sizing": "border-box", "width": "80px"}
+                ),
+                # CÓDIGO
+                rx.table.cell(
+                    rx.box(
+                        rx.text(item.get("Codigo", ""), 
+                                style={
+                                    "font_weight": "600", 
+                                    "color": "#1e293b",
+                                    "font_family": "monospace",
+                                    "letter_spacing": "0.5px",
+                                    "text_align": "center",
+                                    "width": "100%",
+                                    "padding": "0 4px",
+                                }),
+                        display="flex",
+                        justify_content="center",
+                        align_items="center",
+                        width="100%",
+                    ),
+                    style={"padding": "12px 4px", "border_bottom": "1px solid #f1f5f9", "vertical_align": "middle", "font_size": "14px", "color": "#475569", "transition": "all 0.2s ease", "text_align": "center", "overflow": "hidden", "box_sizing": "border-box", "width": "120px"}
+                ),
+                # DESCRIPCIÓN
+                rx.table.cell(
+                    rx.box(
+                        rx.text(
+                            item.get("Descripcion del producto", ""), 
+                            style={
+                                "color": "#334155",
+                                "white_space": "nowrap",
+                                "overflow": "hidden",
+                                "text_overflow": "ellipsis",
+                                "text_align": "center",
+                                "width": "100%",
+                                "padding": "0 4px",
+                            }
+                        ),
+                        display="flex",
+                        justify_content="center",
+                        align_items="center",
+                        width="100%",
+                    ),
+                    style={"padding": "12px 4px", "border_bottom": "1px solid #f1f5f9", "vertical_align": "middle", "font_size": "14px", "color": "#475569", "transition": "all 0.2s ease", "text_align": "center", "overflow": "hidden", "box_sizing": "border-box", "width": "250px"}
+                ),
+                # TIPO
+                rx.table.cell(
+                    rx.box(
+                        rx.badge(
+                            item.get("Tipo de producto", ""),
+                            variant="surface",
+                            color_scheme="gray",
+                            style={
+                                "font_weight": "500",
+                                "white_space": "nowrap",
+                                "overflow": "hidden",
+                                "text_overflow": "ellipsis",
+                                "max_width": "120px",
+                            }
+                        ),
+                        display="flex",
+                        justify_content="center",
+                        align_items="center",
+                        width="100%",
+                    ),
+                    style={"padding": "12px 4px", "border_bottom": "1px solid #f1f5f9", "vertical_align": "middle", "font_size": "14px", "color": "#475569", "transition": "all 0.2s ease", "text_align": "center", "overflow": "hidden", "box_sizing": "border-box", "width": "150px"}
+                ),
+                # UM
+                rx.table.cell(
+                    rx.box(
+                        rx.badge(
+                            item.get("UM", ""), 
+                            variant="outline",
+                            color_scheme="gray",
+                            style={
+                                "font_family": "monospace",
+                                "font_weight": "600",
+                                "color": "#64748b",
+                                "max_width": "70px",
+                            }
+                        ),
+                        display="flex",
+                        justify_content="center",
+                        align_items="center",
+                        width="100%",
+                    ),
+                    style={"padding": "12px 4px", "border_bottom": "1px solid #f1f5f9", "vertical_align": "middle", "font_size": "14px", "color": "#475569", "transition": "all 0.2s ease", "text_align": "center", "overflow": "hidden", "box_sizing": "border-box", "width": "100px"}
+                ),
+                # FECHA ENTRADA
+                rx.table.cell(
+                    rx.box(
+                        rx.box(
+                            rx.text(item.get("Fecha de entrada", ""), 
+                                    style={"color": "#475569", "font_weight": "500", "text_align": "center"}),
+                            style={
+                                "background": "linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%)",
+                                "padding": "6px 8px",
+                                "border_radius": "8px",
+                                "border": "1px solid #dbeafe",
+                                "max_width": "90px",
+                            }
+                        ),
+                        display="flex",
+                        justify_content="center",
+                        align_items="center",
+                        width="100%",
+                    ),
+                    style={"padding": "12px 4px", "border_bottom": "1px solid #f1f5f9", "vertical_align": "middle", "font_size": "14px", "color": "#475569", "transition": "all 0.2s ease", "text_align": "center", "overflow": "hidden", "box_sizing": "border-box", "width": "120px"}
+                ),
+                # CANTIDAD E
+                rx.table.cell(
+                    rx.box(
+                        rx.badge(
+                            item.get("Cantidad E", 0), 
+                            variant="solid", 
+                            color_scheme="green",
+                            style={
+                                "background": "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                                "font_weight": "600",
+                                "padding": "6px 8px",
+                                "max_width": "70px",
+                            }
+                        ),
+                        display="flex",
+                        justify_content="center",
+                        align_items="center",
+                        width="100%",
+                    ),
+                    style={"padding": "12px 4px", "border_bottom": "1px solid #f1f5f9", "vertical_align": "middle", "font_size": "14px", "color": "#475569", "transition": "all 0.2s ease", "text_align": "center", "overflow": "hidden", "box_sizing": "border-box", "width": "100px"}
+                ),
+                # FECHA SALIDA
+                rx.table.cell(
+                    rx.box(
+                        rx.box(
+                            rx.text(
+                                rx.cond(
+                                    item.get("Fecha de salida"),
+                                    item.get("Fecha de salida", ""),
+                                    "-"
+                                ),
+                                style={"color": "#475569", "font_weight": "500", "text_align": "center"}
+                            ),
+                            style={
+                                "background": "linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%)",
+                                "padding": "6px 8px",
+                                "border_radius": "8px",
+                                "border": "1px solid #fde68a",
+                                "max_width": "90px",
+                            }
+                        ),
+                        display="flex",
+                        justify_content="center",
+                        align_items="center",
+                        width="100%",
+                    ),
+                    style={"padding": "12px 4px", "border_bottom": "1px solid #f1f5f9", "vertical_align": "middle", "font_size": "14px", "color": "#475569", "transition": "all 0.2s ease", "text_align": "center", "overflow": "hidden", "box_sizing": "border-box", "width": "120px"}
+                ),
+                # CANTIDAD S
+                rx.table.cell(
+                    rx.box(
+                        rx.cond(
+                            item.get("Cantidad S", 0) != 0,
+                            rx.badge(
+                                f"{item.get('Cantidad S', 0)}", 
+                                variant="solid", 
+                                color_scheme="red",
+                                style={
+                                    "background": "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+                                    "font_weight": "600",
+                                    "padding": "6px 8px",
+                                    "max_width": "70px",
+                                }
+                            ),
+                            rx.text("-", style={"color": "#cbd5e1", "font_weight": "500", "text_align": "center", "width": "100%"})
+                        ),
+                        display="flex",
+                        justify_content="center",
+                        align_items="center",
+                        width="100%",
+                    ),
+                    style={"padding": "12px 4px", "border_bottom": "1px solid #f1f5f9", "vertical_align": "middle", "font_size": "14px", "color": "#475569", "transition": "all 0.2s ease", "text_align": "center", "overflow": "hidden", "box_sizing": "border-box", "width": "100px"}
+                ),
+                # SALDO
+                rx.table.cell(
+                    rx.box(
+                        rx.badge(
+                            item.get("Saldo", 0), 
+                            variant="outline", 
+                            color_scheme="blue",
+                            style={
+                                "font_weight": "700",
+                                "font_size": "14px",
+                                "padding": "6px 8px",
+                                "border_width": "2px",
+                                "border_color": "#3b82f6",
+                                "max_width": "70px",
+                            }
+                        ),
+                        display="flex",
+                        justify_content="center",
+                        align_items="center",
+                        width="100%",
+                    ),
+                    style={"padding": "12px 4px", "border_bottom": "1px solid #f1f5f9", "vertical_align": "middle", "font_size": "14px", "color": "#475569", "transition": "all 0.2s ease", "text_align": "center", "overflow": "hidden", "box_sizing": "border-box", "width": "100px"}
+                ),
+                # PRECIO
+                rx.table.cell(
+                    rx.box(
+                        rx.box(
+                            rx.text(
+                                f"${item.get('Precio', 0):.2f}", 
+                                style={
+                                    "font_weight": "700", 
+                                    "color": "#059669",
+                                    "font_size": "14px",
+                                    "text_align": "center",
+                                }
+                            ),
+                            style={
+                                "background": "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)",
+                                "padding": "6px 8px",
+                                "border_radius": "8px",
+                                "border": "1px solid #a7f3d0",
+                                "max_width": "90px",
+                            }
+                        ),
+                        display="flex",
+                        justify_content="center",
+                        align_items="center",
+                        width="100%",
+                    ),
+                    style={"padding": "12px 4px", "border_bottom": "1px solid #f1f5f9", "vertical_align": "middle", "font_size": "14px", "color": "#475569", "transition": "all 0.2s ease", "text_align": "center", "overflow": "hidden", "box_sizing": "border-box", "width": "120px"}
+                ),
+                # IMPORTE
+                rx.table.cell(
+                    rx.box(
+                        rx.box(
+                            rx.text(
+                                f"${item.get('Importe', 0):.2f}", 
+                                style={
+                                    "font_weight": "700", 
+                                    "color": "#2563eb",
+                                    "font_size": "14px",
+                                    "text_align": "center",
+                                }
+                            ),
+                            style={
+                                "background": "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)",
+                                "padding": "6px 8px",
+                                "border_radius": "8px",
+                                "border": "1px solid #93c5fd",
+                                "max_width": "90px",
+                            }
+                        ),
+                        display="flex",
+                        justify_content="center",
+                        align_items="center",
+                        width="100%",
+                    ),
+                    style={"padding": "12px 4px", "border_bottom": "1px solid #f1f5f9", "vertical_align": "middle", "font_size": "14px", "color": "#475569", "transition": "all 0.2s ease", "text_align": "center", "overflow": "hidden", "box_sizing": "border-box", "width": "120px"}
+                ),
+                _hover={
+                    "background_color": "#f8fafc",
+                    "transform": "translateY(-1px)",
+                    "box_shadow": "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                },
+                style={
+                    "transition": "all 0.2s ease",
+                    "cursor": "pointer",
+                }
+            )
+        
         table_style = {
             "width": "100%",
             "min_width": "1400px",
@@ -59,368 +506,97 @@ def admin_dashboard() -> rx.Component:
             "z_index": "10",
         }
         
-        cell_style = {
-            "padding": "12px 4px",
-            "border_bottom": "1px solid #f1f5f9",
-            "vertical_align": "middle",
-            "font_size": "14px",
-            "color": "#475569",
-            "transition": "all 0.2s ease",
-            "text_align": "center",
-            "overflow": "hidden",
-            "box_sizing": "border-box",
-        }
-        
-        return rx.box(
-            rx.table.root(
-                rx.table.header(
-                    rx.table.row(
-                        rx.table.column_header_cell("Seleccionar", style={**header_style, "width": "100px"}),
-                        rx.table.column_header_cell("Número", style={**header_style, "width": "80px"}),
-                        rx.table.column_header_cell("Código", style={**header_style, "width": "120px"}),
-                        rx.table.column_header_cell("Descripción", style={**header_style, "width": "250px"}),
-                        rx.table.column_header_cell("Tipo", style={**header_style, "width": "150px"}),
-                        rx.table.column_header_cell("UM", style={**header_style, "width": "100px"}),
-                        rx.table.column_header_cell("Fecha Entrada", style={**header_style, "width": "120px"}),
-                        rx.table.column_header_cell("Cant. E", style={**header_style, "width": "100px"}),
-                        rx.table.column_header_cell("Fecha Salida", style={**header_style, "width": "120px"}),
-                        rx.table.column_header_cell("Cant. S", style={**header_style, "width": "100px"}),
-                        rx.table.column_header_cell("Saldo", style={**header_style, "width": "100px"}),
-                        rx.table.column_header_cell("Precio", style={**header_style, "width": "120px"}),
-                        rx.table.column_header_cell("Importe", style={**header_style, "width": "120px"}),
-                    )
-                ),
-                style=table_style,
-            ),
-            
-            rx.scroll_area(
-                rx.table.root(
-                    rx.table.body(
-                        rx.foreach(
-                            AlmacenState.filtered_data,
-                            lambda item: rx.table.row(
-                                # Checkbox usando Numero como identificador
-                                rx.table.cell(
-                                    rx.box(
-                                        rx.checkbox(
-                                            checked=AlmacenState.selected_items.contains(item.get("Numero", 0)),
-                                            on_change=lambda checked, item_numero=item.get("Numero", 0): AlmacenState.toggle_item_selection(item_numero),
-                                            radius="full",
-                                        ),
-                                        display="flex",
-                                        justify_content="center",
-                                        align_items="center",
-                                        width="100%",
-                                    ),
-                                    style={**cell_style, "width": "100px"}
-                                ),
-                                # NÚMERO
-                                rx.table.cell(
-                                    rx.box(
-                                        rx.badge(
-                                            item.get("Numero", "N/A"),
-                                            variant="solid",
-                                            color_scheme="blue",
-                                            style={
-                                                "background": "linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)",
-                                                "color": "white",
-                                                "padding": "6px 8px",
-                                                "border_radius": "20px",
-                                                "font_weight": "600",
-                                                "box_shadow": "0 2px 4px rgba(59, 130, 246, 0.3)",
-                                                "max_width": "60px",
-                                            }
-                                        ),
-                                        display="flex",
-                                        justify_content="center",
-                                        align_items="center",
-                                        width="100%",
-                                    ),
-                                    style={**cell_style, "width": "80px"}
-                                ),
-                                # CÓDIGO
-                                rx.table.cell(
-                                    rx.box(
-                                        rx.text(item.get("Codigo", ""), 
-                                                style={
-                                                    "font_weight": "600", 
-                                                    "color": "#1e293b",
-                                                    "font_family": "monospace",
-                                                    "letter_spacing": "0.5px",
-                                                    "text_align": "center",
-                                                    "width": "100%",
-                                                    "padding": "0 4px",
-                                                }),
-                                        display="flex",
-                                        justify_content="center",
-                                        align_items="center",
-                                        width="100%",
-                                    ),
-                                    style={**cell_style, "width": "120px"}
-                                ),
-                                # DESCRIPCIÓN
-                                rx.table.cell(
-                                    rx.box(
-                                        rx.text(
-                                            item.get("Descripcion del producto", ""), 
-                                            style={
-                                                "color": "#334155",
-                                                "white_space": "nowrap",
-                                                "overflow": "hidden",
-                                                "text_overflow": "ellipsis",
-                                                "text_align": "center",
-                                                "width": "100%",
-                                                "padding": "0 4px",
-                                            }
-                                        ),
-                                        display="flex",
-                                        justify_content="center",
-                                        align_items="center",
-                                        width="100%",
-                                    ),
-                                    style={**cell_style, "width": "250px"}
-                                ),
-                                # TIPO
-                                rx.table.cell(
-                                    rx.box(
-                                        rx.badge(
-                                            item.get("Tipo de producto", ""),
-                                            variant="surface",
-                                            color_scheme="gray",
-                                            style={
-                                                "font_weight": "500",
-                                                "white_space": "nowrap",
-                                                "overflow": "hidden",
-                                                "text_overflow": "ellipsis",
-                                                "max_width": "120px",
-                                            }
-                                        ),
-                                        display="flex",
-                                        justify_content="center",
-                                        align_items="center",
-                                        width="100%",
-                                    ),
-                                    style={**cell_style, "width": "150px"}
-                                ),
-                                # UM
-                                rx.table.cell(
-                                    rx.box(
-                                        rx.badge(
-                                            item.get("UM", ""), 
-                                            variant="outline",
-                                            color_scheme="gray",
-                                            style={
-                                                "font_family": "monospace",
-                                                "font_weight": "600",
-                                                "color": "#64748b",
-                                                "max_width": "70px",
-                                            }
-                                        ),
-                                        display="flex",
-                                        justify_content="center",
-                                        align_items="center",
-                                        width="100%",
-                                    ),
-                                    style={**cell_style, "width": "100px"}
-                                ),
-                                # FECHA ENTRADA
-                                rx.table.cell(
-                                    rx.box(
-                                        rx.box(
-                                            rx.text(item.get("Fecha de entrada", ""), 
-                                                    style={"color": "#475569", "font_weight": "500", "text_align": "center"}),
-                                            style={
-                                                "background": "linear-gradient(135deg, #dbeafe 0%, #eff6ff 100%)",
-                                                "padding": "6px 8px",
-                                                "border_radius": "8px",
-                                                "border": "1px solid #dbeafe",
-                                                "max_width": "90px",
-                                            }
-                                        ),
-                                        display="flex",
-                                        justify_content="center",
-                                        align_items="center",
-                                        width="100%",
-                                    ),
-                                    style={**cell_style, "width": "120px"}
-                                ),
-                                # CANTIDAD E
-                                rx.table.cell(
-                                    rx.box(
-                                        rx.badge(
-                                            item.get("Cantidad E", 0), 
-                                            variant="solid", 
-                                            color_scheme="green",
-                                            style={
-                                                "background": "linear-gradient(135deg, #10b981 0%, #059669 100%)",
-                                                "font_weight": "600",
-                                                "padding": "6px 8px",
-                                                "max_width": "70px",
-                                            }
-                                        ),
-                                        display="flex",
-                                        justify_content="center",
-                                        align_items="center",
-                                        width="100%",
-                                    ),
-                                    style={**cell_style, "width": "100px"}
-                                ),
-                                # FECHA SALIDA
-                                rx.table.cell(
-                                    rx.box(
-                                        rx.box(
-                                            rx.text(
-                                                rx.cond(
-                                                    item.get("Fecha de salida"),
-                                                    item.get("Fecha de salida", ""),
-                                                    "-"
-                                                ),
-                                                style={"color": "#475569", "font_weight": "500", "text_align": "center"}
-                                            ),
-                                            style={
-                                                "background": "linear-gradient(135deg, #fef3c7 0%, #fef9c3 100%)",
-                                                "padding": "6px 8px",
-                                                "border_radius": "8px",
-                                                "border": "1px solid #fde68a",
-                                                "max_width": "90px",
-                                            }
-                                        ),
-                                        display="flex",
-                                        justify_content="center",
-                                        align_items="center",
-                                        width="100%",
-                                    ),
-                                    style={**cell_style, "width": "120px"}
-                                ),
-                                # CANTIDAD S
-                                rx.table.cell(
-                                    rx.box(
-                                        rx.cond(
-                                            item.get("Cantidad S", 0) != 0,
-                                            rx.badge(
-                                                f"{item.get('Cantidad S', 0)}", 
-                                                variant="solid", 
-                                                color_scheme="red",
-                                                style={
-                                                    "background": "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
-                                                    "font_weight": "600",
-                                                    "padding": "6px 8px",
-                                                    "max_width": "70px",
-                                                }
-                                            ),
-                                            rx.text("-", style={"color": "#cbd5e1", "font_weight": "500", "text_align": "center", "width": "100%"})
-                                        ),
-                                        display="flex",
-                                        justify_content="center",
-                                        align_items="center",
-                                        width="100%",
-                                    ),
-                                    style={**cell_style, "width": "100px"}
-                                ),
-                                # SALDO
-                                rx.table.cell(
-                                    rx.box(
-                                        rx.badge(
-                                            item.get("Saldo", 0), 
-                                            variant="outline", 
-                                            color_scheme="blue",
-                                            style={
-                                                "font_weight": "700",
-                                                "font_size": "14px",
-                                                "padding": "6px 8px",
-                                                "border_width": "2px",
-                                                "border_color": "#3b82f6",
-                                                "max_width": "70px",
-                                            }
-                                        ),
-                                        display="flex",
-                                        justify_content="center",
-                                        align_items="center",
-                                        width="100%",
-                                    ),
-                                    style={**cell_style, "width": "100px"}
-                                ),
-                                # PRECIO
-                                rx.table.cell(
-                                    rx.box(
-                                        rx.box(
-                                            rx.text(
-                                                f"${item.get('Precio', 0):.2f}", 
-                                                style={
-                                                    "font_weight": "700", 
-                                                    "color": "#059669",
-                                                    "font_size": "14px",
-                                                    "text_align": "center",
-                                                }
-                                            ),
-                                            style={
-                                                "background": "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)",
-                                                "padding": "6px 8px",
-                                                "border_radius": "8px",
-                                                "border": "1px solid #a7f3d0",
-                                                "max_width": "90px",
-                                            }
-                                        ),
-                                        display="flex",
-                                        justify_content="center",
-                                        align_items="center",
-                                        width="100%",
-                                    ),
-                                    style={**cell_style, "width": "120px"}
-                                ),
-                                # IMPORTE
-                                rx.table.cell(
-                                    rx.box(
-                                        rx.box(
-                                            rx.text(
-                                                f"${item.get('Importe', 0):.2f}", 
-                                                style={
-                                                    "font_weight": "700", 
-                                                    "color": "#2563eb",
-                                                    "font_size": "14px",
-                                                    "text_align": "center",
-                                                }
-                                            ),
-                                            style={
-                                                "background": "linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)",
-                                                "padding": "6px 8px",
-                                                "border_radius": "8px",
-                                                "border": "1px solid #93c5fd",
-                                                "max_width": "90px",
-                                            }
-                                        ),
-                                        display="flex",
-                                        justify_content="center",
-                                        align_items="center",
-                                        width="100%",
-                                    ),
-                                    style={**cell_style, "width": "120px"}
-                                ),
-                                _hover={
-                                    "background_color": "#f8fafc",
-                                    "transform": "translateY(-1px)",
-                                    "box_shadow": "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                                },
-                                style={
-                                    "transition": "all 0.2s ease",
-                                    "cursor": "pointer",
-                                }
+        return rx.vstack(
+            # Tabla con scroll horizontal
+            rx.box(
+                rx.scroll_area(
+                    rx.table.root(
+                        rx.table.header(
+                            rx.table.row(
+                                rx.table.column_header_cell("Seleccionar", style={**header_style, "width": "100px"}),
+                                rx.table.column_header_cell("Número", style={**header_style, "width": "80px"}),
+                                rx.table.column_header_cell("Código", style={**header_style, "width": "120px"}),
+                                rx.table.column_header_cell("Descripción", style={**header_style, "width": "250px"}),
+                                rx.table.column_header_cell("Tipo", style={**header_style, "width": "150px"}),
+                                rx.table.column_header_cell("UM", style={**header_style, "width": "100px"}),
+                                rx.table.column_header_cell("Fecha Entrada", style={**header_style, "width": "120px"}),
+                                rx.table.column_header_cell("Cant. E", style={**header_style, "width": "100px"}),
+                                rx.table.column_header_cell("Fecha Salida", style={**header_style, "width": "120px"}),
+                                rx.table.column_header_cell("Cant. S", style={**header_style, "width": "100px"}),
+                                rx.table.column_header_cell("Saldo", style={**header_style, "width": "100px"}),
+                                rx.table.column_header_cell("Precio", style={**header_style, "width": "120px"}),
+                                rx.table.column_header_cell("Importe", style={**header_style, "width": "120px"}),
                             )
-                        )
+                        ),
+                        rx.table.body(
+                            rx.foreach(
+                                AlmacenState.paginated_data,  # <-- Usamos datos paginados
+                                producto_row
+                            )
+                        ),
+                        style=table_style,
                     ),
-                    style=table_style,
+                    type="always",
+                    scrollbars="horizontal",
+                    style={
+                        "width": "100%",
+                        "max_height": "730px",
+                        "height": "auto",
+                        "overflow_y": "auto",
+                        "border": "1px solid #e2e8f0",
+                        "border_radius": "12px",
+                        "box_shadow": "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                    }
                 ),
-                type="always",
-                scrollbars="horizontal",
-                style={
-                    "width": "100%",
-                    "height": "600px",
-                    "overflow_y": "auto",
-                    "border": "1px solid #e2e8f0",
-                    "border_radius": "12px",
-                    "box_shadow": "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                }
+                width="100%",
             ),
+            # Controles de paginación
+            rx.cond(
+                AlmacenState.filtered_data.length() > AlmacenState.items_per_page,
+                rx.box(
+                    rx.hstack(
+                        rx.text(
+                            rx.cond(
+                                AlmacenState.filtered_data.length() > 0,
+                                rx.cond(
+                                    AlmacenState.current_page == 1,
+                                    "Mostrando 1 a " + rx.cond(
+                                        AlmacenState.items_per_page > AlmacenState.filtered_data.length(),
+                                        AlmacenState.filtered_data.length().to(str),
+                                        AlmacenState.items_per_page.to(str)
+                                    ) + " de " + AlmacenState.filtered_data.length().to(str) + " resultados",
+                                    "Mostrando " + ((AlmacenState.current_page - 1) * AlmacenState.items_per_page + 1).to(str) + " a " + rx.cond(
+                                        AlmacenState.current_page * AlmacenState.items_per_page > AlmacenState.filtered_data.length(),
+                                        AlmacenState.filtered_data.length().to(str),
+                                        (AlmacenState.current_page * AlmacenState.items_per_page).to(str)
+                                    ) + " de " + AlmacenState.filtered_data.length().to(str) + " resultados"
+                                ),
+                                "Mostrando 0 a 0 de 0 resultados"
+                            ),
+                            size="2",
+                            color="#64748b",
+                            font_weight="500",
+                            flex_shrink=0,
+                            margin_right="8rem",
+                        ),
+                        rx.spacer(),
+                        rx.box(
+                            render_pagination(),
+                            flex_shrink=0,
+                            margin_left="0.5rem",
+                        ),
+                        width="100%",
+                        align="center",
+                        spacing="6",
+                        wrap="wrap",
+                    ),
+                    padding="1.5rem 1rem",
+                    border_top="1px solid #e2e8f0",
+                    background="#f8fafc",
+                ),
+                rx.box(height="1rem")  # Espacio cuando no hay paginación
+            ),
+            spacing="0",
             width="100%",
         )
     
@@ -526,7 +702,6 @@ def admin_dashboard() -> rx.Component:
     
     def salida_dialog():
         """Diálogo para dar salida - solo se habilita si hay solicitudes aprobadas"""
-        # Usamos una variable computada en el estado para determinar si está habilitado
         return rx.dialog.root(
             rx.dialog.trigger(
                 rx.button(
@@ -535,17 +710,14 @@ def admin_dashboard() -> rx.Component:
                     variant="solid",
                     color_scheme="red",
                     size="2",
-                    # Usamos rx.cond para determinar si está deshabilitado
-                    # Solo habilitado si hay exactamente un producto seleccionado Y tiene solicitudes aprobadas
                     is_disabled=rx.cond(
                         AlmacenState.selected_items.length() == 1,
-                        # Si hay un producto seleccionado, verificar si tiene solicitudes aprobadas
                         rx.cond(
                             AlmacenState.producto_tiene_solicitudes_aprobadas,
-                            False,  # Habilitado si tiene solicitudes aprobadas
-                            True    # Deshabilitado si no tiene
+                            False,
+                            True
                         ),
-                        True  # Deshabilitado si no hay producto seleccionado
+                        True
                     ),
                     style={
                         "background": "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
@@ -560,7 +732,6 @@ def admin_dashboard() -> rx.Component:
                 ),
                 rx.form(
                     rx.vstack(
-                        # Campos del formulario de salida
                         rx.hstack(
                             rx.vstack(
                                 rx.text("Fecha Salida:", size="2"),
@@ -578,7 +749,6 @@ def admin_dashboard() -> rx.Component:
                         rx.input(placeholder="Destino *", name="destino", required=True, size="3"),
                         rx.input(placeholder="Cliente/Proyecto *", name="cliente", required=True, size="3"),
                         
-                        # Botones
                         rx.vstack(
                             rx.dialog.close(
                                 rx.button("Cancelar", variant="soft", color_scheme="gray", size="2")
@@ -839,7 +1009,6 @@ def admin_dashboard() -> rx.Component:
                                     "border_radius": "8px",
                                 }
                             ),
-                            # MODIFICADO: Agregada la opción "Descripcion del producto"
                             rx.select(
                                 ["Numero", "Codigo", "Descripcion del producto", "Tipo de producto", "UM", "Fecha de entrada", "Precio"],
                                 placeholder="Ordenar por...",
@@ -898,7 +1067,6 @@ def admin_dashboard() -> rx.Component:
                                     "min_width": ["100%", "120px", "120px", "120px"],
                                 }
                             ),
-                            # NUEVO: Botón para leyenda de tipos
                             leyenda_dialog(),
                             spacing="2",
                             width="100%",
@@ -963,20 +1131,19 @@ def admin_dashboard() -> rx.Component:
                                 }
                             ),
                             rx.link(
-                            rx.button(
-                                "📃 Generar comprobante",
-                                variant="solid",  
-                                size="2",
-                                style={
-                                    #"background": "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
-                                    "flex": "1",
-                                    "min_width": ["100%", "140px", "140px", "140px"],
-                                }
+                                rx.button(
+                                    "📃 Generar comprobante",
+                                    variant="solid",  
+                                    size="2",
+                                    style={
+                                        "flex": "1",
+                                        "min_width": ["100%", "140px", "140px", "140px"],
+                                    }
+                                ),
+                                href=Route.GENERAR_COMPROBANTE.value,
+                                width="100%",
+                                color_scheme="indigo",
                             ),
-                            href=Route.GENERAR_COMPROBANTE.value,
-                            width="100%",
-                            color_scheme="indigo",
-                        ),
                             spacing="2",
                             width="100%",
                             wrap="wrap",
@@ -991,7 +1158,7 @@ def admin_dashboard() -> rx.Component:
                     margin_bottom="2rem",
                 ),
                 
-                # Tabla de datos
+                # Tabla de datos con paginación
                 rx.cond(
                     AlmacenState.loading,
                     rx.center(
@@ -1011,13 +1178,7 @@ def admin_dashboard() -> rx.Component:
                             rx.cond(
                                 AlmacenState.filtered_data.length() > 0,
                                 rx.vstack(
-                                    rx.box(
-                                        rx.box(almacen_table(), width="100%", overflow="hidden"),
-                                        width="100%",
-                                        border_radius="12px",
-                                        overflow="hidden",
-                                        box_shadow="0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                                    ),
+                                    productos_table(),  # <-- Usamos la nueva tabla con paginación
                                     # Información de filtrado
                                     rx.cond(
                                         AlmacenState.search_value != "",
