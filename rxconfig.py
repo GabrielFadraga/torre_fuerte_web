@@ -7,6 +7,7 @@ config = rx.Config(
 
     cors_allowed_origins=[
         "http://localhost:3000",
+        "http://localhost:3170",
         "https://www.torrefuertesurl.com",
     ],
     plugins=[

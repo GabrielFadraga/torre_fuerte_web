@@ -37,7 +37,6 @@ def admin_rm_dashboard() -> rx.Component:
     def solicitudes_table() -> rx.Component:
         """Tabla de solicitudes RM pendientes con paginación."""
         
-        # Botón de página individual
         def create_page_button_recursos(page_num: int):
             return rx.button(
                 rx.text(page_num, size="2", font_weight="500"),
@@ -169,6 +168,7 @@ def admin_rm_dashboard() -> rx.Component:
                 rx.text(solicitud.get("fecha_aprobacion_tecnica"), color="#070E0C"),
                 rx.text("-", color="#94a3b8", font_style="italic")
             )
+            num_recursos = solicitud.get("num_recursos", 0)
             
             return rx.table.row(
                 rx.table.cell(
@@ -187,26 +187,37 @@ def admin_rm_dashboard() -> rx.Component:
                     rx.text(solicitud.get("Orden trabajo", "-"), color="#070E0C"),
                     style={"padding": "8px 4px", "min_width": "120px"}
                 ),
+                # Celda de productos
                 rx.table.cell(
-                    rx.text(
-                        solicitud.get("Descripcion", "-"),
-                        color="#070E0C",
-                        style={
-                            "max_width": "150px",
-                            "overflow": "hidden",
-                            "text_overflow": "ellipsis",
-                            "white_space": "nowrap"
-                        }
+                    rx.hstack(
+                        rx.badge(
+                            rx.cond(
+                                num_recursos == 1,
+                                "1 producto",
+                                num_recursos.to(str) + " productos"
+                            ),
+                            color_scheme="blue",
+                            variant="soft",
+                            size="1"
+                        ),
+                        rx.button(
+                            "👁️ Ver",
+                            on_click=lambda: AdminRMState.open_detalle_dialog_recursos(solicitud),
+                            size="1",
+                            variant="ghost",
+                            style={
+                                "padding": "2px 5px",
+                                "font_size": "11px",
+                                "height": "15px",
+                                "min_width": "70px",
+                                "width": "auto",
+                                "flex_shrink": "0",
+                            }
+                        ),
+                        spacing="3",
+                        justify="start"
                     ),
                     style={"padding": "8px 4px", "min_width": "150px"}
-                ),
-                rx.table.cell(
-                    rx.text(solicitud.get("Cantidad", "-"), color="#070E0C"),
-                    style={"padding": "8px 4px", "min_width": "80px"}
-                ),
-                rx.table.cell(
-                    rx.text(solicitud.get("UM", "-"), color="#070E0C"),
-                    style={"padding": "8px 4px", "min_width": "80px"}
                 ),
                 rx.table.cell(
                     fecha_aprobacion,
@@ -275,9 +286,7 @@ def admin_rm_dashboard() -> rx.Component:
                                     rx.table.column_header_cell("Centro Costo", style=header_style),
                                     rx.table.column_header_cell("Fecha", style=header_style),
                                     rx.table.column_header_cell("Orden Trabajo", style=header_style),
-                                    rx.table.column_header_cell("Descripción", style=header_style),
-                                    rx.table.column_header_cell("Cantidad", style=header_style),
-                                    rx.table.column_header_cell("UM", style=header_style),
+                                    rx.table.column_header_cell("Productos", style=header_style),
                                     rx.table.column_header_cell("Aprobado Técnica", style=header_style),
                                     rx.table.column_header_cell("Estado", style=header_style),
                                     rx.table.column_header_cell("Acciones", style=header_style),
@@ -291,7 +300,7 @@ def admin_rm_dashboard() -> rx.Component:
                             ),
                             style={
                                 "width": "100%",
-                                "min_width": "1100px",
+                                "min_width": "1000px",
                                 "table_layout": "auto"
                             }
                         ),
@@ -488,6 +497,7 @@ def admin_rm_dashboard() -> rx.Component:
             )
         
         def solicitud_row(solicitud):
+            num_recursos = solicitud.get("num_recursos", 1)
             return rx.table.row(
                 rx.table.cell(
                     rx.text(solicitud["numero_solicitud"], font_weight="600", color="#070E0C"),
@@ -505,12 +515,37 @@ def admin_rm_dashboard() -> rx.Component:
                     rx.text(solicitud.get("Orden de trabajo", "-"), color="#070E0C"),
                     style={"padding": "8px 4px", "min_width": "120px"}
                 ),
+                # Celda de productos con badge y botón Ver
                 rx.table.cell(
-                    rx.text(
-                        f"{solicitud.get('num_recursos', 1)} productos",
-                        color="#070E0C",
+                    rx.hstack(
+                        rx.badge(
+                            rx.cond(
+                                num_recursos == 1,
+                                "1 producto",
+                                num_recursos.to(str) + " productos"
+                            ),
+                            color_scheme="blue",
+                            variant="soft",
+                            size="1"
+                        ),
+                        rx.button(
+                            "👁️ Ver",
+                            on_click=lambda: AdminRMState.open_detalle_dialog_fin(solicitud),
+                            size="1",
+                            variant="ghost",
+                            style={
+                                "padding": "2px 5px",
+                                "font_size": "11px",
+                                "height": "15px",
+                                "min_width": "70px",
+                                "width": "auto",
+                                "flex_shrink": "0",
+                            }
+                        ),
+                        spacing="3",
+                        justify="start"
                     ),
-                    style={"padding": "8px 4px", "min_width": "100px"}
+                    style={"padding": "8px 4px", "min_width": "150px"}
                 ),
                 rx.table.cell(
                     rx.text(f"${solicitud.get('Total', 0):.2f}", color="#070E0C", font_weight="600"),
@@ -601,7 +636,7 @@ def admin_rm_dashboard() -> rx.Component:
                             ),
                             style={
                                 "width": "100%",
-                                "min_width": "900px",
+                                "min_width": "1000px",
                                 "table_layout": "auto"
                             }
                         ),
@@ -668,7 +703,209 @@ def admin_rm_dashboard() -> rx.Component:
             )
         )
     
-    # ==================== DIÁLOGOS (sin cambios) ====================
+    # ==================== DIÁLOGO DE DETALLES DE RECURSOS ====================
+    def detalle_dialog_recursos():
+        return rx.dialog.root(
+            rx.dialog.content(
+                rx.dialog.title(
+                    rx.hstack(
+                        rx.icon("package", size=20, color="#7c3aed"),
+                        rx.text(f"Productos de Solicitud #{AdminRMState.solicitud_detalle_recursos.get('id', '')}"),
+                        spacing="2",
+                        align="center"
+                    ),
+                    color="#212121"
+                ),
+                rx.dialog.description(
+                    rx.cond(
+                        AdminRMState.solicitud_detalle_recursos.get("id") != "",
+                        rx.vstack(
+                            rx.hstack(
+                                rx.text("Centro de costo:", size="2", color="#64748b", width="100px"),
+                                rx.text(AdminRMState.solicitud_detalle_recursos.get("Centro costo", "-"), size="2", color="#1e293b", font_weight="500"),
+                                spacing="3",
+                                align="center"
+                            ),
+                            rx.hstack(
+                                rx.text("Orden trabajo:", size="2", color="#64748b", width="100px"),
+                                rx.text(AdminRMState.solicitud_detalle_recursos.get("Orden trabajo", "-"), size="2", color="#1e293b", font_weight="500"),
+                                spacing="3",
+                                align="center"
+                            ),
+                            rx.divider(),
+                            rx.heading("Recursos solicitados:", size="3", color="#1e293b"),
+                            rx.cond(
+                                AdminRMState.recursos_detalle_recursos.length() > 0,
+                                rx.vstack(
+                                    rx.foreach(
+                                        AdminRMState.recursos_detalle_recursos,
+                                        lambda recurso, idx: rx.box(
+                                            rx.hstack(
+                                                rx.badge(idx + 1, color_scheme="purple", size="1"),
+                                                rx.vstack(
+                                                    rx.text(recurso.get("descripcion", "-"), size="2", font_weight="500"),
+                                                    rx.hstack(
+                                                        rx.text(f"Cantidad: {recurso.get('cantidad', '-')}", size="1", color="#64748b"),
+                                                        rx.text(f"UM: {recurso.get('unidad_medida', '-')}", size="1", color="#64748b"),
+                                                        rx.cond(
+                                                            recurso.get("observaciones"),
+                                                            rx.text(f"Obs: {recurso.get('observaciones')}", size="1", color="#64748b"),
+                                                            rx.text("")
+                                                        ),
+                                                        spacing="2",
+                                                        wrap="wrap"
+                                                    ),
+                                                    spacing="0",
+                                                    align="start"
+                                                ),
+                                                spacing="3",
+                                                align="start"
+                                            ),
+                                            padding="0.5rem",
+                                            border_radius="6px",
+                                            background=rx.cond(
+                                                idx % 2 == 0,
+                                                "#f9fafb",
+                                                "white"
+                                            ),
+                                            width="100%"
+                                        )
+                                    ),
+                                    spacing="1",
+                                    width="100%"
+                                ),
+                                rx.text("No hay recursos disponibles", size="2", color="#64748b", font_style="italic")
+                            ),
+                            spacing="3",
+                            align="start",
+                            width="100%"
+                        ),
+                        rx.text("No hay solicitud seleccionada")
+                    ),
+                    color="#212121"
+                ),
+                rx.dialog.close(
+                    rx.button(
+                        "Cerrar",
+                        on_click=AdminRMState.close_detalle_dialog_recursos,
+                        variant="soft",
+                        size="2"
+                    ),
+                    margin_top="1rem"
+                ),
+                max_width="600px",
+                style={
+                    "background": "white",
+                    "border_radius": "12px",
+                    "box_shadow": "0 20px 25px -5px rgba(0, 0, 0, 0.1)"
+                }
+            ),
+            open=AdminRMState.show_detalle_dialog_recursos,
+            on_open_change=AdminRMState.set_show_detalle_dialog_recursos,
+        )
+    
+    # ==================== DIÁLOGO DE DETALLES DE FINANCIAMIENTO ====================
+    def detalle_dialog_fin():
+        return rx.dialog.root(
+            rx.dialog.content(
+                rx.dialog.title(
+                    rx.hstack(
+                        rx.icon("package", size=20, color="#059669"),
+                        rx.text(f"Productos de Solicitud #{AdminRMState.solicitud_detalle_fin.get('numero_solicitud', '')}"),
+                        spacing="2",
+                        align="center"
+                    ),
+                    color="#212121"
+                ),
+                rx.dialog.description(
+                    rx.cond(
+                        AdminRMState.solicitud_detalle_fin.get("numero_solicitud") != "",
+                        rx.vstack(
+                            rx.hstack(
+                                rx.text("Área:", size="2", color="#64748b", width="100px"),
+                                rx.text(AdminRMState.solicitud_detalle_fin.get("Area solicitante", "-"), size="2", color="#1e293b", font_weight="500"),
+                                spacing="3",
+                                align="center"
+                            ),
+                            rx.hstack(
+                                rx.text("Orden trabajo:", size="2", color="#64748b", width="100px"),
+                                rx.text(AdminRMState.solicitud_detalle_fin.get("Orden de trabajo", "-"), size="2", color="#1e293b", font_weight="500"),
+                                spacing="3",
+                                align="center"
+                            ),
+                            rx.divider(),
+                            rx.heading("Productos solicitados:", size="3", color="#1e293b"),
+                            rx.cond(
+                                AdminRMState.recursos_detalle_fin.length() > 0,
+                                rx.vstack(
+                                    rx.foreach(
+                                        AdminRMState.recursos_detalle_fin,
+                                        lambda recurso, idx: rx.box(
+                                            rx.hstack(
+                                                rx.badge(idx + 1, color_scheme="green", size="1"),
+                                                rx.vstack(
+                                                    rx.text(recurso.get("Descripcion", "-"), size="2", font_weight="500"),
+                                                    rx.hstack(
+                                                        rx.text(f"Cantidad: {recurso.get('Cantidad', '-')}", size="1", color="#64748b"),
+                                                        rx.text(f"Precio: ${recurso.get('Precio unitario', 0):.2f}", size="1", color="#64748b"),
+                                                        rx.cond(
+                                                            recurso.get("Servicio"),
+                                                            rx.text(f"Servicio: {recurso.get('Servicio')}", size="1", color="#64748b"),
+                                                            rx.text("")
+                                                        ),
+                                                        spacing="2",
+                                                        wrap="wrap"
+                                                    ),
+                                                    spacing="0",
+                                                    align="start"
+                                                ),
+                                                spacing="3",
+                                                align="start"
+                                            ),
+                                            padding="0.5rem",
+                                            border_radius="6px",
+                                            background=rx.cond(
+                                                idx % 2 == 0,
+                                                "#f9fafb",
+                                                "white"
+                                            ),
+                                            width="100%"
+                                        )
+                                    ),
+                                    spacing="1",
+                                    width="100%"
+                                ),
+                                rx.text("No hay productos disponibles", size="2", color="#64748b", font_style="italic")
+                            ),
+                            spacing="3",
+                            align="start",
+                            width="100%"
+                        ),
+                        rx.text("No hay solicitud seleccionada")
+                    ),
+                    color="#212121"
+                ),
+                rx.dialog.close(
+                    rx.button(
+                        "Cerrar",
+                        on_click=AdminRMState.close_detalle_dialog_fin,
+                        variant="soft",
+                        size="2"
+                    ),
+                    margin_top="1rem"
+                ),
+                max_width="600px",
+                style={
+                    "background": "white",
+                    "border_radius": "12px",
+                    "box_shadow": "0 20px 25px -5px rgba(0, 0, 0, 0.1)"
+                }
+            ),
+            open=AdminRMState.show_detalle_dialog_fin,
+            on_open_change=AdminRMState.set_show_detalle_dialog_fin,
+        )
+    
+    # ==================== DIÁLOGOS DE APROBACIÓN/RECHAZO ====================
     def aprobar_dialog():
         return rx.dialog.root(
             rx.dialog.content(
@@ -1084,11 +1321,12 @@ def admin_rm_dashboard() -> rx.Component:
             on_open_change=AdminRMState.set_show_generar_dialog_fin,
         )
     
+    # ==================== CONTENIDO PRINCIPAL ====================
     def dashboard_content():
         return rx.box(
             navbar("Panel de Administración RM"),
             rx.vstack(
-                # Encabezado responsivo
+                # Encabezado principal
                 rx.box(
                     rx.vstack(
                         rx.hstack(
@@ -1193,7 +1431,7 @@ def admin_rm_dashboard() -> rx.Component:
                                 padding_bottom="1.5rem"
                             ),
                             
-                            # Tabla
+                            # Tabla de recursos
                             rx.cond(
                                 AdminRMState.loading,
                                 rx.center(
@@ -1266,7 +1504,7 @@ def admin_rm_dashboard() -> rx.Component:
                                 padding_bottom="1.5rem"
                             ),
                             
-                            # Tabla
+                            # Tabla de financiamiento
                             rx.cond(
                                 AdminRMState.loading_fin,
                                 rx.center(
@@ -1329,14 +1567,16 @@ def admin_rm_dashboard() -> rx.Component:
                 aprobar_dialog_fin(),
                 rechazar_dialog_fin(),
                 generar_dialog_fin(),
+                detalle_dialog_recursos(),
+                detalle_dialog_fin(),
                 
                 # Pie de página
                 rx.box(
                     rx.vstack(
                         rx.hstack(
                             rx.text("© 2026 Sistema de Gestión de Recursos", 
-                                   size="1", 
-                                   color="#64748b"),
+                                size="1", 
+                                color="#64748b"),
                             rx.spacer(),
                             rx.text(
                                 "Administrador/Presidente - Maikel",

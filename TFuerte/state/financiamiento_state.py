@@ -18,6 +18,13 @@ class FinanciamientoState(rx.State):
     search_value_revfin: str = ""
     motivo_rechazo_revfin: str = ""
     
+    # ==================================================
+    # NUEVO: Diálogo de detalles de financiamiento
+    # ==================================================
+    show_detalle_dialog_revfin: bool = False
+    solicitud_detalle_revfin: dict = {}
+    recursos_detalle_revfin: List[dict] = []
+    
     # Usuario actual de RevFin
     current_revfin: dict = {}
     is_authenticated_revfin: bool = False
@@ -85,39 +92,56 @@ class FinanciamientoState(rx.State):
         
         self.loading_revfin = False
     
-    # Cargar datos para RevFin
+    # Cargar datos para RevFin (MODIFICADO: agrupar por número de solicitud)
     @rx.event
     def load_data_revfin(self):
-        """Carga las solicitudes pendientes para revisión financiera"""
+        """Carga las solicitudes pendientes para revisión financiera y las agrupa por número de solicitud"""
         self.loading_revfin = True
         yield
         
         solicitudes_pendientes = FinanciamientoApi.get_solicitudes_fin_pendientes_revfin()
         
-        # Formatear fechas
-        solicitudes_procesadas = []
+        # Agrupar por número de solicitud
+        solicitudes_agrupadas = {}
         for solicitud in solicitudes_pendientes:
-            solicitud_procesada = solicitud.copy()
+            numero_solicitud = solicitud.get("numero_solicitud")
+            if not numero_solicitud:
+                # Si no tiene número de solicitud (caso raro), se asigna uno basado en ID
+                numero_solicitud = f"FIN-{solicitud.get('id')}"
             
-            if "fecha_creacion" in solicitud_procesada and solicitud_procesada["fecha_creacion"]:
-                fecha = solicitud_procesada["fecha_creacion"]
-                if isinstance(fecha, str) and len(fecha) >= 10:
-                    solicitud_procesada["fecha_creacion"] = fecha[:10]
+            # Formatear fechas (para la cabecera del grupo)
+            fecha = solicitud.get("Fecha", "")
+            if isinstance(fecha, str) and len(fecha) >= 10:
+                fecha = fecha[:10]
             
-            if "Fecha" in solicitud_procesada and solicitud_procesada["Fecha"]:
-                fecha = solicitud_procesada["Fecha"]
-                if isinstance(fecha, str) and len(fecha) >= 10:
-                    solicitud_procesada["Fecha"] = fecha[:10]
-            
-            solicitudes_procesadas.append(solicitud_procesada)
+            if numero_solicitud not in solicitudes_agrupadas:
+                solicitudes_agrupadas[numero_solicitud] = {
+                    "id": solicitud.get("id"),  # ID del primer recurso (puede no ser necesario)
+                    "numero_solicitud": numero_solicitud,
+                    "Area solicitante": solicitud.get("Area solicitante"),
+                    "Fecha": fecha,
+                    "Orden de trabajo": solicitud.get("Orden de trabajo"),
+                    "Total": solicitud.get("Total", 0),
+                    "estado": solicitud.get("estado", "pendiente_revfin"),
+                    "num_recursos": 1,
+                    "recursos": [solicitud]
+                }
+            else:
+                solicitudes_agrupadas[numero_solicitud]["num_recursos"] += 1
+                solicitudes_agrupadas[numero_solicitud]["recursos"].append(solicitud)
+                # Actualizar el total (ya está calculado por el trigger, pero por si acaso)
+                solicitudes_agrupadas[numero_solicitud]["Total"] = max(
+                    solicitudes_agrupadas[numero_solicitud]["Total"],
+                    solicitud.get("Total", 0)
+                )
         
-        self.solicitudes_pendientes_revfin = solicitudes_procesadas
+        self.solicitudes_pendientes_revfin = list(solicitudes_agrupadas.values())
         self.reset_revfin_pagination()
         self.loading_revfin = False
     
-    # Filtrar solicitudes para RevFin
+    # Filtrar solicitudes para RevFin (ahora sobre los grupos)
     def filter_solicitudes_revfin(self, search_value: str):
-        """Filtra las solicitudes por término de búsqueda"""
+        """Filtra las solicitudes por término de búsqueda (sobre los grupos)"""
         self.search_value_revfin = search_value
         
         if not search_value:
@@ -126,10 +150,9 @@ class FinanciamientoState(rx.State):
         search_term = search_value.lower()
         filtered = []
         for s in self.solicitudes_pendientes_revfin:
-            if (search_term in s.get("Descripcion", "").lower() or
-                search_term in s.get("Area solicitante", "").lower() or
+            if (search_term in s.get("Area solicitante", "").lower() or
                 search_term in s.get("Orden de trabajo", "").lower() or
-                search_term in s.get("Servicio", "").lower()):
+                search_term in str(s.get("Total", "")).lower()):
                 filtered.append(s)
         
         self.solicitudes_pendientes_revfin = filtered
@@ -165,28 +188,65 @@ class FinanciamientoState(rx.State):
             self.selected_solicitud_revfin = {}
             self.motivo_rechazo_revfin = ""
     
-    # Métodos de aprobación/rechazo para RevFin
+    # ==================================================
+    # NUEVO: Métodos para diálogo de detalles
+    # ==================================================
+    def open_detalle_dialog_revfin(self, solicitud: dict):
+        self.solicitud_detalle_revfin = solicitud
+        self.recursos_detalle_revfin = solicitud.get("recursos", [])
+        self.show_detalle_dialog_revfin = True
+    
+    def close_detalle_dialog_revfin(self):
+        self.show_detalle_dialog_revfin = False
+        self.solicitud_detalle_revfin = {}
+        self.recursos_detalle_revfin = []
+    
+    def set_show_detalle_dialog_revfin(self, show: bool):
+        self.show_detalle_dialog_revfin = show
+        if not show:
+            self.solicitud_detalle_revfin = {}
+            self.recursos_detalle_revfin = []
+    
+    # Métodos de aprobación/rechazo para RevFin (ahora sobre el grupo)
     @rx.event
     def aprobar_solicitud_revfin(self):
         if not self.selected_solicitud_revfin:
             yield rx.toast.error("❌ No hay solicitud seleccionada")
             return
 
-        solicitud_id = self.selected_solicitud_revfin.get("id")
+        numero_solicitud = self.selected_solicitud_revfin.get("numero_solicitud")
+        recursos = self.selected_solicitud_revfin.get("recursos", [])
+
+        if not recursos:
+            yield rx.toast.error("❌ No se encontraron recursos para esta solicitud")
+            return
+
         revfin_usuario = self.current_revfin.get("usuario", "Revisor Financiero")
 
-        try:
-            result = FinanciamientoApi.aprobar_por_revfin(solicitud_id, revfin_usuario)
+        self.loading_revfin = True
+        yield
 
-            if result:
+        try:
+            exito = True
+            for recurso in recursos:
+                result = FinanciamientoApi.aprobar_por_revfin(recurso["id"], revfin_usuario)
+                if not result:
+                    exito = False
+                    yield rx.toast.error(f"❌ Error al aprobar recurso {recurso['id']}")
+                    break
+
+            if exito:
                 self.close_aprobar_dialog_revfin()
                 yield from self.load_data_revfin()
-                yield rx.toast.success("✅ Solicitud aprobada por Revisor Financiero")
+                yield rx.toast.success("✅ Solicitud de financiamiento aprobada")
             else:
                 yield rx.toast.error("❌ Error al aprobar la solicitud")
         except Exception as e:
             print(f"❌ Error en aprobar_solicitud_revfin: {e}")
             yield rx.toast.error(f"❌ Error interno: {str(e)}")
+        finally:
+            self.loading_revfin = False
+            yield
     
     @rx.event
     def rechazar_solicitud_revfin(self):
@@ -194,21 +254,38 @@ class FinanciamientoState(rx.State):
             yield rx.toast.error("❌ No hay solicitud seleccionada")
             return
 
-        solicitud_id = self.selected_solicitud_revfin.get("id")
+        numero_solicitud = self.selected_solicitud_revfin.get("numero_solicitud")
+        recursos = self.selected_solicitud_revfin.get("recursos", [])
         motivo = self.motivo_rechazo_revfin if self.motivo_rechazo_revfin else "Rechazado por Revisor Financiero"
 
-        try:
-            result = FinanciamientoApi.rechazar_solicitud_fin(solicitud_id, motivo)
+        if not recursos:
+            yield rx.toast.error("❌ No se encontraron recursos para esta solicitud")
+            return
 
-            if result:
+        self.loading_revfin = True
+        yield
+
+        try:
+            exito = True
+            for recurso in recursos:
+                result = FinanciamientoApi.rechazar_solicitud_fin(recurso["id"], motivo)
+                if not result:
+                    exito = False
+                    yield rx.toast.error(f"❌ Error al rechazar recurso {recurso['id']}")
+                    break
+
+            if exito:
                 self.close_rechazar_dialog_revfin()
                 yield from self.load_data_revfin()
-                yield rx.toast.success("✅ Solicitud rechazada")
+                yield rx.toast.success("✅ Solicitud de financiamiento rechazada")
             else:
                 yield rx.toast.error("❌ Error al rechazar la solicitud")
         except Exception as e:
             print(f"❌ Error en rechazar_solicitud_revfin: {e}")
             yield rx.toast.error(f"❌ Error interno: {str(e)}")
+        finally:
+            self.loading_revfin = False
+            yield
     
     # Cerrar sesión RevFin
     @rx.event

@@ -25,7 +25,6 @@ def tecnica_dashboard() -> rx.Component:
     def solicitudes_table() -> rx.Component:
         """Tabla de solicitudes RM pendientes con paginación."""
         
-        # Botón de página individual
         def create_page_button(page_num: int):
             return rx.button(
                 rx.text(page_num, size="2", font_weight="500"),
@@ -58,10 +57,8 @@ def tecnica_dashboard() -> rx.Component:
                 )
             )
         
-        # Controles de paginación
         def render_pagination():
             return rx.hstack(
-                # Botón anterior
                 rx.button(
                     rx.icon("chevron-left", size=16),
                     on_click=TecnicaState.previous_page,
@@ -77,10 +74,8 @@ def tecnica_dashboard() -> rx.Component:
                         "padding": "0 8px",
                     }
                 ),
-                # Contenedor de números
                 rx.box(
                     rx.hstack(
-                        # Primera página + "..." si estamos lejos del inicio
                         rx.cond(
                             (TecnicaState.current_page > 3) & (TecnicaState.total_pages > 4),
                             rx.hstack(
@@ -90,7 +85,6 @@ def tecnica_dashboard() -> rx.Component:
                                 flex_shrink=0,
                             ),
                         ),
-                        # Páginas del rango calculado (máximo 4)
                         rx.cond(
                             TecnicaState.page_numbers.length() > 0,
                             rx.hstack(
@@ -110,7 +104,6 @@ def tecnica_dashboard() -> rx.Component:
                                 flex_shrink=0,
                             ),
                         ),
-                        # Última página + "..." si estamos lejos del final
                         rx.cond(
                             (TecnicaState.current_page < TecnicaState.total_pages - 2) & (TecnicaState.total_pages > 4),
                             rx.hstack(
@@ -129,7 +122,6 @@ def tecnica_dashboard() -> rx.Component:
                     flex_shrink=1,
                     max_width="100%",
                 ),
-                # Botón siguiente
                 rx.button(
                     rx.hstack(
                         rx.icon("chevron-right", size=16),
@@ -158,8 +150,9 @@ def tecnica_dashboard() -> rx.Component:
                 width="100%",
             )
         
-        # Fila de solicitud
         def solicitud_row(solicitud):
+            # Usar el campo precalculado num_recursos
+            num_recursos = solicitud.get("num_recursos", 0)
             return rx.table.row(
                 rx.table.cell(
                     rx.text(solicitud["id"], font_weight="600", color="#070E0C"),
@@ -177,26 +170,37 @@ def tecnica_dashboard() -> rx.Component:
                     rx.text(solicitud.get("Orden trabajo", "-"), color="#070E0C"),
                     style={"padding": "8px 4px", "min_width": "120px"}
                 ),
+                # Celda de productos
                 rx.table.cell(
-                    rx.text(
-                        solicitud.get("Descripcion", "-"),
-                        color="#070E0C",
-                        style={
-                            "max_width": "180px",
-                            "overflow": "hidden",
-                            "text_overflow": "ellipsis",
-                            "white_space": "nowrap"
-                        }
+                    rx.hstack(
+                        rx.badge(
+                            rx.cond(
+                                num_recursos == 1,
+                                "1 producto",
+                                num_recursos.to(str) + " productos"
+                            ),
+                            color_scheme="blue",
+                            variant="soft",
+                            size="1"
+                        ),
+                        rx.button(
+                            "👁️ Ver",
+                            on_click=lambda: TecnicaState.open_detalle_dialog(solicitud),
+                            size="1",
+                            variant="ghost",
+                            style={
+                                        "padding": "2px 5px",
+                                        "font_size": "11px",
+                                        "height": "15px",
+                                        "min_width": "70px",
+                                        "width": "auto",
+                                        "flex_shrink": "0",  # evitar que se estire
+                                    }
+                        ),
+                        spacing="3",
+                        justify="start"
                     ),
-                    style={"padding": "8px 4px", "min_width": "180px"}
-                ),
-                rx.table.cell(
-                    rx.text(solicitud.get("Cantidad", "-"), color="#070E0C"),
-                    style={"padding": "8px 4px", "min_width": "80px"}
-                ),
-                rx.table.cell(
-                    rx.text(solicitud.get("UM", "-"), color="#070E0C"),
-                    style={"padding": "8px 4px", "min_width": "80px"}
+                    style={"padding": "8px 4px", "min_width": "150px"}
                 ),
                 rx.table.cell(
                     estado_badge_rm(solicitud.get("estado", "pendiente")),
@@ -252,7 +256,7 @@ def tecnica_dashboard() -> rx.Component:
                 width="100%"
             ),
             rx.vstack(
-                # Tabla con scroll horizontal
+                # Tabla
                 rx.box(
                     rx.scroll_area(
                         rx.table.root(
@@ -262,22 +266,20 @@ def tecnica_dashboard() -> rx.Component:
                                     rx.table.column_header_cell("Centro Costo", style=header_style),
                                     rx.table.column_header_cell("Fecha", style=header_style),
                                     rx.table.column_header_cell("Orden Trabajo", style=header_style),
-                                    rx.table.column_header_cell("Descripción", style=header_style),
-                                    rx.table.column_header_cell("Cantidad", style=header_style),
-                                    rx.table.column_header_cell("UM", style=header_style),
+                                    rx.table.column_header_cell("Productos", style=header_style),
                                     rx.table.column_header_cell("Estado", style=header_style),
                                     rx.table.column_header_cell("Acciones", style=header_style),
                                 )
                             ),
                             rx.table.body(
                                 rx.foreach(
-                                    TecnicaState.solicitudes_paginated,  # <-- Usamos datos paginados
+                                    TecnicaState.solicitudes_paginated,
                                     solicitud_row
                                 )
                             ),
                             style={
                                 "width": "100%",
-                                "min_width": "1000px",
+                                "min_width": "900px",
                                 "table_layout": "auto"
                             }
                         ),
@@ -285,7 +287,7 @@ def tecnica_dashboard() -> rx.Component:
                         scrollbars="horizontal",
                         style={
                             "width": "100%",
-                            "max_height": "650px",   # Ajuste para 10 filas
+                            "max_height": "650px",
                             "height": "auto",
                             "overflow_y": "auto",
                             "border": "1px solid #e2e8f0",
@@ -294,7 +296,7 @@ def tecnica_dashboard() -> rx.Component:
                     ),
                     width="100%",
                 ),
-                # Controles de paginación
+                # Paginación
                 rx.cond(
                     TecnicaState.solicitudes_pendientes.length() > TecnicaState.items_per_page,
                     rx.box(
@@ -486,11 +488,111 @@ def tecnica_dashboard() -> rx.Component:
             on_open_change=TecnicaState.set_show_rechazar_dialog,
         )
     
+    def detalle_dialog():
+        return rx.dialog.root(
+            rx.dialog.content(
+                rx.dialog.title(
+                    rx.hstack(
+                        rx.icon("package", size=20, color="#059669"),
+                        rx.text(f"Productos de Solicitud #{TecnicaState.solicitud_detalle.get('id', '')}"),
+                        spacing="2",
+                        align="center"
+                    ),
+                    color="#212121"
+                ),
+                rx.dialog.description(
+                    rx.cond(
+                        TecnicaState.solicitud_detalle.get("id") != "",
+                        rx.vstack(
+                            rx.hstack(
+                                rx.text("Centro de costo:", size="2", color="#64748b", width="100px"),
+                                rx.text(TecnicaState.solicitud_detalle.get("Centro costo", "-"), size="2", color="#1e293b", font_weight="500"),
+                                spacing="3",
+                                align="center"
+                            ),
+                            rx.hstack(
+                                rx.text("Orden trabajo:", size="2", color="#64748b", width="100px"),
+                                rx.text(TecnicaState.solicitud_detalle.get("Orden trabajo", "-"), size="2", color="#1e293b", font_weight="500"),
+                                spacing="3",
+                                align="center"
+                            ),
+                            rx.divider(),
+                            rx.heading("Recursos solicitados:", size="3", color="#1e293b"),
+                            rx.cond(
+                                TecnicaState.recursos_detalle.length() > 0,
+                                rx.vstack(
+                                    rx.foreach(
+                                        TecnicaState.recursos_detalle,
+                                        lambda recurso, idx: rx.box(
+                                            rx.hstack(
+                                                rx.badge(idx + 1, color_scheme="blue", size="1"),
+                                                rx.vstack(
+                                                    rx.text(recurso.get("descripcion", "-"), size="2", font_weight="500"),
+                                                    rx.hstack(
+                                                        rx.text(f"Cantidad: {recurso.get('cantidad', '-')}", size="1", color="#64748b"),
+                                                        rx.text(f"UM: {recurso.get('unidad_medida', '-')}", size="1", color="#64748b"),
+                                                        rx.cond(
+                                                            recurso.get("observaciones"),
+                                                            rx.text(f"Obs: {recurso.get('observaciones')}", size="1", color="#64748b"),
+                                                            rx.text("")
+                                                        ),
+                                                        spacing="2",
+                                                        wrap="wrap"
+                                                    ),
+                                                    spacing="0",
+                                                    align="start"
+                                                ),
+                                                spacing="3",
+                                                align="start"
+                                            ),
+                                            padding="0.5rem",
+                                            border_radius="6px",
+                                            background=rx.cond(
+                                                idx % 2 == 0,
+                                                "#f9fafb",
+                                                "white"
+                                            ),
+                                            width="100%"
+                                        )
+                                    ),
+                                    spacing="1",
+                                    width="100%"
+                                ),
+                                rx.text("No hay recursos disponibles", size="2", color="#64748b", font_style="italic")
+                            ),
+                            spacing="3",
+                            align="start",
+                            width="100%"
+                        ),
+                        rx.text("No hay solicitud seleccionada")
+                    ),
+                    color="#212121"
+                ),
+                rx.dialog.close(
+                    rx.button(
+                        "Cerrar",
+                        on_click=TecnicaState.close_detalle_dialog,
+                        variant="soft",
+                        size="2"
+                    ),
+                    margin_top="1rem"
+                ),
+                max_width="600px",
+                style={
+                    "background": "white",
+                    "border_radius": "12px",
+                    "box_shadow": "0 20px 25px -5px rgba(0, 0, 0, 0.1)"
+                }
+            ),
+            open=TecnicaState.show_detalle_dialog,
+            on_open_change=TecnicaState.set_show_detalle_dialog,
+        )
+    
     def dashboard_content():
         return rx.box(
             navbar("Panel de Área Técnica"),
             rx.vstack(
-                # Encabezado responsivo
+                # Encabezado
                 rx.box(
                     rx.vstack(
                         rx.hstack(
@@ -554,7 +656,7 @@ def tecnica_dashboard() -> rx.Component:
                     border_bottom="1px solid #e2e8f0"
                 ),
                 
-                # Búsqueda responsiva
+                # Búsqueda
                 rx.box(
                     rx.hstack(
                         rx.input(
@@ -571,7 +673,7 @@ def tecnica_dashboard() -> rx.Component:
                     padding_bottom="1.5rem"
                 ),
                 
-                # Contenido principal
+                # Contenido
                 rx.cond(
                     TecnicaState.loading,
                     rx.center(
@@ -584,10 +686,10 @@ def tecnica_dashboard() -> rx.Component:
                         height="300px", 
                         width="100%",
                     ),
-                    solicitudes_table()  # <-- Tabla con paginación
+                    solicitudes_table()
                 ),
                 
-                # Información de búsqueda
+                # Info de búsqueda
                 rx.cond(
                     TecnicaState.search_value != "",
                     rx.box(
@@ -621,8 +723,9 @@ def tecnica_dashboard() -> rx.Component:
                 # Diálogos
                 aprobar_dialog(),
                 rechazar_dialog(),
+                detalle_dialog(),
                 
-                # Pie de página responsivo
+                # Pie de página
                 rx.box(
                     rx.vstack(
                         rx.hstack(

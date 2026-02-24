@@ -25,6 +25,11 @@ class AdminRMState(rx.State):
     selected_solicitud: dict = {}
     search_value: str = ""
     
+    # Diálogo de detalles de recursos
+    show_detalle_dialog_recursos: bool = False
+    solicitud_detalle_recursos: dict = {}
+    recursos_detalle_recursos: List[dict] = []
+    
     # Estados de UI (FINANCIAMIENTO)
     loading_fin: bool = False
     show_aprobar_dialog_fin: bool = False
@@ -32,6 +37,13 @@ class AdminRMState(rx.State):
     show_generar_dialog_fin: bool = False
     selected_solicitud_fin: dict = {}
     search_value_fin: str = ""
+    
+    # ==================================================
+    # NUEVO: Diálogo de detalles de financiamiento
+    # ==================================================
+    show_detalle_dialog_fin: bool = False
+    solicitud_detalle_fin: dict = {}
+    recursos_detalle_fin: List[dict] = []
     
     # Variable para el motivo del rechazo
     motivo_rechazo: str = ""
@@ -92,8 +104,6 @@ class AdminRMState(rx.State):
         for solicitud in solicitudes_pendientes:
             numero_solicitud = solicitud.get("numero_solicitud")
             if not numero_solicitud:
-                # Si no tiene número de solicitud, es una solicitud antigua
-                # Le asignamos un número basado en su ID
                 numero_solicitud = f"FIN-{solicitud.get('id')}"
             
             if numero_solicitud not in solicitudes_agrupadas:
@@ -111,7 +121,6 @@ class AdminRMState(rx.State):
             else:
                 solicitudes_agrupadas[numero_solicitud]["num_recursos"] += 1
                 solicitudes_agrupadas[numero_solicitud]["recursos"].append(solicitud)
-                # El Total ya está calculado por el trigger, pero por si acaso sumamos
                 solicitudes_agrupadas[numero_solicitud]["Total"] = max(
                     solicitudes_agrupadas[numero_solicitud]["Total"],
                     solicitud.get("Total", 0)
@@ -122,9 +131,7 @@ class AdminRMState(rx.State):
         self.loading_fin = False
     
     def filter_solicitudes_fin(self, search_value: str):
-        """Filtra las solicitudes de financiamiento por término de búsqueda"""
         self.search_value_fin = search_value
-        
         if not search_value:
             return self.load_data_fin()
         
@@ -181,6 +188,25 @@ class AdminRMState(rx.State):
         self.show_generar_dialog_fin = show
         if not show:
             self.selected_solicitud_fin = {}
+    
+    # ==================================================
+    # NUEVO: Métodos para diálogo de detalles de financiamiento
+    # ==================================================
+    def open_detalle_dialog_fin(self, solicitud: dict):
+        self.solicitud_detalle_fin = solicitud
+        self.recursos_detalle_fin = solicitud.get("recursos", [])
+        self.show_detalle_dialog_fin = True
+    
+    def close_detalle_dialog_fin(self):
+        self.show_detalle_dialog_fin = False
+        self.solicitud_detalle_fin = {}
+        self.recursos_detalle_fin = []
+    
+    def set_show_detalle_dialog_fin(self, show: bool):
+        self.show_detalle_dialog_fin = show
+        if not show:
+            self.solicitud_detalle_fin = {}
+            self.recursos_detalle_fin = []
     
     @rx.event
     def aprobar_solicitud_fin(self):
@@ -260,7 +286,6 @@ class AdminRMState(rx.State):
     
     @rx.event
     def generar_documento_fin(self):
-        """Genera el documento Word para la solicitud de financiamiento"""
         if not self.selected_solicitud_fin:
             yield rx.toast.error("❌ No hay solicitud seleccionada")
             return
@@ -271,7 +296,6 @@ class AdminRMState(rx.State):
         yield
         
         try:
-            # Obtener datos completos (recursos + solicitante)
             from TFuerte.api.financiamiento_api import FinanciamientoApi
             datos_completos = FinanciamientoApi.get_solicitud_fin_con_solicitante(numero_solicitud)
             
@@ -283,7 +307,6 @@ class AdminRMState(rx.State):
             recursos = datos_completos["recursos"]
             solicitante = datos_completos["solicitante"]
             
-            # Generar el documento Word
             word_content = generar_word_solicitud_fin(numero_solicitud, recursos, solicitante)
             
             if not word_content:
@@ -291,8 +314,6 @@ class AdminRMState(rx.State):
                 self.loading_fin = False
                 return
             
-            # Crear nombre del archivo
-            from datetime import datetime
             fecha_actual = datetime.now().strftime("%Y%m%d_%H%M%S")
             nombre_archivo = f"Solicitud_Fin_{numero_solicitud}_{fecha_actual}.docx"
             
@@ -300,7 +321,6 @@ class AdminRMState(rx.State):
             
             yield rx.toast.success(f"✅ Documento generado: {nombre_archivo}")
             
-            # Retornar el archivo para descarga
             return rx.download(
                 data=word_content,
                 filename=nombre_archivo
@@ -318,7 +338,6 @@ class AdminRMState(rx.State):
     
     @rx.event
     def sign_in(self):
-        """Inicia sesión como Administrador/Presidente"""
         self.loading = True
         self.error_message = ""
         yield
@@ -339,27 +358,14 @@ class AdminRMState(rx.State):
                 self.username = ""
                 self.password = ""
                 
-                yield rx.toast.success(
-                    "✅ Inicio de sesión exitoso",
-                    position="top-right",
-                    duration=3000
-                )
-                
+                yield rx.toast.success("✅ Inicio de sesión exitoso")
                 yield rx.redirect(Route.ADMIN_RM_DASHBOARD.value)
             else:
                 self.error_message = "No tienes permisos para acceder a este panel"
-                yield rx.toast.error(
-                    "❌ No tienes permisos para acceder a este panel",
-                    position="top-right",
-                    duration=4000
-                )
+                yield rx.toast.error("❌ No tienes permisos")
         else:
             self.error_message = response["error"] or "Error al iniciar sesión"
-            yield rx.toast.error(
-                self.error_message,
-                position="top-right",
-                duration=4000
-            )
+            yield rx.toast.error(self.error_message)
         
         self.loading = False
     
@@ -371,7 +377,6 @@ class AdminRMState(rx.State):
         
         solicitudes_pendientes = SolicitudesRMApi.get_solicitudes_rm_pendientes_admin()
         
-        # Formatear fechas y extraer primer recurso
         solicitudes_procesadas = []
         for solicitud in solicitudes_pendientes:
             solicitud_procesada = solicitud.copy()
@@ -392,7 +397,7 @@ class AdminRMState(rx.State):
                 if isinstance(fecha, str) and len(fecha) >= 10:
                     solicitud_procesada["Fecha"] = fecha[:10]
             
-            # Extraer datos del primer recurso
+            # Extraer datos del primer recurso para compatibilidad (opcional)
             recursos = solicitud_procesada.get("recursos", [])
             if recursos and len(recursos) > 0:
                 primer_recurso = recursos[0]
@@ -404,6 +409,9 @@ class AdminRMState(rx.State):
                 solicitud_procesada["Cantidad"] = "-"
                 solicitud_procesada["UM"] = "-"
             
+            # AÑADIR: número de recursos
+            solicitud_procesada["num_recursos"] = len(recursos)
+            
             solicitudes_procesadas.append(solicitud_procesada)
         
         self.solicitudes_pendientes = solicitudes_procesadas
@@ -411,9 +419,7 @@ class AdminRMState(rx.State):
         self.loading = False
     
     def filter_solicitudes(self, search_value: str):
-        """Filtra las solicitudes RM por término de búsqueda"""
         self.search_value = search_value
-        
         if not search_value:
             return self.load_data()
         
@@ -422,7 +428,6 @@ class AdminRMState(rx.State):
         for s in self.solicitudes_pendientes:
             if (search_term in s.get("Centro costo", "").lower() or
                 search_term in s.get("Orden trabajo", "").lower() or
-                search_term in s.get("Observaciones", "").lower() or
                 search_term in s.get("Descripcion", "").lower()):
                 filtered.append(s)
         
@@ -458,7 +463,25 @@ class AdminRMState(rx.State):
         if not show:
             self.selected_solicitud = {}
             self.motivo_rechazo = ""
+
+    # Métodos para diálogo de detalles de recursos
+    def open_detalle_dialog_recursos(self, solicitud: dict):
+        self.solicitud_detalle_recursos = solicitud
+        self.recursos_detalle_recursos = solicitud.get("recursos", [])
+        self.show_detalle_dialog_recursos = True
     
+    def close_detalle_dialog_recursos(self):
+        self.show_detalle_dialog_recursos = False
+        self.solicitud_detalle_recursos = {}
+        self.recursos_detalle_recursos = []
+    
+    def set_show_detalle_dialog_recursos(self, show: bool):
+        self.show_detalle_dialog_recursos = show
+        if not show:
+            self.solicitud_detalle_recursos = {}
+            self.recursos_detalle_recursos = []
+    
+    # Métodos de aprobación (recursos)
     @rx.event
     def aprobar_solicitud(self):
         if not self.selected_solicitud:
@@ -519,13 +542,7 @@ class AdminRMState(rx.State):
     def sign_out(self):
         self.is_authenticated = False
         self.current_admin = {}
-        
-        yield rx.toast.success(
-            "✅ Sesión cerrada exitosamente",
-            position="top-right",
-            duration=3000
-        )
-        
+        yield rx.toast.success("✅ Sesión cerrada exitosamente")
         yield rx.redirect(Route.ADMIN_RM_LOGIN.value)
     
     # Variables computadas
@@ -553,7 +570,6 @@ class AdminRMState(rx.State):
         return total
     
     def reset_loading_states(self):
-        """Resetea todos los estados de carga al cargar la página"""
         self.loading = False
         self.loading_fin = False
 

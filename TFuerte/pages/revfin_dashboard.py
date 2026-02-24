@@ -22,8 +22,9 @@ def revfin_dashboard() -> rx.Component:
             )
         )
     
+    # ==================== TABLA DE SOLICITUDES (AGRUPADA) ====================
     def solicitudes_table() -> rx.Component:
-        """Tabla de solicitudes de financiamiento pendientes con paginación."""
+        """Tabla de solicitudes de financiamiento pendientes (agrupadas) con paginación."""
         
         def create_page_button(page_num: int):
             return rx.button(
@@ -151,9 +152,10 @@ def revfin_dashboard() -> rx.Component:
             )
         
         def solicitud_row(solicitud):
+            num_recursos = solicitud.get("num_recursos", 1)
             return rx.table.row(
                 rx.table.cell(
-                    rx.text(solicitud["id"], font_weight="600", color="#070E0C"),
+                    rx.text(solicitud["numero_solicitud"], font_weight="600", color="#070E0C"),
                     style={"padding": "8px 4px"}
                 ),
                 rx.table.cell(
@@ -165,29 +167,40 @@ def revfin_dashboard() -> rx.Component:
                     style={"padding": "8px 4px", "min_width": "100px"}
                 ),
                 rx.table.cell(
-                    rx.text(solicitud.get("Servicio", "-"), color="#070E0C"),
+                    rx.text(solicitud.get("Orden de trabajo", "-"), color="#070E0C"),
                     style={"padding": "8px 4px", "min_width": "120px"}
                 ),
+                # Celda de productos
                 rx.table.cell(
-                    rx.text(
-                        solicitud.get("Descripcion", "-"),
-                        color="#070E0C",
-                        style={
-                            "max_width": "180px",
-                            "overflow": "hidden",
-                            "text_overflow": "ellipsis",
-                            "white_space": "nowrap"
-                        }
+                    rx.hstack(
+                        rx.badge(
+                            rx.cond(
+                                num_recursos == 1,
+                                "1 producto",
+                                num_recursos.to(str) + " productos"
+                            ),
+                            color_scheme="blue",
+                            variant="soft",
+                            size="1"
+                        ),
+                        rx.button(
+                            "👁️ Ver",
+                            on_click=lambda: FinanciamientoState.open_detalle_dialog_revfin(solicitud),
+                            size="1",
+                            variant="ghost",
+                            style={
+                                "padding": "2px 5px",
+                                "font_size": "11px",
+                                "height": "15px",
+                                "min_width": "70px",
+                                "width": "auto",
+                                "flex_shrink": "0",
+                            }
+                        ),
+                        spacing="3",
+                        justify="start"
                     ),
-                    style={"padding": "8px 4px", "min_width": "180px"}
-                ),
-                rx.table.cell(
-                    rx.text(solicitud.get("Cantidad", "-"), color="#070E0C"),
-                    style={"padding": "8px 4px", "min_width": "80px"}
-                ),
-                rx.table.cell(
-                    rx.text(f"${solicitud.get('Precio unitario', 0):.2f}", color="#070E0C"),
-                    style={"padding": "8px 4px", "min_width": "100px"}
+                    style={"padding": "8px 4px", "min_width": "150px"}
                 ),
                 rx.table.cell(
                     rx.text(f"${solicitud.get('Total', 0):.2f}", color="#070E0C", font_weight="600"),
@@ -252,13 +265,11 @@ def revfin_dashboard() -> rx.Component:
                         rx.table.root(
                             rx.table.header(
                                 rx.table.row(
-                                    rx.table.column_header_cell("ID", style=header_style),
+                                    rx.table.column_header_cell("N° Solicitud", style=header_style),
                                     rx.table.column_header_cell("Área", style=header_style),
                                     rx.table.column_header_cell("Fecha", style=header_style),
-                                    rx.table.column_header_cell("Servicio", style=header_style),
-                                    rx.table.column_header_cell("Descripción", style=header_style),
-                                    rx.table.column_header_cell("Cantidad", style=header_style),
-                                    rx.table.column_header_cell("Precio Unit.", style=header_style),
+                                    rx.table.column_header_cell("Orden Trabajo", style=header_style),
+                                    rx.table.column_header_cell("Productos", style=header_style),
                                     rx.table.column_header_cell("Total", style=header_style),
                                     rx.table.column_header_cell("Estado", style=header_style),
                                     rx.table.column_header_cell("Acciones", style=header_style),
@@ -289,6 +300,7 @@ def revfin_dashboard() -> rx.Component:
                     ),
                     width="100%",
                 ),
+                # Controles de paginación
                 rx.cond(
                     FinanciamientoState.solicitudes_pendientes_revfin.length() > FinanciamientoState.revfin_items_per_page,
                     rx.box(
@@ -339,16 +351,118 @@ def revfin_dashboard() -> rx.Component:
             )
         )
     
+    # ==================== NUEVO: DIÁLOGO DE DETALLES ====================
+    def detalle_dialog():
+        return rx.dialog.root(
+            rx.dialog.content(
+                rx.dialog.title(
+                    rx.hstack(
+                        rx.icon("package", size=20, color="#0d9488"),
+                        rx.text(f"Productos de Solicitud #{FinanciamientoState.solicitud_detalle_revfin.get('numero_solicitud', '')}"),
+                        spacing="2",
+                        align="center"
+                    ),
+                    color="#212121"
+                ),
+                rx.dialog.description(
+                    rx.cond(
+                        FinanciamientoState.solicitud_detalle_revfin.get("numero_solicitud") != "",
+                        rx.vstack(
+                            rx.hstack(
+                                rx.text("Área:", size="2", color="#64748b", width="100px"),
+                                rx.text(FinanciamientoState.solicitud_detalle_revfin.get("Area solicitante", "-"), size="2", color="#1e293b", font_weight="500"),
+                                spacing="3",
+                                align="center"
+                            ),
+                            rx.hstack(
+                                rx.text("Orden trabajo:", size="2", color="#64748b", width="100px"),
+                                rx.text(FinanciamientoState.solicitud_detalle_revfin.get("Orden de trabajo", "-"), size="2", color="#1e293b", font_weight="500"),
+                                spacing="3",
+                                align="center"
+                            ),
+                            rx.divider(),
+                            rx.heading("Productos solicitados:", size="3", color="#1e293b"),
+                            rx.cond(
+                                FinanciamientoState.recursos_detalle_revfin.length() > 0,
+                                rx.vstack(
+                                    rx.foreach(
+                                        FinanciamientoState.recursos_detalle_revfin,
+                                        lambda recurso, idx: rx.box(
+                                            rx.hstack(
+                                                rx.badge(idx + 1, color_scheme="teal", size="1"),
+                                                rx.vstack(
+                                                    rx.text(recurso.get("Descripcion", "-"), size="2", font_weight="500"),
+                                                    rx.hstack(
+                                                        rx.text(f"Cantidad: {recurso.get('Cantidad', '-')}", size="1", color="#64748b"),
+                                                        rx.text(f"Precio: ${recurso.get('Precio unitario', 0):.2f}", size="1", color="#64748b"),
+                                                        rx.cond(
+                                                            recurso.get("Servicio"),
+                                                            rx.text(f"Servicio: {recurso.get('Servicio')}", size="1", color="#64748b"),
+                                                            rx.text("")
+                                                        ),
+                                                        spacing="2",
+                                                        wrap="wrap"
+                                                    ),
+                                                    spacing="0",
+                                                    align="start"
+                                                ),
+                                                spacing="3",
+                                                align="start"
+                                            ),
+                                            padding="0.5rem",
+                                            border_radius="6px",
+                                            background=rx.cond(
+                                                idx % 2 == 0,
+                                                "#f9fafb",
+                                                "white"
+                                            ),
+                                            width="100%"
+                                        )
+                                    ),
+                                    spacing="1",
+                                    width="100%"
+                                ),
+                                rx.text("No hay productos disponibles", size="2", color="#64748b", font_style="italic")
+                            ),
+                            spacing="3",
+                            align="start",
+                            width="100%"
+                        ),
+                        rx.text("No hay solicitud seleccionada")
+                    ),
+                    color="#212121"
+                ),
+                rx.dialog.close(
+                    rx.button(
+                        "Cerrar",
+                        on_click=FinanciamientoState.close_detalle_dialog_revfin,
+                        variant="soft",
+                        size="2"
+                    ),
+                    margin_top="1rem"
+                ),
+                max_width="600px",
+                style={
+                    "background": "white",
+                    "border_radius": "12px",
+                    "box_shadow": "0 20px 25px -5px rgba(0, 0, 0, 0.1)"
+                }
+            ),
+            open=FinanciamientoState.show_detalle_dialog_revfin,
+            on_open_change=FinanciamientoState.set_show_detalle_dialog_revfin,
+        )
+    
+    # ==================== DIÁLOGOS EXISTENTES ====================
     def aprobar_dialog():
         return rx.dialog.root(
             rx.dialog.content(
                 rx.dialog.title("Aprobar Solicitud", color="#212121"),
                 rx.dialog.description(
                     rx.cond(
-                        (FinanciamientoState.selected_solicitud_revfin["id"] != "") & (FinanciamientoState.selected_solicitud_revfin["id"] != None),
+                        (FinanciamientoState.selected_solicitud_revfin["numero_solicitud"] != "") & (FinanciamientoState.selected_solicitud_revfin["numero_solicitud"] != None),
                         rx.hstack(
                             rx.text("¿Aprobar solicitud #"),
-                            rx.text(FinanciamientoState.selected_solicitud_revfin["id"], font_weight="600"),
+                            rx.text(FinanciamientoState.selected_solicitud_revfin["numero_solicitud"], font_weight="600"),
                             rx.text("?"),
                             spacing="1"
                         ),
@@ -357,7 +471,7 @@ def revfin_dashboard() -> rx.Component:
                     color="#212121"
                 ),
                 rx.cond(
-                    (FinanciamientoState.selected_solicitud_revfin["id"] != "") & (FinanciamientoState.selected_solicitud_revfin["id"] != None),
+                    (FinanciamientoState.selected_solicitud_revfin["numero_solicitud"] != "") & (FinanciamientoState.selected_solicitud_revfin["numero_solicitud"] != None),
                     rx.vstack(
                         rx.box(
                             rx.vstack(
@@ -373,23 +487,23 @@ def revfin_dashboard() -> rx.Component:
                                     align="center"
                                 ),
                                 rx.hstack(
-                                    rx.text("Descripción:", size="2", color="#64748b", width="100px"),
-                                    rx.text(
-                                        FinanciamientoState.selected_solicitud_revfin.get("Descripcion", "Sin descripción"),
-                                        size="2", 
-                                        color="#1e293b",
-                                        font_weight="500"
-                                    ),
-                                    spacing="3",
-                                    align="center"
-                                ),
-                                rx.hstack(
                                     rx.text("Total:", size="2", color="#64748b", width="100px"),
                                     rx.text(
                                         f"${FinanciamientoState.selected_solicitud_revfin.get('Total', 0):.2f}",
                                         size="2", 
                                         color="#1e293b",
                                         font_weight="600"
+                                    ),
+                                    spacing="3",
+                                    align="center"
+                                ),
+                                rx.hstack(
+                                    rx.text("Productos:", size="2", color="#64748b", width="100px"),
+                                    rx.text(
+                                        f"{FinanciamientoState.selected_solicitud_revfin.get('num_recursos', 1)} productos",
+                                        size="2", 
+                                        color="#1e293b",
+                                        font_weight="500"
                                     ),
                                     spacing="3",
                                     align="center"
@@ -442,10 +556,10 @@ def revfin_dashboard() -> rx.Component:
                 rx.dialog.title("Rechazar Solicitud", color="#212121"),
                 rx.dialog.description(
                     rx.cond(
-                        (FinanciamientoState.selected_solicitud_revfin["id"] != "") & (FinanciamientoState.selected_solicitud_revfin["id"] != None),
+                        (FinanciamientoState.selected_solicitud_revfin["numero_solicitud"] != "") & (FinanciamientoState.selected_solicitud_revfin["numero_solicitud"] != None),
                         rx.hstack(
                             rx.text("¿Rechazar solicitud #"),
-                            rx.text(FinanciamientoState.selected_solicitud_revfin["id"], font_weight="600"),
+                            rx.text(FinanciamientoState.selected_solicitud_revfin["numero_solicitud"], font_weight="600"),
                             rx.text("?"),
                             spacing="1"
                         ),
@@ -499,10 +613,12 @@ def revfin_dashboard() -> rx.Component:
             on_open_change=FinanciamientoState.set_show_rechazar_dialog_revfin,
         )
     
+    # ==================== CONTENIDO PRINCIPAL ====================
     def dashboard_content():
         return rx.box(
             navbar("Panel de Revisor Financiero"),
             rx.vstack(
+                # Encabezado
                 rx.box(
                     rx.vstack(
                         rx.hstack(
@@ -566,6 +682,7 @@ def revfin_dashboard() -> rx.Component:
                     border_bottom="1px solid #e2e8f0"
                 ),
                 
+                # Búsqueda
                 rx.box(
                     rx.hstack(
                         rx.input(
@@ -582,6 +699,7 @@ def revfin_dashboard() -> rx.Component:
                     padding_bottom="1.5rem"
                 ),
                 
+                # Contenido principal
                 rx.cond(
                     FinanciamientoState.loading_revfin,
                     rx.center(
@@ -597,6 +715,7 @@ def revfin_dashboard() -> rx.Component:
                     solicitudes_table()
                 ),
                 
+                # Información de búsqueda
                 rx.cond(
                     FinanciamientoState.search_value_revfin != "",
                     rx.box(
@@ -627,9 +746,12 @@ def revfin_dashboard() -> rx.Component:
                     ),
                 ),
                 
+                # Diálogos
                 aprobar_dialog(),
                 rechazar_dialog(),
+                detalle_dialog(),  # <-- Nuevo diálogo
                 
+                # Pie de página
                 rx.box(
                     rx.vstack(
                         rx.hstack(

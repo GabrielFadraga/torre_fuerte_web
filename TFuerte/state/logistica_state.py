@@ -24,6 +24,13 @@ class LogisticaState(rx.State):
     selected_solicitud: dict = {}
     search_value: str = ""
     
+    # ==================================================
+    # NUEVO: Diálogo de detalles de recursos
+    # ==================================================
+    show_detalle_dialog: bool = False
+    solicitud_detalle: dict = {}
+    recursos_detalle: List[dict] = []
+    
     # Variable para el motivo del rechazo
     motivo_rechazo: str = ""
     
@@ -180,7 +187,7 @@ class LogisticaState(rx.State):
             # Formatear fechas
             solicitud_procesada = self._formatear_fechas_solicitud(solicitud_procesada)
             
-            # Extraer datos del primer recurso para facilitar el acceso
+            # Extraer datos del primer recurso para facilitar el acceso (opcional)
             recursos = solicitud_procesada.get("recursos", [])
             if recursos and len(recursos) > 0:
                 primer_recurso = recursos[0]
@@ -192,10 +199,13 @@ class LogisticaState(rx.State):
                 solicitud_procesada["Cantidad"] = "-"
                 solicitud_procesada["UM"] = "-"
             
+            # AÑADIR: número de recursos
+            solicitud_procesada["num_recursos"] = len(recursos)
+            
             solicitudes_procesadas.append(solicitud_procesada)
         
         self.solicitudes_pendientes = solicitudes_procesadas
-        self.reset_pendientes_pagination()  # <-- Añadido
+        self.reset_pendientes_pagination()
         self.loading = False
     
     @rx.event
@@ -227,6 +237,9 @@ class LogisticaState(rx.State):
                     solicitud_procesada["Descripcion"] = "-"
                     solicitud_procesada["Cantidad"] = "-"
                     solicitud_procesada["UM"] = "-"
+                
+                # AÑADIR: número de recursos (opcional para completadas)
+                solicitud_procesada["num_recursos"] = len(recursos)
                 
                 solicitudes_procesadas.append(solicitud_procesada)
             
@@ -331,7 +344,7 @@ class LogisticaState(rx.State):
                 filtered.append(s)
         
         self.solicitudes_pendientes = filtered
-        self.reset_pendientes_pagination()  # <-- Añadido
+        self.reset_pendientes_pagination()
     
     # ==================================================
     # DIÁLOGOS PARA SOLICITUDES
@@ -389,6 +402,25 @@ class LogisticaState(rx.State):
         self.show_generar_dialog = show
         if not show:
             self.selected_solicitud = {}
+    
+    # ==================================================
+    # NUEVO: Diálogo de detalles
+    # ==================================================
+    def open_detalle_dialog(self, solicitud: dict):
+        self.solicitud_detalle = solicitud
+        self.recursos_detalle = solicitud.get("recursos", [])
+        self.show_detalle_dialog = True
+    
+    def close_detalle_dialog(self):
+        self.show_detalle_dialog = False
+        self.solicitud_detalle = {}
+        self.recursos_detalle = []
+    
+    def set_show_detalle_dialog(self, show: bool):
+        self.show_detalle_dialog = show
+        if not show:
+            self.solicitud_detalle = {}
+            self.recursos_detalle = []
     
     # ==================================================
     # DIÁLOGOS PARA PRECIOS

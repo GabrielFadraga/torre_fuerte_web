@@ -817,7 +817,7 @@ def solicitante_rm_form() -> rx.Component:
                                                     rx.text(
                                                         rx.cond(
                                                             recurso["cantidad"] != "",
-                                                            recurso["cantidad"].to(str),  # <--- CORRECCIÓN AQUÍ
+                                                            recurso["cantidad"].to(str),
                                                             "-"
                                                         )
                                                     ), 
@@ -1381,7 +1381,7 @@ def solicitante_rm_form() -> rx.Component:
                 SolicitanteRMState.precios_loading,
                 rx.center(rx.spinner(size="3"), padding="3rem"),
                 rx.cond(
-                    SolicitanteRMState.precios_disponibles.length() == 0,
+                    SolicitanteRMState.precios_filtered.length() == 0,
                     rx.center(
                         rx.vstack(
                             rx.icon("package", size=32, color="#cbd5e1"),
@@ -1391,6 +1391,44 @@ def solicitante_rm_form() -> rx.Component:
                         padding="3rem",
                     ),
                     rx.vstack(
+                        # NUEVO: Barra de búsqueda
+                        rx.box(
+                            rx.hstack(
+                                rx.input(
+                                    placeholder="Buscar por tipo o descripción...",
+                                    on_change=SolicitanteRMState.filter_precios,
+                                    size="2",
+                                    flex="1",
+                                    style={
+                                        "background": "gray",
+                                        "border": "1px solid #e2e8f0",
+                                        "border_radius": "6px",
+                                        "padding": "8px 12px",
+                                        "font_size": "14px",
+                                    },
+                                ),
+                                rx.button(
+                                    "Limpiar",
+                                    on_click=lambda: SolicitanteRMState.filter_precios(""),
+                                    size="2",
+                                    variant="soft",
+                                    color_scheme="gray",
+                                    flex_shrink=0,
+                                    width="50%",
+                                    style={
+                                        "border": "1px solid #e2e8f0",
+                                        "background": "#f8fafc",
+                                        "color": "#1e293b",
+                                    },
+                                ),
+                                spacing="3",
+                                width="100%",
+                                align="center",
+                                wrap="nowrap",
+                            ),
+                            width="100%",
+                            margin_bottom="1rem",
+                        ),
                         # Tabla con scroll horizontal
                         rx.box(
                             rx.scroll_area(
@@ -1427,26 +1465,44 @@ def solicitante_rm_form() -> rx.Component:
                             width="100%",
                             overflow_x="auto"
                         ),
+                        # Información de búsqueda (opcional)
+                        rx.cond(
+                            SolicitanteRMState.precios_search_value != "",
+                            rx.box(
+                                rx.hstack(
+                                    rx.icon("search", size=14, color="#10b981"),
+                                    rx.text(
+                                        f"Mostrando {SolicitanteRMState.precios_filtered.length()} de {SolicitanteRMState.precios_disponibles.length()} productos",
+                                        size="1",
+                                        color="#64748b"
+                                    ),
+                                    spacing="2",
+                                    align="center"
+                                ),
+                                width="100%",
+                                padding="0.5rem 0",
+                            ),
+                        ),
                         # Paginación
                         rx.cond(
-                            SolicitanteRMState.precios_disponibles.length() > SolicitanteRMState.items_per_page_precios,
+                            SolicitanteRMState.precios_filtered.length() > SolicitanteRMState.items_per_page_precios,
                             rx.box(
                                 rx.hstack(
                                     rx.text(
                                         rx.cond(
-                                            SolicitanteRMState.precios_disponibles.length() > 0,
+                                            SolicitanteRMState.precios_filtered.length() > 0,
                                             rx.cond(
                                                 SolicitanteRMState.current_page_precios == 1,
                                                 "Mostrando 1 a " + rx.cond(
-                                                    SolicitanteRMState.items_per_page_precios > SolicitanteRMState.precios_disponibles.length(),
-                                                    SolicitanteRMState.precios_disponibles.length().to(str),
+                                                    SolicitanteRMState.items_per_page_precios > SolicitanteRMState.precios_filtered.length(),
+                                                    SolicitanteRMState.precios_filtered.length().to(str),
                                                     SolicitanteRMState.items_per_page_precios.to(str)
-                                                ) + " de " + SolicitanteRMState.precios_disponibles.length().to(str) + " resultados",
+                                                ) + " de " + SolicitanteRMState.precios_filtered.length().to(str) + " resultados",
                                                 "Mostrando " + ((SolicitanteRMState.current_page_precios - 1) * SolicitanteRMState.items_per_page_precios + 1).to(str) + " a " + rx.cond(
-                                                    SolicitanteRMState.current_page_precios * SolicitanteRMState.items_per_page_precios > SolicitanteRMState.precios_disponibles.length(),
-                                                    SolicitanteRMState.precios_disponibles.length().to(str),
+                                                    SolicitanteRMState.current_page_precios * SolicitanteRMState.items_per_page_precios > SolicitanteRMState.precios_filtered.length(),
+                                                    SolicitanteRMState.precios_filtered.length().to(str),
                                                     (SolicitanteRMState.current_page_precios * SolicitanteRMState.items_per_page_precios).to(str)
-                                                ) + " de " + SolicitanteRMState.precios_disponibles.length().to(str) + " resultados"
+                                                ) + " de " + SolicitanteRMState.precios_filtered.length().to(str) + " resultados"
                                             ),
                                             "Mostrando 0 a 0 de 0 resultados"
                                         ),
@@ -1558,7 +1614,7 @@ def solicitante_rm_form() -> rx.Component:
                                     width="100%"
                                 ),
                                 
-                                precios_table(),
+                                precios_table(),  # <-- Tabla con filtro y paginación
                                 
                                 spacing="3",
                             ),

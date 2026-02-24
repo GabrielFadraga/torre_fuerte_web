@@ -22,6 +22,7 @@ def logistica_dashboard() -> rx.Component:
             )
         )
     
+    # ==================== TABLA DE PENDIENTES CON PAGINACIÓN ====================
     def solicitudes_table() -> rx.Component:
         """Tabla de solicitudes RM pendientes para logística con paginación"""
         
@@ -161,6 +162,7 @@ def logistica_dashboard() -> rx.Component:
                 width="100%",
             )
         
+        # Fila de solicitud (MODIFICADA)
         def solicitud_row(solicitud):
             # Verificar si está completamente aprobada
             is_completely_approved = (
@@ -182,6 +184,8 @@ def logistica_dashboard() -> rx.Component:
                 rx.text("-", color="#94a3b8", font_style="italic")
             )
             
+            num_recursos = solicitud.get("num_recursos", 0)
+            
             return rx.table.row(
                 rx.table.cell(
                     rx.text(solicitud["id"], font_weight="600", color="#070E0C"),
@@ -195,28 +199,37 @@ def logistica_dashboard() -> rx.Component:
                     rx.text(solicitud.get("Orden trabajo", "-"), color="#070E0C"),
                     style={"padding": "8px 4px", "min_width": "120px"}
                 ),
-                rx.table.cell(
-                    rx.text(
-                        solicitud.get("Descripcion", "-"),
-                        color="#070E0C",
-                        style={
-                            "max_width": "150px",
-                            "overflow": "hidden",
-                            "text_overflow": "ellipsis",
-                            "white_space": "nowrap"
-                        }
-                    ),
-                    style={"padding": "8px 4px", "min_width": "150px"}
-                ),
+                # Celda de productos
                 rx.table.cell(
                     rx.hstack(
-                        rx.text(solicitud.get('Cantidad', '-'), color="#070E0C"),
-                        rx.text(" "),
-                        rx.text(solicitud.get('UM', ''), color="#070E0C"),
-                        spacing="0",
-                        wrap="wrap"
+                        rx.badge(
+                            rx.cond(
+                                num_recursos == 1,
+                                "1 producto",
+                                num_recursos.to(str) + " productos"
+                            ),
+                            color_scheme="blue",
+                            variant="soft",
+                            size="1"
+                        ),
+                        rx.button(
+                            "👁️ Ver",
+                            on_click=lambda: LogisticaState.open_detalle_dialog(solicitud),
+                            size="1",
+                            variant="ghost",
+                            style={
+                                        "padding": "2px 5px",
+                                        "font_size": "11px",
+                                        "height": "15px",
+                                        "min_width": "70px",
+                                        "width": "auto",
+                                        "flex_shrink": "0",  # evitar que se estire
+                                    }
+                        ),
+                        spacing="3",
+                        justify="start"
                     ),
-                    style={"padding": "8px 4px", "min_width": "100px"}
+                    style={"padding": "8px 4px", "min_width": "150px"}
                 ),
                 rx.table.cell(
                     fecha_tecnica,
@@ -289,8 +302,7 @@ def logistica_dashboard() -> rx.Component:
                                     rx.table.column_header_cell("ID", style=header_style),
                                     rx.table.column_header_cell("Centro Costo", style=header_style),
                                     rx.table.column_header_cell("Orden Trabajo", style=header_style),
-                                    rx.table.column_header_cell("Descripción", style=header_style),
-                                    rx.table.column_header_cell("Cantidad", style=header_style),
+                                    rx.table.column_header_cell("Productos", style=header_style),  # Nueva columna
                                     rx.table.column_header_cell("Aprob. Técnica", style=header_style),
                                     rx.table.column_header_cell("Aprob. Admin", style=header_style),
                                     rx.table.column_header_cell("Estado", style=header_style),
@@ -299,13 +311,13 @@ def logistica_dashboard() -> rx.Component:
                             ),
                             rx.table.body(
                                 rx.foreach(
-                                    LogisticaState.pendientes_paginated,  # <-- Datos paginados
+                                    LogisticaState.pendientes_paginated,
                                     solicitud_row
                                 )
                             ),
                             style={
                                 "width": "100%",
-                                "min_width": "1100px",
+                                "min_width": "1000px",
                                 "table_layout": "auto"
                             }
                         ),
@@ -313,7 +325,7 @@ def logistica_dashboard() -> rx.Component:
                         scrollbars="horizontal",
                         style={
                             "width": "100%",
-                            "max_height": "650px",   # Ajuste para 10 filas
+                            "max_height": "650px",
                             "height": "auto",
                             "overflow_y": "auto",
                             "border": "1px solid #e2e8f0",
@@ -350,13 +362,13 @@ def logistica_dashboard() -> rx.Component:
                                 color="#64748b",
                                 font_weight="500",
                                 flex_shrink=0,
-                                margin_right="8rem",  # Separación del texto
+                                margin_right="8rem",
                             ),
                             rx.spacer(),
                             rx.box(
                                 render_pagination_pendientes(),
                                 flex_shrink=0,
-                                margin_left="0.5rem",  # Separación de los botones
+                                margin_left="0.5rem",
                             ),
                             width="100%",
                             align="center",
@@ -374,6 +386,7 @@ def logistica_dashboard() -> rx.Component:
             )
         )
     
+    # ==================== TABLA DE COMPLETADAS (sin cambios) ====================
     def completadas_table() -> rx.Component:
         """Tabla de solicitudes RM completadas (aprobadas por logística)"""
         
@@ -506,6 +519,108 @@ def logistica_dashboard() -> rx.Component:
             )
         )
     
+    # ==================== NUEVO: Diálogo de detalles de productos ====================
+    def detalle_dialog():
+        return rx.dialog.root(
+            rx.dialog.content(
+                rx.dialog.title(
+                    rx.hstack(
+                        rx.icon("package", size=20, color="#2563eb"),
+                        rx.text(f"Productos de Solicitud #{LogisticaState.solicitud_detalle.get('id', '')}"),
+                        spacing="2",
+                        align="center"
+                    ),
+                    color="#212121"
+                ),
+                rx.dialog.description(
+                    rx.cond(
+                        LogisticaState.solicitud_detalle.get("id") != "",
+                        rx.vstack(
+                            rx.hstack(
+                                rx.text("Centro de costo:", size="2", color="#64748b", width="100px"),
+                                rx.text(LogisticaState.solicitud_detalle.get("Centro costo", "-"), size="2", color="#1e293b", font_weight="500"),
+                                spacing="3",
+                                align="center"
+                            ),
+                            rx.hstack(
+                                rx.text("Orden trabajo:", size="2", color="#64748b", width="100px"),
+                                rx.text(LogisticaState.solicitud_detalle.get("Orden trabajo", "-"), size="2", color="#1e293b", font_weight="500"),
+                                spacing="3",
+                                align="center"
+                            ),
+                            rx.divider(),
+                            rx.heading("Recursos solicitados:", size="3", color="#1e293b"),
+                            rx.cond(
+                                LogisticaState.recursos_detalle.length() > 0,
+                                rx.vstack(
+                                    rx.foreach(
+                                        LogisticaState.recursos_detalle,
+                                        lambda recurso, idx: rx.box(
+                                            rx.hstack(
+                                                rx.badge(idx + 1, color_scheme="blue", size="1"),
+                                                rx.vstack(
+                                                    rx.text(recurso.get("descripcion", "-"), size="2", font_weight="500"),
+                                                    rx.hstack(
+                                                        rx.text(f"Cantidad: {recurso.get('cantidad', '-')}", size="1", color="#64748b"),
+                                                        rx.text(f"UM: {recurso.get('unidad_medida', '-')}", size="1", color="#64748b"),
+                                                        rx.cond(
+                                                            recurso.get("observaciones"),
+                                                            rx.text(f"Obs: {recurso.get('observaciones')}", size="1", color="#64748b"),
+                                                            rx.text("")
+                                                        ),
+                                                        spacing="2",
+                                                        wrap="wrap"
+                                                    ),
+                                                    spacing="0",
+                                                    align="start"
+                                                ),
+                                                spacing="3",
+                                                align="start"
+                                            ),
+                                            padding="0.5rem",
+                                            border_radius="6px",
+                                            background=rx.cond(
+                                                idx % 2 == 0,
+                                                "#f9fafb",
+                                                "white"
+                                            ),
+                                            width="100%"
+                                        )
+                                    ),
+                                    spacing="1",
+                                    width="100%"
+                                ),
+                                rx.text("No hay recursos disponibles", size="2", color="#64748b", font_style="italic")
+                            ),
+                            spacing="3",
+                            align="start",
+                            width="100%"
+                        ),
+                        rx.text("No hay solicitud seleccionada")
+                    ),
+                    color="#212121"
+                ),
+                rx.dialog.close(
+                    rx.button(
+                        "Cerrar",
+                        on_click=LogisticaState.close_detalle_dialog,
+                        variant="soft",
+                        size="2"
+                    ),
+                    margin_top="1rem"
+                ),
+                max_width="600px",
+                style={
+                    "background": "white",
+                    "border_radius": "12px",
+                    "box_shadow": "0 20px 25px -5px rgba(0, 0, 0, 0.1)"
+                }
+            ),
+            open=LogisticaState.show_detalle_dialog,
+            on_open_change=LogisticaState.set_show_detalle_dialog,
+        )
+    
+    # ==================== GESTIÓN DE PRECIOS (sin cambios) ====================
     def gestion_precios_tab() -> rx.Component:
         """Tab para gestionar precios de productos"""
         
@@ -1096,6 +1211,7 @@ def logistica_dashboard() -> rx.Component:
             width="100%",
         )
     
+    # ==================== DIÁLOGOS (sin cambios) ====================
     def aprobar_dialog():
         return rx.dialog.root(
             rx.dialog.content(
@@ -1352,6 +1468,7 @@ def logistica_dashboard() -> rx.Component:
             on_open_change=LogisticaState.set_show_generar_dialog,
         )
     
+    # ==================== CONTENIDO PRINCIPAL ====================
     def dashboard_content():
         return rx.box(
             navbar("Panel de Logística"),
@@ -1567,6 +1684,7 @@ def logistica_dashboard() -> rx.Component:
                 aprobar_dialog(),
                 rechazar_dialog(),
                 generar_dialog(),
+                detalle_dialog(),  # <-- Nuevo diálogo agregado
                 
                 # Pie de página responsivo
                 rx.box(
