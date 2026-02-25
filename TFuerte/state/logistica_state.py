@@ -24,9 +24,7 @@ class LogisticaState(rx.State):
     selected_solicitud: dict = {}
     search_value: str = ""
     
-    # ==================================================
-    # NUEVO: Diálogo de detalles de recursos
-    # ==================================================
+    # Diálogo de detalles de recursos
     show_detalle_dialog: bool = False
     solicitud_detalle: dict = {}
     recursos_detalle: List[dict] = []
@@ -45,6 +43,9 @@ class LogisticaState(rx.State):
     
     # Variables para gestión de precios
     precios: List[dict] = []
+    precios_filtered: List[dict] = []          # Lista filtrada y ordenada
+    precios_search_value: str = ""             # Texto de búsqueda
+    precios_sort_value: str = ""                # Columna seleccionada para ordenar
     loading_precios: bool = False
     nuevo_tipo: str = ""
     nueva_descripcion: str = ""
@@ -255,7 +256,7 @@ class LogisticaState(rx.State):
     
     @rx.event
     def load_precios(self):
-        """Carga todos los precios de productos"""
+        """Carga todos los precios de productos y aplica filtros/orden"""
         self.loading_precios = True
         yield
 
@@ -271,13 +272,18 @@ class LogisticaState(rx.State):
 
             self.tipos_disponibles = sorted(list(tipos))
             print(f"✅ {len(self.precios)} precios cargados, {len(self.tipos_disponibles)} tipos disponibles")
-            
-            # Calcular paginación
+
+            # Inicializar la lista filtrada con todos los datos
+            self.precios_filtered = self.precios.copy()
+            # Aplicar filtros y orden si ya existían valores
+            self._apply_precios_filters()
+            # Calcular paginación basada en la lista filtrada
             self.calculate_precios_pagination()
-            
+
         except Exception as e:
             print(f"❌ Error cargando precios: {e}")
             self.precios = []
+            self.precios_filtered = []
             self.tipos_disponibles = []
             self.precios_paginated = []
             self.total_pages_precios = 1
@@ -285,6 +291,41 @@ class LogisticaState(rx.State):
 
         self.loading_precios = False
     
+    def _apply_precios_filters(self):
+        """Aplica filtro de búsqueda y orden a la lista de precios"""
+        # Partir de la lista completa
+        result = self.precios.copy()
+
+        # Aplicar filtro por texto en Descripción y Tipo
+        if self.precios_search_value:
+            search_term = self.precios_search_value.lower()
+            result = [
+                item for item in result
+                if search_term in item.get("Descripcion", "").lower()
+                or search_term in item.get("Tipo", "").lower()
+            ]
+
+        # Aplicar ordenamiento
+        if self.precios_sort_value:
+            # Orden ascendente por la columna seleccionada
+            result = sorted(result, key=lambda x: x.get(self.precios_sort_value, ""))
+
+        self.precios_filtered = result
+
+    @rx.event
+    def filter_precios(self, search_value: str):
+        """Actualiza el filtro de búsqueda y recalcula la lista"""
+        self.precios_search_value = search_value
+        self._apply_precios_filters()
+        self.reset_precios_pagination()  # Vuelve a página 1 y recalcula paginación
+
+    @rx.event
+    def sort_precios(self, sort_value: str):
+        """Actualiza el criterio de ordenamiento y recalcula la lista"""
+        self.precios_sort_value = sort_value
+        self._apply_precios_filters()
+        self.reset_precios_pagination()
+
     def _formatear_fechas_solicitud(self, solicitud: dict) -> dict:
         """Formatea las fechas de una solicitud en el backend"""
         if not solicitud:
@@ -816,12 +857,12 @@ class LogisticaState(rx.State):
         self.loading_precios = False
 
     # ==================================================
-    # MÉTODOS DE PAGINACIÓN PARA PRECIOS
+    # MÉTODOS DE PAGINACIÓN PARA PRECIOS (usando precios_filtered)
     # ==================================================
 
     def calculate_precios_pagination(self):
-        """Calcula la paginación para la tabla de precios"""
-        total_items = len(self.precios)
+        """Calcula la paginación para la tabla de precios usando la lista filtrada"""
+        total_items = len(self.precios_filtered)
 
         if total_items == 0:
             self.total_pages_precios = 1
@@ -837,7 +878,7 @@ class LogisticaState(rx.State):
         end_idx = min(start_idx + self.items_per_page_precios, total_items)
 
         if total_items > 0:
-            self.precios_paginated = self.precios[start_idx:end_idx]
+            self.precios_paginated = self.precios_filtered[start_idx:end_idx]
         else:
             self.precios_paginated = []
 
@@ -882,8 +923,7 @@ class LogisticaState(rx.State):
     def reset_precios_pagination(self):
         """Resetea la paginación de precios a la primera página"""
         self.current_page_precios = 1
-        if hasattr(self, 'precios') and self.precios:
-            self.calculate_precios_pagination()
+        self.calculate_precios_pagination()
 
     # ==================================================
     # MÉTODOS DE PAGINACIÓN PARA PENDIENTES

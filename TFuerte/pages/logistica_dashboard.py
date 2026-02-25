@@ -162,16 +162,10 @@ def logistica_dashboard() -> rx.Component:
                 width="100%",
             )
         
-        # Fila de solicitud (MODIFICADA)
+        # Fila de solicitud
         def solicitud_row(solicitud):
-            # Verificar si está completamente aprobada
-            is_completely_approved = (
-                (solicitud.get("aprobado_tecnica") == True) & 
-                (solicitud.get("aprobado_admin") == True) & 
-                (solicitud.get("aprobado_logistica") == True)
-            )
+            num_recursos = solicitud.get("num_recursos", 0)
             
-            # Función para mostrar fechas formateadas
             fecha_tecnica = rx.cond(
                 (solicitud.get("fecha_aprobacion_tecnica") != None) & (solicitud.get("fecha_aprobacion_tecnica") != ""),
                 rx.text(solicitud.get("fecha_aprobacion_tecnica"), color="#070E0C"),
@@ -183,8 +177,6 @@ def logistica_dashboard() -> rx.Component:
                 rx.text(solicitud.get("fecha_aprobacion_admin"), color="#070E0C"),
                 rx.text("-", color="#94a3b8", font_style="italic")
             )
-            
-            num_recursos = solicitud.get("num_recursos", 0)
             
             return rx.table.row(
                 rx.table.cell(
@@ -218,13 +210,13 @@ def logistica_dashboard() -> rx.Component:
                             size="1",
                             variant="ghost",
                             style={
-                                        "padding": "2px 5px",
-                                        "font_size": "11px",
-                                        "height": "15px",
-                                        "min_width": "70px",
-                                        "width": "auto",
-                                        "flex_shrink": "0",  # evitar que se estire
-                                    }
+                                "padding": "2px 5px",
+                                "font_size": "11px",
+                                "height": "15px",
+                                "min_width": "70px",
+                                "width": "auto",
+                                "flex_shrink": "0",
+                            }
                         ),
                         spacing="3",
                         justify="start"
@@ -302,7 +294,7 @@ def logistica_dashboard() -> rx.Component:
                                     rx.table.column_header_cell("ID", style=header_style),
                                     rx.table.column_header_cell("Centro Costo", style=header_style),
                                     rx.table.column_header_cell("Orden Trabajo", style=header_style),
-                                    rx.table.column_header_cell("Productos", style=header_style),  # Nueva columna
+                                    rx.table.column_header_cell("Productos", style=header_style),
                                     rx.table.column_header_cell("Aprob. Técnica", style=header_style),
                                     rx.table.column_header_cell("Aprob. Admin", style=header_style),
                                     rx.table.column_header_cell("Estado", style=header_style),
@@ -339,7 +331,6 @@ def logistica_dashboard() -> rx.Component:
                     LogisticaState.solicitudes_pendientes.length() > LogisticaState.pendientes_items_per_page,
                     rx.box(
                         rx.hstack(
-                            # Texto de resultados
                             rx.text(
                                 rx.cond(
                                     LogisticaState.solicitudes_pendientes.length() > 0,
@@ -379,19 +370,18 @@ def logistica_dashboard() -> rx.Component:
                         border_top="1px solid #e2e8f0",
                         background="#f8fafc",
                     ),
-                    rx.box(height="1rem")  # Espacio cuando no hay paginación
+                    rx.box(height="1rem")
                 ),
                 spacing="0",
                 width="100%"
             )
         )
     
-    # ==================== TABLA DE COMPLETADAS (sin cambios) ====================
+    # ==================== TABLA DE COMPLETADAS ====================
     def completadas_table() -> rx.Component:
         """Tabla de solicitudes RM completadas (aprobadas por logística)"""
         
         def solicitud_row_completada(solicitud):
-            # Simplificado - mostrar fecha ya formateada del backend
             return rx.table.row(
                 rx.table.cell(
                     rx.text(solicitud["id"], font_weight="600", color="#212121"),
@@ -429,7 +419,6 @@ def logistica_dashboard() -> rx.Component:
                     style={"padding": "8px 4px", "min_width": "100px"}
                 ),
                 rx.table.cell(
-                    # Mostrar fecha ya formateada del backend
                     rx.text(solicitud.get("fecha_aprobacion_logistica", "-"), color="#212121"),
                     style={"padding": "8px 4px", "min_width": "120px"}
                 ),
@@ -519,7 +508,7 @@ def logistica_dashboard() -> rx.Component:
             )
         )
     
-    # ==================== NUEVO: Diálogo de detalles de productos ====================
+    # ==================== DIÁLOGO DE DETALLES DE PRODUCTOS ====================
     def detalle_dialog():
         return rx.dialog.root(
             rx.dialog.content(
@@ -620,14 +609,14 @@ def logistica_dashboard() -> rx.Component:
             on_open_change=LogisticaState.set_show_detalle_dialog,
         )
     
-    # ==================== GESTIÓN DE PRECIOS (sin cambios) ====================
+    # ==================== GESTIÓN DE PRECIOS (con búsqueda y orden) ====================
     def gestion_precios_tab() -> rx.Component:
         """Tab para gestionar precios de productos"""
         
+        # --- Tabla de precios con paginación ---
         def precios_table() -> rx.Component:
-            """Tabla de precios con paginación compacta: flechas + números (máx 4)."""
+            """Tabla de precios con paginación compacta."""
             
-            # --- Botón de página individual (reutilizable) ---
             def create_page_button_precios(page_num: int):
                 return rx.button(
                     rx.text(page_num, size="2", font_weight="500"),
@@ -660,10 +649,8 @@ def logistica_dashboard() -> rx.Component:
                     )
                 )
             
-            # --- Controles de paginación: siempre horizontales, con flechas ---
             def render_pagination_precios():
                 return rx.hstack(
-                    # Botón ANTERIOR (icono)
                     rx.button(
                         rx.icon("chevron-left", size=16),
                         on_click=LogisticaState.previous_page_precios,
@@ -679,10 +666,8 @@ def logistica_dashboard() -> rx.Component:
                             "padding": "0 8px",
                         }
                     ),
-                    # Contenedor de números (con scroll horizontal solo si es necesario)
                     rx.box(
                         rx.hstack(
-                            # Primera página + "..." si estamos lejos del inicio
                             rx.cond(
                                 (LogisticaState.current_page_precios > 3) &
                                 (LogisticaState.total_pages_precios > 4),
@@ -693,7 +678,6 @@ def logistica_dashboard() -> rx.Component:
                                     flex_shrink=0,
                                 ),
                             ),
-                            # Páginas del rango calculado (máximo 4 números)
                             rx.cond(
                                 LogisticaState.page_numbers_precios.length() > 0,
                                 rx.hstack(
@@ -705,7 +689,6 @@ def logistica_dashboard() -> rx.Component:
                                     wrap="nowrap",
                                     flex_shrink=0,
                                 ),
-                                # Fallback: mostrar texto con página actual (nunca debería ocurrir)
                                 rx.text(
                                     f"Pág. {LogisticaState.current_page_precios}",
                                     size="2",
@@ -714,7 +697,6 @@ def logistica_dashboard() -> rx.Component:
                                     flex_shrink=0,
                                 ),
                             ),
-                            # Última página + "..." si estamos lejos del final
                             rx.cond(
                                 (LogisticaState.current_page_precios < LogisticaState.total_pages_precios - 2) &
                                 (LogisticaState.total_pages_precios > 4),
@@ -726,15 +708,14 @@ def logistica_dashboard() -> rx.Component:
                                 ),
                             ),
                             spacing="1",
-                            wrap="nowrap",      # ← NUNCA se apilan
+                            wrap="nowrap",
                             align="center",
                         ),
-                        overflow_x="auto",      # ← Scroll horizontal solo si hay demasiados elementos
-                        flex_grow=0,           # No se expande
-                        flex_shrink=1,         # Puede encogerse si falta espacio
-                        max_width="100%",      # Respeta el ancho del padre
+                        overflow_x="auto",
+                        flex_grow=0,
+                        flex_shrink=1,
+                        max_width="100%",
                     ),
-                    # Botón SIGUIENTE (icono)
                     rx.button(
                         rx.hstack(
                             rx.icon("chevron-right", size=16),
@@ -757,13 +738,12 @@ def logistica_dashboard() -> rx.Component:
                         }
                     ),
                     spacing="2",
-                    wrap="nowrap",            # ← Todo el conjunto en una sola línea
+                    wrap="nowrap",
                     align="center",
                     justify="end",
                     width="100%",
                 )
             
-            # --- Fila de precio (igual que antes) ---
             def precio_row(precio):
                 return rx.table.row(
                     rx.table.cell(
@@ -806,7 +786,7 @@ def logistica_dashboard() -> rx.Component:
                                         "height": "28px",
                                         "min_width": "70px",
                                         "width": "auto",
-                                        "flex_shrink": "0",  # evitar que se estire
+                                        "flex_shrink": "0",
                                     }
                                 ),
                                 rx.button(
@@ -821,9 +801,8 @@ def logistica_dashboard() -> rx.Component:
                                         "height": "28px",
                                         "min_width": "70px",
                                         "width": "auto",
-                                        "flex_shrink": "0",  # evitar que se estire
+                                        "flex_shrink": "0",
                                     }
-
                                 ),
                                 spacing="1"
                             ),
@@ -833,7 +812,6 @@ def logistica_dashboard() -> rx.Component:
                     ),
                 )
             
-            # --- Estilo del encabezado ---
             header_style = {
                 "background": "#f59e0b",
                 "color": "white",
@@ -843,16 +821,15 @@ def logistica_dashboard() -> rx.Component:
                 "white_space": "nowrap"
             }
             
-            # --- Renderizado final ---
             return rx.cond(
                 LogisticaState.loading_precios,
                 rx.center(rx.spinner(size="3"), padding="3rem"),
                 rx.cond(
-                    LogisticaState.precios.length() == 0,
+                    LogisticaState.precios_filtered.length() == 0,
                     rx.center(
                         rx.vstack(
                             rx.icon("package", size=32, color="#cbd5e1"),
-                            rx.text("No hay precios registrados", size="3", color="#64748b"),
+                            rx.text("No hay productos que coincidan con la búsqueda", size="3", color="#64748b"),
                             spacing="2",
                             align="center"
                         ),
@@ -860,7 +837,6 @@ def logistica_dashboard() -> rx.Component:
                         width="100%"
                     ),
                     rx.vstack(
-                        # Tabla con scroll horizontal (igual que antes)
                         rx.box(
                             rx.scroll_area(
                                 rx.table.root(
@@ -897,27 +873,26 @@ def logistica_dashboard() -> rx.Component:
                             width="100%",
                             overflow_x="auto"
                         ),
-                        # --- PAGINACIÓN ---
+                        # Paginación
                         rx.cond(
-                            LogisticaState.precios.length() > LogisticaState.items_per_page_precios,
+                            LogisticaState.precios_filtered.length() > LogisticaState.items_per_page_precios,
                             rx.box(
                                 rx.hstack(
-                                    # Texto de resultados (siempre a la izquierda)
                                     rx.text(
                                         rx.cond(
-                                            LogisticaState.precios.length() > 0,
+                                            LogisticaState.precios_filtered.length() > 0,
                                             rx.cond(
                                                 LogisticaState.current_page_precios == 1,
                                                 "Mostrando 1 a " + rx.cond(
-                                                    LogisticaState.items_per_page_precios > LogisticaState.precios.length(),
-                                                    LogisticaState.precios.length().to(str),
+                                                    LogisticaState.items_per_page_precios > LogisticaState.precios_filtered.length(),
+                                                    LogisticaState.precios_filtered.length().to(str),
                                                     LogisticaState.items_per_page_precios.to(str)
-                                                ) + " de " + LogisticaState.precios.length().to(str) + " resultados",
+                                                ) + " de " + LogisticaState.precios_filtered.length().to(str) + " resultados",
                                                 "Mostrando " + ((LogisticaState.current_page_precios - 1) * LogisticaState.items_per_page_precios + 1).to(str) + " a " + rx.cond(
-                                                    LogisticaState.current_page_precios * LogisticaState.items_per_page_precios > LogisticaState.precios.length(),
-                                                    LogisticaState.precios.length().to(str),
+                                                    LogisticaState.current_page_precios * LogisticaState.items_per_page_precios > LogisticaState.precios_filtered.length(),
+                                                    LogisticaState.precios_filtered.length().to(str),
                                                     (LogisticaState.current_page_precios * LogisticaState.items_per_page_precios).to(str)
-                                                ) + " de " + LogisticaState.precios.length().to(str) + " resultados"
+                                                ) + " de " + LogisticaState.precios_filtered.length().to(str) + " resultados"
                                             ),
                                             "Mostrando 0 a 0 de 0 resultados"
                                         ),
@@ -929,19 +904,19 @@ def logistica_dashboard() -> rx.Component:
                                     rx.spacer(),
                                     rx.box(
                                         render_pagination_precios(),
-                                        margin_left="10rem",   # ← SEPARACIÓN ADICIONAL hacia la derecha
+                                        margin_left="10rem",
                                         flex_shrink=0,
-                                    ),   # ← Siempre horizontal, compacta, con flechas
+                                    ),
                                     width="100%",
                                     align="center",
                                     spacing="4",
-                                    wrap="wrap",          # ← Permite que el texto se mueva arriba si es necesario
+                                    wrap="wrap",
                                 ),
                                 padding="1.5rem 1rem",
                                 border_top="1px solid #e2e8f0",
                                 background="#f8fafc",
                             ),
-                            rx.box(height="1rem")  # Espacio cuando no hay paginación
+                            rx.box(height="1rem")
                         ),
                         spacing="0",
                         width="100%",
@@ -949,8 +924,8 @@ def logistica_dashboard() -> rx.Component:
                 )
             )
         
+        # --- Formulario para agregar nuevo precio ---
         def form_agregar_precio():
-            """Formulario para agregar nuevo precio"""
             return rx.box(
                 rx.vstack(
                     rx.heading("➕ Agregar Nuevo Producto/Precio", size="4", color="#1F1F1F"),
@@ -1018,6 +993,7 @@ def logistica_dashboard() -> rx.Component:
                 margin_bottom="1rem"
             )
         
+        # --- Diálogos para editar/eliminar precios ---
         def editar_precio_dialog():
             return rx.dialog.root(
                 rx.dialog.content(
@@ -1169,6 +1145,7 @@ def logistica_dashboard() -> rx.Component:
                 on_open_change=LogisticaState.set_show_eliminar_precio_dialog,
             )
         
+        # --- Estructura principal de la pestaña ---
         return rx.vstack(
             rx.heading("💰 Gestión de Precios de Productos", size="5", color="#1F1F1F"),
             rx.text(
@@ -1178,6 +1155,7 @@ def logistica_dashboard() -> rx.Component:
                 margin_bottom="1rem"
             ),
             
+            # Botón de recarga y badge (total de productos)
             rx.hstack(
                 rx.button(
                     "🔄 Cargar Precios",
@@ -1201,15 +1179,65 @@ def logistica_dashboard() -> rx.Component:
                 wrap="wrap"
             ),
             
+            # Formulario para agregar nuevo producto
             form_agregar_precio(),
             
+            # ========== CONTROLES DE BÚSQUEDA Y ORDEN (ENCIMA DE LA TABLA) ==========
+            rx.box(
+                rx.vstack(
+                    # Input de búsqueda
+                    rx.input(
+                        placeholder="Buscar por tipo o descripción...",
+                        on_change=LogisticaState.filter_precios,
+                        size="2",
+                        width="100%",
+                        background="gray"
+                    ),
+                    # Fila con selector de orden y badge de resultados filtrados
+                    rx.hstack(
+                        rx.select(
+                            ["Tipo", "Descripcion", "Precio"],
+                            placeholder="Ordenar por...",
+                            on_change=LogisticaState.sort_precios,
+                            size="2",
+                            width="100%"
+                        ),
+                        rx.box(
+                            rx.badge(
+                                rx.cond(
+                                    LogisticaState.precios_filtered.length() == 1,
+                                    rx.text("1 producto"),
+                                    rx.text(LogisticaState.precios_filtered.length().to(str) + " productos")
+                                ),
+                                color_scheme="orange",
+                                variant="soft",
+                                size="2"
+                            ),
+                            display="flex",
+                            justify_content="center",
+                            align_items="center",
+                            width="100%"
+                        ),
+                        spacing="3",
+                        width="100%",
+                        wrap="wrap"
+                    ),
+                    spacing="3",
+                    width="100%"
+                ),
+                width="100%",
+                padding_bottom="1.5rem"
+            ),
+            # ===================================================
+            
+            # Tabla de precios (con spinner mientras carga)
             rx.cond(
                 LogisticaState.loading_precios,
                 rx.center(rx.spinner(size="3"), padding="3rem"),
                 precios_table()
             ),
             
-            # Diálogos para editar/eliminar
+            # Diálogos
             editar_precio_dialog(),
             eliminar_precio_dialog(),
             
@@ -1217,7 +1245,7 @@ def logistica_dashboard() -> rx.Component:
             width="100%",
         )
     
-    # ==================== DIÁLOGOS (sin cambios) ====================
+    # ==================== DIÁLOGOS DE APROBACIÓN/RECHAZO/GENERACIÓN ====================
     def aprobar_dialog():
         return rx.dialog.root(
             rx.dialog.content(
@@ -1479,7 +1507,7 @@ def logistica_dashboard() -> rx.Component:
         return rx.box(
             navbar("Panel de Logística"),
             rx.vstack(
-                # Encabezado responsivo
+                # Encabezado
                 rx.box(
                     rx.vstack(
                         rx.hstack(
@@ -1553,7 +1581,7 @@ def logistica_dashboard() -> rx.Component:
                     border_bottom="1px solid #e2e8f0"
                 ),
                 
-                # Tabs responsivos
+                # Tabs
                 rx.tabs.root(
                     rx.tabs.list(
                         rx.tabs.trigger("⏳ Pendientes", value="pendientes", color="#1F1F1F"),
@@ -1565,7 +1593,7 @@ def logistica_dashboard() -> rx.Component:
                     
                     rx.tabs.content(
                         rx.vstack(
-                            # Búsqueda solo para pendientes
+                            # Búsqueda para pendientes
                             rx.box(
                                 rx.hstack(
                                     rx.input(
@@ -1583,7 +1611,6 @@ def logistica_dashboard() -> rx.Component:
                                 padding_bottom="1.5rem"
                             ),
                             
-                            # Tabla de pendientes
                             rx.cond(
                                 LogisticaState.loading,
                                 rx.center(
@@ -1599,7 +1626,6 @@ def logistica_dashboard() -> rx.Component:
                                 solicitudes_table()
                             ),
                             
-                            # Información de búsqueda
                             rx.cond(
                                 LogisticaState.search_value != "",
                                 rx.box(
@@ -1644,7 +1670,6 @@ def logistica_dashboard() -> rx.Component:
                     
                     rx.tabs.content(
                         rx.vstack(
-                            # Botón para cargar completadas
                             rx.hstack(
                                 rx.button(
                                     "🔄 Cargar Completadas",
@@ -1663,7 +1688,6 @@ def logistica_dashboard() -> rx.Component:
                                 wrap="wrap"
                             ),
                             
-                            # Tabla de completadas
                             rx.cond(
                                 LogisticaState.loading_completadas,
                                 rx.center(rx.spinner(size="3"), padding="3rem"),
@@ -1691,9 +1715,9 @@ def logistica_dashboard() -> rx.Component:
                 aprobar_dialog(),
                 rechazar_dialog(),
                 generar_dialog(),
-                detalle_dialog(),  # <-- Nuevo diálogo agregado
+                detalle_dialog(),
                 
-                # Pie de página responsivo
+                # Pie de página
                 rx.box(
                     rx.vstack(
                         rx.hstack(
