@@ -41,6 +41,7 @@ def solicitante_login() -> rx.Component:
                             size="3",
                             margin_bottom="1rem",
                             on_change=SolicitanteAuthState.set_usuario,
+                            background="gray"
                         ),
                         rx.input(
                             type="password",
@@ -50,6 +51,7 @@ def solicitante_login() -> rx.Component:
                             size="3",
                             margin_bottom="2rem",
                             on_change=SolicitanteAuthState.set_clave,
+                            background="gray"
                         ),
                         rx.button(
                             "Ingresar",

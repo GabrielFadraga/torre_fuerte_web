@@ -41,6 +41,7 @@ def revfin_login() -> rx.Component:
                             size="3",
                             margin_bottom="1rem",
                             on_change=FinanciamientoState.set_username_revfin,
+                            background="gray"
                         ),
                         rx.input(
                             type="password",
@@ -50,6 +51,7 @@ def revfin_login() -> rx.Component:
                             size="3",
                             margin_bottom="2rem",
                             on_change=FinanciamientoState.set_password_revfin,
+                            background="gray"
                         ),
                         rx.button(
                             "Ingresar",

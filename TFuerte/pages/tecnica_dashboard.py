@@ -17,8 +17,8 @@ def tecnica_dashboard() -> rx.Component:
             rx.badge("PENDIENTE", color_scheme="amber", variant="soft"),
             rx.cond(
                 estado == "aprobado_tecnica",
-                rx.badge("APROBADO TÉCNICA", color_scheme="green", variant="soft"),
-                rx.badge("RECHAZADA", color_scheme="red", variant="soft")
+                rx.badge("APROBADO TÉCNICA", color_scheme="green", variant="solid"),
+                rx.badge("RECHAZADA", color_scheme="red", variant="solid")
             )
         )
     
@@ -180,7 +180,7 @@ def tecnica_dashboard() -> rx.Component:
                                 num_recursos.to(str) + " productos"
                             ),
                             color_scheme="blue",
-                            variant="soft",
+                            variant="solid",
                             size="1"
                         ),
                         rx.button(
@@ -525,7 +525,7 @@ def tecnica_dashboard() -> rx.Component:
                                         TecnicaState.recursos_detalle,
                                         lambda recurso, idx: rx.box(
                                             rx.hstack(
-                                                rx.badge(idx + 1, color_scheme="blue", size="1"),
+                                                rx.badge(idx + 1, color_scheme="blue", size="1", variant="solid"),
                                                 rx.vstack(
                                                     rx.text(recurso.get("descripcion", "-"), size="2", font_weight="500"),
                                                     rx.hstack(
@@ -625,7 +625,7 @@ def tecnica_dashboard() -> rx.Component:
                             rx.badge(
                                 f"{TecnicaState.solicitudes_pendientes.length()} pendientes",
                                 color_scheme="amber",
-                                variant="soft",
+                                variant="solid",
                                 size="2"
                             ),
                             rx.button(
@@ -663,7 +663,8 @@ def tecnica_dashboard() -> rx.Component:
                             placeholder="Buscar solicitudes...",
                             on_change=TecnicaState.filter_solicitudes,
                             width=["100%", "100%", "400px", "400px"],
-                            size="3"
+                            size="3",
+                            background="gray"
                         ),
                         spacing="2",
                         width="100%",

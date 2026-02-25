@@ -14,9 +14,144 @@ from TFuerte.routes import Route
 def generar_comprobante() -> rx.Component:
     """Página para generar comprobantes de salida"""
     
-    def productos_table():
-        """Tabla de productos disponibles para el comprobante"""
+    # ========== TABLA DE PRODUCTOS DISPONIBLES CON PAGINACIÓN ==========
+    def productos_table() -> rx.Component:
+        """Tabla de productos disponibles con paginación"""
         
+        # Botón de página individual
+        def create_page_button(page_num: int):
+            return rx.button(
+                rx.text(page_num, size="2", font_weight="500"),
+                on_click=lambda: AlmacenState.go_to_page(page_num),
+                variant="soft",
+                size="2",
+                style=rx.cond(
+                    AlmacenState.current_page == page_num,
+                    {
+                        "background": "#0f766e",
+                        "color": "white",
+                        "border": "1px solid #0f766e",
+                        "_hover": {"background": "#0b5e58"},
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    },
+                    {
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "_hover": {
+                            "background": "#f8fafc",
+                            "border": "1px solid #cbd5e1"
+                        },
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                )
+            )
+        
+        # Controles de paginación
+        def render_pagination():
+            return rx.hstack(
+                # Botón anterior
+                rx.button(
+                    rx.icon("chevron-left", size=16),
+                    on_click=AlmacenState.previous_page,
+                    variant="soft",
+                    size="2",
+                    is_disabled=AlmacenState.current_page == 1,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                # Contenedor de números
+                rx.box(
+                    rx.hstack(
+                        # Primera página + "..." si estamos lejos del inicio
+                        rx.cond(
+                            (AlmacenState.current_page > 3) & (AlmacenState.total_pages > 4),
+                            rx.hstack(
+                                create_page_button(1),
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        # Páginas del rango calculado (máximo 4)
+                        rx.cond(
+                            AlmacenState.page_numbers.length() > 0,
+                            rx.hstack(
+                                rx.foreach(
+                                    AlmacenState.page_numbers,
+                                    create_page_button
+                                ),
+                                spacing="1",
+                                wrap="nowrap",
+                                flex_shrink=0,
+                            ),
+                            rx.text(
+                                f"Pág. {AlmacenState.current_page}",
+                                size="2",
+                                color="#64748b",
+                                padding_x="2",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        # Última página + "..." si estamos lejos del final
+                        rx.cond(
+                            (AlmacenState.current_page < AlmacenState.total_pages - 2) & (AlmacenState.total_pages > 4),
+                            rx.hstack(
+                                rx.text("...", size="2", color="#64748b", padding_x="1"),
+                                create_page_button(AlmacenState.total_pages),
+                                spacing="1",
+                                flex_shrink=0,
+                            ),
+                        ),
+                        spacing="1",
+                        wrap="nowrap",
+                        align="center",
+                    ),
+                    overflow_x="auto",
+                    flex_grow=0,
+                    flex_shrink=1,
+                    max_width="100%",
+                ),
+                # Botón siguiente
+                rx.button(
+                    rx.hstack(
+                        rx.icon("chevron-right", size=16),
+                        width="100%",
+                        spacing="0",
+                        justify="end",
+                        align="end",
+                    ),
+                    on_click=AlmacenState.next_page,
+                    variant="soft",
+                    size="2",
+                    is_disabled=AlmacenState.current_page == AlmacenState.total_pages,
+                    style={
+                        "background": "white",
+                        "border": "1px solid #e2e8f0",
+                        "color": "#1e293b",
+                        "flex_shrink": 0,
+                        "min_width": "32px",
+                        "padding": "0 8px",
+                    }
+                ),
+                spacing="2",
+                wrap="nowrap",
+                align="center",
+                justify="end",
+                width="100%",
+            )
+        
+        # Fila de producto (sin cambios)
         def producto_row(item):
             return rx.table.row(
                 rx.table.cell(
@@ -42,7 +177,9 @@ def generar_comprobante() -> rx.Component:
                 rx.table.cell(rx.text(f"${item['Precio']:.2f}", color="#1e293b")),
             )
         
-        return rx.box(
+        return rx.cond(
+            AlmacenState.loading,
+            rx.center(rx.spinner(size="3"), padding="2rem"),
             rx.cond(
                 AlmacenState.filtered_data.length() == 0,
                 rx.center(
@@ -53,38 +190,102 @@ def generar_comprobante() -> rx.Component:
                     ),
                     padding="3rem",
                 ),
-                rx.box(
-                    rx.table.root(
-                        rx.table.header(
-                            rx.table.row(
-                                rx.table.column_header_cell("Agregar", style={"color": "#1e293b", "padding": "8px"}),
-                                rx.table.column_header_cell("Número", style={"color": "#1e293b", "padding": "8px"}),
-                                rx.table.column_header_cell("Código", style={"color": "#1e293b", "padding": "8px"}),
-                                rx.table.column_header_cell("Descripción", style={"color": "#1e293b", "padding": "8px"}),
-                                rx.table.column_header_cell("UM", style={"color": "#1e293b", "padding": "8px"}),
-                                rx.table.column_header_cell("Saldo", style={"color": "#1e293b", "padding": "8px"}),
-                                rx.table.column_header_cell("Precio", style={"color": "#1e293b", "padding": "8px"}),
-                            )
+                rx.vstack(
+                    # Tabla con scroll horizontal
+                    rx.box(
+                        rx.scroll_area(
+                            rx.table.root(
+                                rx.table.header(
+                                    rx.table.row(
+                                        rx.table.column_header_cell("Agregar", style={"color": "#1e293b", "padding": "8px"}),
+                                        rx.table.column_header_cell("Número", style={"color": "#1e293b", "padding": "8px"}),
+                                        rx.table.column_header_cell("Código", style={"color": "#1e293b", "padding": "8px"}),
+                                        rx.table.column_header_cell("Descripción", style={"color": "#1e293b", "padding": "8px"}),
+                                        rx.table.column_header_cell("UM", style={"color": "#1e293b", "padding": "8px"}),
+                                        rx.table.column_header_cell("Saldo", style={"color": "#1e293b", "padding": "8px"}),
+                                        rx.table.column_header_cell("Precio", style={"color": "#1e293b", "padding": "8px"}),
+                                    )
+                                ),
+                                rx.table.body(
+                                    rx.foreach(
+                                        AlmacenState.paginated_data,
+                                        producto_row
+                                    )
+                                ),
+                                variant="surface",
+                                size="3",
+                                style={
+                                    "width": "100%",
+                                    "min_width": "800px",
+                                    "table_layout": "auto"
+                                }
+                            ),
+                            type="always",
+                            scrollbars="horizontal",
+                            style={
+                                "width": "100%",
+                                "max_height": "700px",
+                                "height": "auto",
+                                "overflow_y": "auto",
+                                "border": "1px solid #e2e8f0",
+                                "border_radius": "8px",
+                            }
                         ),
-                        rx.table.body(
-                            rx.foreach(
-                                AlmacenState.filtered_data,
-                                producto_row
-                            )
-                        ),
-                        variant="surface",
-                        size="3"
+                        width="100%",
                     ),
-                    style={
-                        "width": "100%",
-                        "overflow_x": "auto",
-                        "display": "block"
-                    }
+                    # Controles de paginación
+                    rx.cond(
+                        AlmacenState.filtered_data.length() > AlmacenState.items_per_page,
+                        rx.box(
+                            rx.hstack(
+                                rx.text(
+                                    rx.cond(
+                                        AlmacenState.filtered_data.length() > 0,
+                                        rx.cond(
+                                            AlmacenState.current_page == 1,
+                                            "Mostrando 1 a " + rx.cond(
+                                                AlmacenState.items_per_page > AlmacenState.filtered_data.length(),
+                                                AlmacenState.filtered_data.length().to(str),
+                                                AlmacenState.items_per_page.to(str)
+                                            ) + " de " + AlmacenState.filtered_data.length().to(str) + " resultados",
+                                            "Mostrando " + ((AlmacenState.current_page - 1) * AlmacenState.items_per_page + 1).to(str) + " a " + rx.cond(
+                                                AlmacenState.current_page * AlmacenState.items_per_page > AlmacenState.filtered_data.length(),
+                                                AlmacenState.filtered_data.length().to(str),
+                                                (AlmacenState.current_page * AlmacenState.items_per_page).to(str)
+                                            ) + " de " + AlmacenState.filtered_data.length().to(str) + " resultados"
+                                        ),
+                                        "Mostrando 0 a 0 de 0 resultados"
+                                    ),
+                                    size="2",
+                                    color="#64748b",
+                                    font_weight="500",
+                                    flex_shrink=0,
+                                    margin_right="8rem",
+                                ),
+                                rx.spacer(),
+                                rx.box(
+                                    render_pagination(),
+                                    flex_shrink=0,
+                                    margin_left="0.5rem",
+                                ),
+                                width="100%",
+                                align="center",
+                                spacing="6",
+                                wrap="wrap",
+                            ),
+                            padding="1.5rem 1rem",
+                            border_top="1px solid #e2e8f0",
+                            background="#f8fafc",
+                        ),
+                        rx.box(height="1rem")  # Espacio cuando no hay paginación
+                    ),
+                    spacing="0",
+                    width="100%",
                 )
-            ),
-            width="100%"
+            )
         )
     
+    # ========== TABLA DE PRODUCTOS SELECCIONADOS (sin cambios) ==========
     def productos_seleccionados_table():
         """Tabla de productos seleccionados para el comprobante"""
         
@@ -196,6 +397,7 @@ def generar_comprobante() -> rx.Component:
             width="100%"
         )
     
+    # ========== DIÁLOGO DE COMPROBANTE (sin cambios) ==========
     def comprobante_dialog():
         """Diálogo para confirmar y generar el comprobante"""
         return rx.dialog.root(
@@ -343,6 +545,7 @@ def generar_comprobante() -> rx.Component:
             on_open_change=ComprobanteState.set_show_comprobante_dialog,
         )
     
+    # ========== CONTENIDO PRINCIPAL (sin cambios mayores) ==========
     def main_content():
         return rx.vstack(
             # Encabezado
@@ -380,7 +583,7 @@ def generar_comprobante() -> rx.Component:
                 border_bottom="1px solid #e2e8f0"
             ),
             
-            # Controles de búsqueda
+            # Controles de búsqueda (sin cambios)
             rx.box(
                 rx.vstack(
                     rx.input(
@@ -420,7 +623,7 @@ def generar_comprobante() -> rx.Component:
                 padding_bottom="1.5rem"
             ),
             
-            # Tabla de productos disponibles
+            # Tabla de productos disponibles (AHORA CON PAGINACIÓN)
             rx.box(
                 rx.vstack(
                     rx.heading("📦 Productos Disponibles", size="5", color="#1e293b"),
@@ -440,7 +643,7 @@ def generar_comprobante() -> rx.Component:
                 background="white"
             ),
             
-            # Productos seleccionados
+            # Productos seleccionados (sin cambios)
             rx.box(
                 rx.vstack(
                     rx.hstack(
@@ -474,10 +677,10 @@ def generar_comprobante() -> rx.Component:
             padding_y=styles.Spacer.DEFAULT,
             spacing="4",
             width="100%",
-            max_width="1400px",  # Cambia de 100% a un valor fijo
-            padding_x=["1rem", "2rem", "3rem", "4rem"],  # Padding responsive
+            max_width="1400px",
+            padding_x=["1rem", "2rem", "3rem", "4rem"],
             align="start",
-            margin="0 auto"  # Centra el contenido
+            margin="0 auto"
         )
     
     return rx.box(

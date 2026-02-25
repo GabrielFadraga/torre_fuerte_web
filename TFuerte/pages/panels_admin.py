@@ -11,7 +11,7 @@ def admin_card():
         rx.vstack(
             rx.icon(
                 "shield", 
-                size=48, 
+                size=70, 
                 color="#0f766e",
                 style={
                     "background": "linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)",
@@ -31,19 +31,19 @@ def admin_card():
             rx.divider(margin_y="1rem"),
             rx.vstack(
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#059669"),
+                    rx.icon("chevron_right", size=16, color="#059669"),
                     rx.text("Aprobar/Rechazar solicitudes", size="2", color="#1e293b"),
                     spacing="2",
                     align="center"
                 ),
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#059669"),
+                    rx.icon("chevron_right", size=16, color="#059669"),
                     rx.text("Ver historial completo", size="2", color="#1e293b"),
                     spacing="2",
                     align="center"
                 ),
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#059669"),
+                    rx.icon("chevron_right", size=16, color="#059669"),
                     rx.text("Control de usuarios", size="2", color="#1e293b"),
                     spacing="2",
                     align="center"
@@ -92,7 +92,7 @@ def almacen_card():
         rx.vstack(
             rx.icon(
                 "warehouse", 
-                size=48, 
+                size=70, 
                 color="#2563eb",
                 style={
                     "background": "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
@@ -112,19 +112,19 @@ def almacen_card():
             rx.divider(margin_y="1rem"),
             rx.vstack(
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#2563eb"),
+                    rx.icon("chevron_right", size=16, color="#2563eb"),
                     rx.text("Registrar entradas al almacén", size="2", color="#1e293b"),
                     spacing="2",
                     align="center"
                 ),
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#2563eb"),
+                    rx.icon("chevron_right", size=16, color="#2563eb"),
                     rx.text("Registrar salidas aprobadas", size="2", color="#1e293b"),
                     spacing="2",
                     align="center"
                 ),
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#2563eb"),
+                    rx.icon("chevron_right", size=16, color="#2563eb"),
                     rx.text("Control de inventario", size="2", color="#1e293b"),
                     spacing="2",
                     align="center"
@@ -174,7 +174,7 @@ def solicitante_card():
         rx.vstack(
             rx.icon(
                 "file-text", 
-                size=48, 
+                size=70, 
                 color="#7c3aed",
                 style={
                     "background": "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)",
@@ -194,19 +194,19 @@ def solicitante_card():
             rx.divider(margin_y="1rem"),
             rx.vstack(
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#7c3aed"),
+                    rx.icon("chevron_right", size=16, color="#7c3aed"),
                     rx.text("Crear nuevas solicitudes", size="2", color="#1e293b"),
                     spacing="2",
                     align="center"
                 ),
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#7c3aed"),
+                    rx.icon("chevron_right", size=16, color="#7c3aed"),
                     rx.text("Ver estado de solicitudes", size="2", color="#1e293b"),
                     spacing="2",
                     align="center"
                 ),
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#7c3aed"),
+                    rx.icon("chevron_right", size=16, color="#7c3aed"),
                     rx.text("Historial de solicitudes", size="2", color="#1e293b"),
                     spacing="2",
                     align="center"
@@ -261,7 +261,7 @@ def admin_rm_card():
         rx.vstack(
             rx.icon(
                 "crown", 
-                size=48, 
+                size=70, 
                 color="#7c3aed",
                 style={
                     "background": "linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%)",
@@ -281,17 +281,17 @@ def admin_rm_card():
             rx.divider(margin_y="1rem"),
             rx.vstack(
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#7c3aed"),
+                    rx.icon("chevron_right", size=16, color="#7c3aed"),
                     rx.text("Aprobar/Rechazar RM", size="2", color="#1e293b"),
                     spacing="2", align="center"
                 ),
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#7c3aed"),
+                    rx.icon("chevron_right", size=16, color="#7c3aed"),
                     rx.text("Aprobar/Rechazar FIN", size="2", color="#1e293b"),
                     spacing="2", align="center"
                 ),
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#7c3aed"),
+                    rx.icon("chevron_right", size=16, color="#7c3aed"),
                     rx.text("Generar documentos Word", size="2", color="#1e293b"),
                     spacing="2", align="center"
                 ),
@@ -335,7 +335,7 @@ def tecnica_card():
         rx.vstack(
             rx.icon(
                 "wrench", 
-                size=48, 
+                size=70, 
                 color="#059669",
                 style={
                     "background": "linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)",
@@ -355,17 +355,17 @@ def tecnica_card():
             rx.divider(margin_y="1rem"),
             rx.vstack(
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#059669"),
+                    rx.icon("chevron_right", size=16, color="#059669"),
                     rx.text("Revisar solicitudes", size="2", color="#1e293b"),
                     spacing="2", align="center"
                 ),
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#059669"),
+                    rx.icon("chevron_right", size=16, color="#059669"),
                     rx.text("Aprobar técnicamente", size="2", color="#1e293b"),
                     spacing="2", align="center"
                 ),
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#059669"),
+                    rx.icon("chevron_right", size=16, color="#059669"),
                     rx.text("Rechazar solicitudes", size="2", color="#1e293b"),
                     spacing="2", align="center"
                 ),
@@ -409,7 +409,7 @@ def logistica_card():
         rx.vstack(
             rx.icon(
                 "truck", 
-                size=48, 
+                size=70, 
                 color="#2563eb",
                 style={
                     "background": "linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)",
@@ -429,17 +429,17 @@ def logistica_card():
             rx.divider(margin_y="1rem"),
             rx.vstack(
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#2563eb"),
+                    rx.icon("chevron_right", size=16, color="#2563eb"),
                     rx.text("Aprobar solicitudes finales", size="2", color="#1e293b"),
                     spacing="2", align="center"
                 ),
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#2563eb"),
+                    rx.icon("chevron_right", size=16, color="#2563eb"),
                     rx.text("Generar documentos Word", size="2", color="#1e293b"),
                     spacing="2", align="center"
                 ),
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#2563eb"),
+                    rx.icon("chevron_right", size=16, color="#2563eb"),
                     rx.text("Gestionar precios", size="2", color="#1e293b"),
                     spacing="2", align="center"
                 ),
@@ -483,7 +483,7 @@ def revfin_card():
         rx.vstack(
             rx.icon(
                 "dollar-sign", 
-                size=48, 
+                size=70, 
                 color="#0d9488",
                 style={
                     "background": "linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)",
@@ -503,17 +503,17 @@ def revfin_card():
             rx.divider(margin_y="1rem"),
             rx.vstack(
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#0d9488"),
+                    rx.icon("chevron_right", size=16, color="#0d9488"),
                     rx.text("Revisar solicitudes FIN", size="2", color="#1e293b"),
                     spacing="2", align="center"
                 ),
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#0d9488"),
+                    rx.icon("chevron_right", size=16, color="#0d9488"),
                     rx.text("Aprobar/Rechazar FIN", size="2", color="#1e293b"),
                     spacing="2", align="center"
                 ),
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#0d9488"),
+                    rx.icon("chevron_right", size=16, color="#0d9488"),
                     rx.text("Control presupuestario", size="2", color="#1e293b"),
                     spacing="2", align="center"
                 ),
@@ -557,7 +557,7 @@ def solicitante_rm_card():
         rx.vstack(
             rx.icon(
                 "clipboard-list", 
-                size=48, 
+                size=70, 
                 color="#f59e0b",
                 style={
                     "background": "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)",
@@ -577,17 +577,17 @@ def solicitante_rm_card():
             rx.divider(margin_y="1rem"),
             rx.vstack(
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#f59e0b"),
+                    rx.icon("chevron_right", size=16, color="#f59e0b"),
                     rx.text("Crear solicitudes RM", size="2", color="#1e293b"),
                     spacing="2", align="center"
                 ),
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#f59e0b"),
+                    rx.icon("chevron_right", size=16, color="#f59e0b"),
                     rx.text("Crear solicitudes FIN", size="2", color="#1e293b"),
                     spacing="2", align="center"
                 ),
                 rx.hstack(
-                    rx.icon("check-circle", size=16, color="#f59e0b"),
+                    rx.icon("chevron_right", size=16, color="#f59e0b"),
                     rx.text("Ver historial", size="2", color="#1e293b"),
                     spacing="2", align="center"
                 ),

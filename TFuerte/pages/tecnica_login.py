@@ -41,6 +41,7 @@ def tecnica_login() -> rx.Component:
                             size="3",
                             margin_bottom="1rem",
                             on_change=TecnicaState.set_username,
+                            background="gray"
                         ),
                         rx.input(
                             type="password",
@@ -50,6 +51,7 @@ def tecnica_login() -> rx.Component:
                             size="3",
                             margin_bottom="2rem",
                             on_change=TecnicaState.set_password,
+                            background="gray"
                         ),
                         rx.button(
                             "Ingresar",

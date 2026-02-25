@@ -6,7 +6,11 @@ from TFuerte.routes import Route
 @rx.page(
     route=Route.SOLICITANTE_RM_FORM.value,
     title="Solicitud de Recursos - Solicitante",
-    on_load=[SolicitanteRMState.reset_loading_states, SolicitanteRMState.load_mis_solicitudes_rm]
+    on_load=[
+        SolicitanteRMState.reset_loading_states,
+        SolicitanteRMState.load_mis_solicitudes_rm,
+        SolicitanteRMState.load_precios_disponibles  # Cargar precios para autocompletado
+    ]
 )
 def solicitante_rm_form() -> rx.Component:
     """Página para crear solicitudes de recursos"""
@@ -618,7 +622,7 @@ def solicitante_rm_form() -> rx.Component:
         )
     
     def formulario_financiamiento():
-        """Formulario para solicitud de financiamiento con múltiples recursos"""
+        """Formulario para solicitud de financiamiento con autocompletado"""
         return rx.vstack(
             rx.heading("    Complete el formulario", size="4", color="#1F1F1F"),
             
@@ -712,13 +716,58 @@ def solicitante_rm_form() -> rx.Component:
                             align="start",
                             width="100%"
                         ),
+                        # Campo de descripción con autocompletado
                         rx.vstack(
                             rx.text("Descripción *", size="2", color="#1F1F1F"),
-                            rx.input(
-                                placeholder="Ej: Cable eléctrico 2.5mm",
-                                value=SolicitanteRMState.recurso_fin_descripcion,
-                                on_change=SolicitanteRMState.set_recurso_fin_descripcion,
-                                width="100%"
+                            rx.box(
+                                rx.input(
+                                    placeholder="Ej: Cable eléctrico 2.5mm",
+                                    value=SolicitanteRMState.recurso_fin_descripcion,
+                                    on_change=[
+                                        lambda value: SolicitanteRMState.set_recurso_fin_descripcion(value),
+                                        lambda value: SolicitanteRMState.buscar_sugerencias_descripcion(value)
+                                    ],
+                                    width="100%"
+                                ),
+                                # Lista de sugerencias
+                                rx.cond(
+                                    (SolicitanteRMState.sugerencias_descripcion.length() > 0) & (SolicitanteRMState.recurso_fin_descripcion != ""),
+                                    rx.box(
+                                        rx.vstack(
+                                            rx.foreach(
+                                                SolicitanteRMState.sugerencias_descripcion,
+                                                lambda sug: rx.button(
+                                                    sug,
+                                                    on_click=lambda: SolicitanteRMState.seleccionar_sugerencia(sug),
+                                                    variant="soft",
+                                                    size="1",
+                                                    width="100%",
+                                                    justify="start",
+                                                    color="#0f1011",
+                                                    style={
+                                                        "text_align": "left",
+                                                        "padding": "4px 8px",
+                                                        "border_radius": "4px",
+                                                        "_hover": {"background": "#f1f5f9"}
+                                                    }
+                                                )
+                                            ),
+                                            spacing="0",
+                                            width="100%",
+                                        ),
+                                        width="100%",
+                                        max_height="200px",
+                                        overflow_y="auto",
+                                        border="1px solid #e2e8f0",
+                                        border_radius="4px",
+                                        background="white",
+                                        box_shadow="0 4px 6px -1px rgba(0,0,0,0.1)",
+                                        margin_top="2px",
+                                        padding="4px",
+                                    ),
+                                ),
+                                width="100%",
+                                position="relative",
                             ),
                             spacing="1",
                             align="start",
@@ -812,7 +861,6 @@ def solicitante_rm_form() -> rx.Component:
                                                     ), 
                                                     color="#1F1F1F"
                                                 ),
-                                                # CELDA DE CANTIDAD CORREGIDA
                                                 rx.table.cell(
                                                     rx.text(
                                                         rx.cond(
@@ -1381,7 +1429,7 @@ def solicitante_rm_form() -> rx.Component:
                 SolicitanteRMState.precios_loading,
                 rx.center(rx.spinner(size="3"), padding="3rem"),
                 rx.cond(
-                    SolicitanteRMState.precios_filtered.length() == 0,
+                    SolicitanteRMState.precios_disponibles.length() == 0,
                     rx.center(
                         rx.vstack(
                             rx.icon("package", size=32, color="#cbd5e1"),
@@ -1391,44 +1439,6 @@ def solicitante_rm_form() -> rx.Component:
                         padding="3rem",
                     ),
                     rx.vstack(
-                        # NUEVO: Barra de búsqueda
-                        rx.box(
-                            rx.hstack(
-                                rx.input(
-                                    placeholder="Buscar por tipo o descripción...",
-                                    on_change=SolicitanteRMState.filter_precios,
-                                    size="2",
-                                    flex="1",
-                                    style={
-                                        "background": "gray",
-                                        "border": "1px solid #e2e8f0",
-                                        "border_radius": "6px",
-                                        "padding": "8px 12px",
-                                        "font_size": "14px",
-                                    },
-                                ),
-                                rx.button(
-                                    "Limpiar",
-                                    on_click=lambda: SolicitanteRMState.filter_precios(""),
-                                    size="2",
-                                    variant="soft",
-                                    color_scheme="gray",
-                                    flex_shrink=0,
-                                    width="50%",
-                                    style={
-                                        "border": "1px solid #e2e8f0",
-                                        "background": "#f8fafc",
-                                        "color": "#1e293b",
-                                    },
-                                ),
-                                spacing="3",
-                                width="100%",
-                                align="center",
-                                wrap="nowrap",
-                            ),
-                            width="100%",
-                            margin_bottom="1rem",
-                        ),
                         # Tabla con scroll horizontal
                         rx.box(
                             rx.scroll_area(
@@ -1465,44 +1475,26 @@ def solicitante_rm_form() -> rx.Component:
                             width="100%",
                             overflow_x="auto"
                         ),
-                        # Información de búsqueda (opcional)
-                        rx.cond(
-                            SolicitanteRMState.precios_search_value != "",
-                            rx.box(
-                                rx.hstack(
-                                    rx.icon("search", size=14, color="#10b981"),
-                                    rx.text(
-                                        f"Mostrando {SolicitanteRMState.precios_filtered.length()} de {SolicitanteRMState.precios_disponibles.length()} productos",
-                                        size="1",
-                                        color="#64748b"
-                                    ),
-                                    spacing="2",
-                                    align="center"
-                                ),
-                                width="100%",
-                                padding="0.5rem 0",
-                            ),
-                        ),
                         # Paginación
                         rx.cond(
-                            SolicitanteRMState.precios_filtered.length() > SolicitanteRMState.items_per_page_precios,
+                            SolicitanteRMState.precios_disponibles.length() > SolicitanteRMState.items_per_page_precios,
                             rx.box(
                                 rx.hstack(
                                     rx.text(
                                         rx.cond(
-                                            SolicitanteRMState.precios_filtered.length() > 0,
+                                            SolicitanteRMState.precios_disponibles.length() > 0,
                                             rx.cond(
                                                 SolicitanteRMState.current_page_precios == 1,
                                                 "Mostrando 1 a " + rx.cond(
-                                                    SolicitanteRMState.items_per_page_precios > SolicitanteRMState.precios_filtered.length(),
-                                                    SolicitanteRMState.precios_filtered.length().to(str),
+                                                    SolicitanteRMState.items_per_page_precios > SolicitanteRMState.precios_disponibles.length(),
+                                                    SolicitanteRMState.precios_disponibles.length().to(str),
                                                     SolicitanteRMState.items_per_page_precios.to(str)
-                                                ) + " de " + SolicitanteRMState.precios_filtered.length().to(str) + " resultados",
+                                                ) + " de " + SolicitanteRMState.precios_disponibles.length().to(str) + " resultados",
                                                 "Mostrando " + ((SolicitanteRMState.current_page_precios - 1) * SolicitanteRMState.items_per_page_precios + 1).to(str) + " a " + rx.cond(
-                                                    SolicitanteRMState.current_page_precios * SolicitanteRMState.items_per_page_precios > SolicitanteRMState.precios_filtered.length(),
-                                                    SolicitanteRMState.precios_filtered.length().to(str),
+                                                    SolicitanteRMState.current_page_precios * SolicitanteRMState.items_per_page_precios > SolicitanteRMState.precios_disponibles.length(),
+                                                    SolicitanteRMState.precios_disponibles.length().to(str),
                                                     (SolicitanteRMState.current_page_precios * SolicitanteRMState.items_per_page_precios).to(str)
-                                                ) + " de " + SolicitanteRMState.precios_filtered.length().to(str) + " resultados"
+                                                ) + " de " + SolicitanteRMState.precios_disponibles.length().to(str) + " resultados"
                                             ),
                                             "Mostrando 0 a 0 de 0 resultados"
                                         ),
@@ -1614,7 +1606,7 @@ def solicitante_rm_form() -> rx.Component:
                                     width="100%"
                                 ),
                                 
-                                precios_table(),  # <-- Tabla con filtro y paginación
+                                precios_table(),
                                 
                                 spacing="3",
                             ),

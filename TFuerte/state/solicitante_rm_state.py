@@ -37,9 +37,6 @@ class SolicitanteRMState(rx.State):
     # PRECIOS DISPONIBLES
     precios_disponibles: List[dict] = []
     precios_loading: bool = False
-    # NUEVO: filtro y lista filtrada
-    precios_search_value: str = ""
-    precios_filtered: List[dict] = []
     
     # FINANCIAMIENTO
     area_solicitante_fin: str = ""
@@ -60,6 +57,11 @@ class SolicitanteRMState(rx.State):
     
     # Tipos de productos para select
     tipos_productos: List[str] = []
+    
+    # ==================================================
+    # AUTOCOMPLETADO PARA DESCRIPCIÓN DE PRODUCTOS
+    # ==================================================
+    sugerencias_descripcion: List[str] = []  # Sugerencias para el campo de descripción
     
     # ==================================================
     # PAGINACIÓN PARA PRECIOS DISPONIBLES
@@ -276,6 +278,8 @@ class SolicitanteRMState(rx.State):
         self.recurso_fin_servicio = ""
         self.recurso_fin_descripcion = ""
         self.recurso_fin_cantidad = ""
+        # Limpiar sugerencias al agregar
+        self.sugerencias_descripcion = []
         
         return rx.toast.success(f"✅ Producto agregado ({len(self.recursos_fin)} total)")
     
@@ -509,10 +513,9 @@ class SolicitanteRMState(rx.State):
         self.show_success_fin = False
     
     # ==================================================
-    # PRECIOS DISPONIBLES (con paginación y filtro)
+    # PRECIOS DISPONIBLES (con paginación)
     # ==================================================
     
-    @rx.event
     def load_precios_disponibles(self):
         """Carga los precios disponibles y calcula la paginación"""
         self.precios_loading = True
@@ -532,42 +535,48 @@ class SolicitanteRMState(rx.State):
                 precios_con_final.append(precio_modificado)
             
             self.precios_disponibles = precios_con_final
-            self.precios_filtered = precios_con_final  # inicialmente todos
             self.reset_precios_pagination()
         except Exception as e:
             print(f"Error cargando precios: {e}")
             self.precios_disponibles = []
-            self.precios_filtered = []
             self.reset_precios_pagination()
         
         self.precios_loading = False
-
-    # NUEVO: método para filtrar precios
-    def filter_precios(self, search_value: str):
-        """Filtra los precios por tipo o descripción"""
-        self.precios_search_value = search_value
-        
-        if not search_value:
-            self.precios_filtered = self.precios_disponibles
-        else:
-            search_term = search_value.lower()
-            filtered = []
-            for p in self.precios_disponibles:
-                tipo = p.get("Tipo", "").lower()
-                desc = p.get("Descripcion", "").lower()
-                if search_term in tipo or search_term in desc:
-                    filtered.append(p)
-            self.precios_filtered = filtered
-        
-        self.reset_precios_pagination()  # vuelve a página 1 y recalcula
     
     # ==================================================
-    # MÉTODOS DE PAGINACIÓN PARA PRECIOS (ahora sobre filtered)
+    # MÉTODOS DE AUTOCOMPLETADO
+    # ==================================================
+    
+    @rx.event
+    def buscar_sugerencias_descripcion(self, texto: str):
+        """Busca productos cuya descripción contenga el texto ingresado"""
+        if not texto or len(texto) < 2:
+            self.sugerencias_descripcion = []
+            return
+        
+        texto_lower = texto.lower()
+        sugerencias = []
+        for producto in self.precios_disponibles:
+            descripcion = producto.get("Descripcion", "")
+            if texto_lower in descripcion.lower():
+                sugerencias.append(descripcion)
+        
+        # Limitar a 10 sugerencias para no saturar
+        self.sugerencias_descripcion = sugerencias[:10]
+    
+    @rx.event
+    def seleccionar_sugerencia(self, descripcion: str):
+        """Selecciona una sugerencia y limpia la lista"""
+        self.recurso_fin_descripcion = descripcion
+        self.sugerencias_descripcion = []
+    
+    # ==================================================
+    # MÉTODOS DE PAGINACIÓN PARA PRECIOS
     # ==================================================
     
     def calculate_precios_pagination(self):
         """Calcula la paginación para la tabla de precios disponibles."""
-        total_items = len(self.precios_filtered)
+        total_items = len(self.precios_disponibles)
 
         if total_items == 0:
             self.total_pages_precios = 1
@@ -582,7 +591,7 @@ class SolicitanteRMState(rx.State):
         end_idx = min(start_idx + self.items_per_page_precios, total_items)
 
         if total_items > 0:
-            self.precios_paginated = self.precios_filtered[start_idx:end_idx]
+            self.precios_paginated = self.precios_disponibles[start_idx:end_idx]
         else:
             self.precios_paginated = []
 

@@ -96,7 +96,7 @@ def almacen_readonly_table() -> rx.Component:
             rx.table.cell(
                 rx.badge(
                     item.get("Cantidad E", 0),
-                    variant="soft",
+                    variant="solid",
                     color_scheme="green",
                     size="1"
                 ),
@@ -115,7 +115,7 @@ def almacen_readonly_table() -> rx.Component:
                     item.get("Cantidad S", 0) != 0,
                     rx.badge(
                         item.get("Cantidad S", 0),
-                        variant="soft",
+                        variant="solid",
                         color_scheme="red",
                         size="1"
                     ),
@@ -340,14 +340,16 @@ def almacen_readonly_table() -> rx.Component:
                 placeholder="Buscar por descripción...",
                 on_change=AlmacenViewState.filter_values,
                 width=["100%", "300px", "300px", "300px"],
-                size="2"
+                size="2",
+                background="black"
             ),
             rx.select(
                 ["Numero", "Codigo", "Descripcion del producto", "Tipo de producto", "Precio"],
                 placeholder="Ordenar por...",
                 on_change=AlmacenViewState.sort_values,
                 width=["100%", "200px", "200px", "200px"],
-                size="2"
+                size="2",
+                background="black"
             ),
             rx.button(
                 "🔄 Actualizar",

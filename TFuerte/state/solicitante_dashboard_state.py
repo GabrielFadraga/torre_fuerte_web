@@ -1,9 +1,10 @@
 import reflex as rx
-from typing import List
+from typing import List, Dict
 from TFuerte.api.solicitudes_api import SolicitudesAPI
 from datetime import datetime
 import uuid
 import traceback
+from TFuerte.state.almacen_state import AlmacenState
 
 class SolicitanteDashboardState(rx.State):
     """Estado para el dashboard de solicitantes"""
@@ -32,9 +33,14 @@ class SolicitanteDashboardState(rx.State):
     # ==================================================
     mis_solicitudes_paginated: List[dict] = []
     mis_current_page: int = 1
-    mis_items_per_page: int = 5          # Número de tarjetas por página
+    mis_items_per_page: int = 5
     mis_total_pages: int = 1
     mis_page_numbers: List[int] = []
+
+    # ==================================================
+    # AUTOCOMPLETADO PARA DESCRIPCIÓN DE RECURSOS
+    # ==================================================
+    sugerencias_descripcion: Dict[int, List[str]] = {}  # índice -> lista de sugerencias
 
     def _fetch_and_group_solicitudes(self) -> List[dict]:
         """Obtiene y agrupa las solicitudes del solicitante actual (sin eventos)."""
@@ -94,16 +100,9 @@ class SolicitanteDashboardState(rx.State):
         """Verifica si hay recursos en el formulario"""
         return len(self.recursos_form) > 0
     
-    @rx.var
-    def is_loading(self) -> bool:
-        """Combina el loading propio y el de AlmacenState."""
-        from TFuerte.state.almacen_state import AlmacenState
-        return self.loading | AlmacenState.loading
-    
     def on_load(self):
         """Se ejecuta al cargar la página"""
         print("🔄 on_load: Cargando dashboard...")
-        # Generar un nuevo ID de grupo para la próxima solicitud
         self.grupo_id_actual = str(uuid.uuid4())[:8]
         return SolicitanteDashboardState.load_mis_solicitudes
     
@@ -130,7 +129,7 @@ class SolicitanteDashboardState(rx.State):
         self.destino = destino
     
     def agregar_recurso_form(self):
-        """Agrega un nuevo recurso al formulario"""
+        """Agrega un nuevo recurso al formulario y limpia sugerencias."""
         nuevo_recurso = {
             "descripcion": "",
             "cantidad": "",
@@ -138,14 +137,16 @@ class SolicitanteDashboardState(rx.State):
             "index": len(self.recursos_form)
         }
         self.recursos_form.append(nuevo_recurso)
+        self.sugerencias_descripcion = {}  # Reiniciamos sugerencias
     
     def eliminar_recurso_form(self, index: int):
-        """Elimina un recurso del formulario"""
+        """Elimina un recurso del formulario y limpia sugerencias."""
         if 0 <= index < len(self.recursos_form):
             self.recursos_form.pop(index)
             # Reindexar los recursos restantes
             for i, recurso in enumerate(self.recursos_form):
                 recurso["index"] = i
+            self.sugerencias_descripcion = {}  # Reiniciamos sugerencias
     
     def get_recurso_field(self, index: int, field: str):
         """Obtiene el valor de un campo de un recurso"""
@@ -215,6 +216,7 @@ class SolicitanteDashboardState(rx.State):
             self.recursos_form = []
             self.destino = ""
             self.grupo_id_actual = str(uuid.uuid4())[:8]
+            self.sugerencias_descripcion = {}  # Limpiar sugerencias
             
             yield rx.toast.success(f"✅ Solicitud creada con {recursos_creados} recursos")
             
@@ -258,9 +260,42 @@ class SolicitanteDashboardState(rx.State):
             )
     
     def limpiar_recursos_form(self):
-        """Limpia todos los recursos del formulario"""
+        """Limpia todos los recursos del formulario y las sugerencias."""
         self.recursos_form = []
         self.destino = ""
+        self.sugerencias_descripcion = {}
+
+    # ==================================================
+    # MÉTODOS DE AUTOCOMPLETADO (CORREGIDOS CON ASYNC/AWAIT)
+    # ==================================================
+    @rx.event
+    async def buscar_sugerencias_descripcion(self, index: int, texto: str):
+        """Busca productos cuya descripción contenga el texto ingresado."""
+        if not texto or len(texto) < 2:
+            if index in self.sugerencias_descripcion:
+                self.sugerencias_descripcion[index] = []
+            return
+
+        # Obtener el estado actual de AlmacenState (asíncrono)
+        almacen_state = await self.get_state(AlmacenState)
+        productos = almacen_state.filtered_data  # Lista real de Python
+
+        texto_lower = texto.lower()
+        sugerencias = []
+        for producto in productos:
+            descripcion = producto.get("Descripcion del producto", "")
+            if texto_lower in descripcion.lower():
+                sugerencias.append(descripcion)
+
+        self.sugerencias_descripcion[index] = sugerencias[:10]
+
+    @rx.event
+    def seleccionar_sugerencia(self, index: int, descripcion: str):
+        """Selecciona una sugerencia y la asigna al recurso correspondiente."""
+        if 0 <= index < len(self.recursos_form):
+            self.recursos_form[index]["descripcion"] = descripcion
+        if index in self.sugerencias_descripcion:
+            self.sugerencias_descripcion[index] = []
 
     # ==================================================
     # MÉTODOS DE PAGINACIÓN PARA MIS SOLICITUDES

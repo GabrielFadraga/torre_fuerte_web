@@ -42,14 +42,63 @@ def solicitante_dashboard() -> rx.Component:
                     ),
                     
                     rx.vstack(
+                        # Campo Descripción con autocompletado
                         rx.vstack(
                             rx.text("Descripción:", size="2", color="#64748b"),
-                            rx.input(
-                                placeholder="Descripción del recurso...",
-                                value=recurso.get("descripcion", ""),
-                                on_change=lambda value: SolicitanteDashboardState.set_recurso_field(index, "descripcion", value),
-                                size="2",
-                                width="100%"
+                            rx.box(
+                                rx.input(
+                                    placeholder="Descripción del recurso...",
+                                    value=recurso.get("descripcion", ""),
+                                    on_change=lambda value: [
+                                        SolicitanteDashboardState.set_recurso_field(index, "descripcion", value),
+                                        SolicitanteDashboardState.buscar_sugerencias_descripcion(index, value)
+                                    ],
+                                    size="2",
+                                    width="100%",
+                                    background="gray"
+                                ),
+                                # Lista de sugerencias
+                                rx.cond(
+                                    (SolicitanteDashboardState.sugerencias_descripcion.contains(index)) &
+                                    (SolicitanteDashboardState.sugerencias_descripcion[index].length() > 0),
+                                    rx.box(
+                                        rx.vstack(
+                                            rx.foreach(
+                                                SolicitanteDashboardState.sugerencias_descripcion[index],
+                                                lambda sug: rx.button(
+                                                    sug,
+                                                    on_click=lambda: SolicitanteDashboardState.seleccionar_sugerencia(index, sug),
+                                                    variant="soft",
+                                                    size="1",
+                                                    width="100%",
+                                                    justify="start",
+                                                    color="#0f1011",
+                                                    style={
+                                                        "text_align": "left",
+                                                        "padding": "4px 8px",
+                                                        "border_radius": "4px",
+                                                        "_hover": {"background": "#f1f5f9"}
+                                                    }
+                                                )
+                                            ),
+                                            spacing="0",
+                                            width="100%",
+                                        ),
+                                        width="100%",
+                                        max_height="200px",
+                                        overflow_y="auto",
+                                        border="1px solid #e2e8f0",
+                                        border_radius="4px",
+                                        background="white",
+                                        box_shadow="0 4px 6px -1px rgba(0,0,0,0.1)",
+                                        margin_top="2px",
+                                        padding="4px",
+                                        position="absolute",
+                                        z_index="10"
+                                    ),
+                                ),
+                                width="100%",
+                                position="relative",
                             ),
                             align="start",
                             spacing="1",
@@ -65,7 +114,8 @@ def solicitante_dashboard() -> rx.Component:
                                 on_change=lambda value: SolicitanteDashboardState.set_recurso_field(index, "cantidad", value),
                                 size="2",
                                 width="100%",
-                                min="1"
+                                min="1",
+                                background="gray"
                             ),
                             align="start",
                             spacing="1",
@@ -79,7 +129,8 @@ def solicitante_dashboard() -> rx.Component:
                                 value=recurso.get("observacion", ""),
                                 on_change=lambda value: SolicitanteDashboardState.set_recurso_field(index, "observacion", value),
                                 size="2",
-                                width="100%"
+                                width="100%",
+                                background="gray"
                             ),
                             align="start",
                             spacing="1",
@@ -148,7 +199,8 @@ def solicitante_dashboard() -> rx.Component:
                                 value=SolicitanteDashboardState.destino,
                                 on_change=SolicitanteDashboardState.set_destino,
                                 size="2",
-                                width="100%"
+                                width="100%",
+                                background="gray"
                             ),
                             align="start",
                             spacing="1",
@@ -247,7 +299,6 @@ def solicitante_dashboard() -> rx.Component:
     def mis_solicitudes_section():
         """Sección de mis solicitudes con paginación"""
         
-        # Función para el badge de estado (similar a la de otros paneles)
         def estado_badge(estado):
             return rx.match(
                 estado,
@@ -257,7 +308,6 @@ def solicitante_dashboard() -> rx.Component:
                 rx.badge("DESCONOCIDO", color_scheme="gray", variant="soft")
             )
         
-        # Función para crear botón de página individual
         def create_page_button_mis(page_num: int):
             return rx.button(
                 rx.text(page_num, size="2", font_weight="500"),
@@ -290,10 +340,8 @@ def solicitante_dashboard() -> rx.Component:
                 )
             )
         
-        # Controles de paginación (estilo unificado)
         def render_pagination_mis():
             return rx.hstack(
-                # Botón anterior
                 rx.button(
                     rx.icon("chevron-left", size=16),
                     on_click=SolicitanteDashboardState.previous_page_mis,
@@ -309,10 +357,8 @@ def solicitante_dashboard() -> rx.Component:
                         "padding": "0 8px",
                     }
                 ),
-                # Contenedor de números
                 rx.box(
                     rx.hstack(
-                        # Primera página + "..." si estamos lejos del inicio
                         rx.cond(
                             (SolicitanteDashboardState.mis_current_page > 3) &
                             (SolicitanteDashboardState.mis_total_pages > 4),
@@ -323,7 +369,6 @@ def solicitante_dashboard() -> rx.Component:
                                 flex_shrink=0,
                             ),
                         ),
-                        # Páginas del rango calculado (máximo 4)
                         rx.cond(
                             SolicitanteDashboardState.mis_page_numbers.length() > 0,
                             rx.hstack(
@@ -343,7 +388,6 @@ def solicitante_dashboard() -> rx.Component:
                                 flex_shrink=0,
                             ),
                         ),
-                        # Última página + "..." si estamos lejos del final
                         rx.cond(
                             (SolicitanteDashboardState.mis_current_page < SolicitanteDashboardState.mis_total_pages - 2) &
                             (SolicitanteDashboardState.mis_total_pages > 4),
@@ -363,7 +407,6 @@ def solicitante_dashboard() -> rx.Component:
                     flex_shrink=1,
                     max_width="100%",
                 ),
-                # Botón siguiente
                 rx.button(
                     rx.hstack(
                         rx.icon("chevron-right", size=16),
@@ -392,14 +435,13 @@ def solicitante_dashboard() -> rx.Component:
                 width="100%",
             )
         
-        # Tarjeta de grupo de solicitud (CORREGIDA)
         def grupo_solicitud_card(grupo):
             """Tarjeta para mostrar un grupo de solicitudes"""
             grupo_id = grupo["grupo_id"]
             destino = grupo.get("destino", "")
             fecha = grupo.get("fecha_formateada", "")
             num_recursos = grupo.get("num_recursos", 0)
-            estado_expr = grupo.get("estado", "pendiente")  # <- Esto es una expresión Reflex, no un string
+            estado_expr = grupo.get("estado", "pendiente")
             
             return rx.card(
                 rx.vstack(
@@ -420,7 +462,6 @@ def solicitante_dashboard() -> rx.Component:
                             spacing="1"
                         ),
                         rx.spacer(),
-                        # Badge de estado usando rx.match
                         estado_badge(estado_expr),
                         width="100%",
                         align="center"
@@ -478,7 +519,6 @@ def solicitante_dashboard() -> rx.Component:
         
         return rx.box(
             rx.vstack(
-                # Encabezado con badge de total
                 rx.hstack(
                     rx.vstack(
                         rx.heading("📋 Mis Solicitudes", size="5", color="#1e293b"),
@@ -494,14 +534,13 @@ def solicitante_dashboard() -> rx.Component:
                     rx.badge(
                         f"{SolicitanteDashboardState.computed_total_solicitudes} solicitudes",
                         color_scheme="blue",
-                        variant="soft",
+                        variant="solid",
                         size="2"
                     ),
                     width="100%",
                     align="center"
                 ),
                 
-                # Lista de tarjetas (solo página actual)
                 rx.cond(
                     SolicitanteDashboardState.loading,
                     rx.center(
@@ -548,7 +587,6 @@ def solicitante_dashboard() -> rx.Component:
                     )
                 ),
                 
-                # Controles de paginación
                 rx.cond(
                     SolicitanteDashboardState.mis_solicitudes.length() > SolicitanteDashboardState.mis_items_per_page,
                     rx.box(
@@ -607,7 +645,7 @@ def solicitante_dashboard() -> rx.Component:
         )
     
     def productos_almacen_section():
-        """Sección de productos en almacén con paginación (sin cambios)"""
+        """Sección de productos en almacén con paginación"""
         
         def create_page_button(page_num: int):
             return rx.button(
@@ -766,7 +804,6 @@ def solicitante_dashboard() -> rx.Component:
         
         return rx.box(
             rx.vstack(
-                # Encabezado
                 rx.hstack(
                     rx.vstack(
                         rx.heading("📦 Productos en Almacén", size="5", color="#1e293b"),
@@ -782,14 +819,13 @@ def solicitante_dashboard() -> rx.Component:
                     rx.badge(
                         f"{AlmacenState.filtered_data.length()} productos",
                         color_scheme="blue",
-                        variant="soft",
+                        variant="solid",
                         size="2"
                     ),
                     width="100%",
                     align="center"
                 ),
                 
-                # Controles de búsqueda
                 rx.box(
                     rx.vstack(
                         rx.hstack(
@@ -797,14 +833,15 @@ def solicitante_dashboard() -> rx.Component:
                                 placeholder="Buscar productos...",
                                 on_change=AlmacenState.filter_values,
                                 size="2",
-                                width="100%"
+                                width="100%",
+                                background="gray"
                             ),
                             rx.select(
                                 ["Numero", "Codigo", "Descripcion del producto", "Precio"],
                                 placeholder="Ordenar por...",
                                 on_change=AlmacenState.sort_values,
                                 size="2",
-                                width="100%"
+                                width="100%",
                             ),
                             spacing="3",
                             width="100%",
@@ -816,7 +853,6 @@ def solicitante_dashboard() -> rx.Component:
                     padding_bottom="1.5rem"
                 ),
                 
-                # Tabla con datos paginados
                 rx.cond(
                     AlmacenState.loading,
                     rx.center(rx.spinner(size="3"), padding="3rem"),
@@ -831,7 +867,6 @@ def solicitante_dashboard() -> rx.Component:
                             padding="3rem",
                         ),
                         rx.vstack(
-                            # Tabla con scroll horizontal
                             rx.box(
                                 rx.scroll_area(
                                     rx.table.root(
@@ -870,7 +905,6 @@ def solicitante_dashboard() -> rx.Component:
                                 width="100%"
                             ),
                             
-                            # Controles de paginación
                             rx.cond(
                                 AlmacenState.filtered_data.length() > AlmacenState.items_per_page,
                                 rx.box(
@@ -935,7 +969,6 @@ def solicitante_dashboard() -> rx.Component:
     
     def main_content():
         return rx.vstack(
-            # Encabezado principal
             rx.box(
                 rx.hstack(
                     rx.vstack(
@@ -981,7 +1014,6 @@ def solicitante_dashboard() -> rx.Component:
                 border_bottom="1px solid #e2e8f0"
             ),
             
-            # Contenido principal
             rx.vstack(
                 rx.box(nueva_solicitud_form(), width="100%"),
                 rx.box(productos_almacen_section(), width="100%"),
@@ -990,7 +1022,6 @@ def solicitante_dashboard() -> rx.Component:
                 width="100%"
             ),
             
-            # Estadísticas
             rx.box(
                 rx.hstack(
                     rx.card(

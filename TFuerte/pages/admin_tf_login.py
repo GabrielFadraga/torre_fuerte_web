@@ -18,7 +18,7 @@ def admin_tf_login() -> rx.Component:
                     rx.vstack(
                         rx.icon(
                             "shield", 
-                            size=48, 
+                            size=70, 
                             color="#0f766e",
                             style={
                                 "background": "linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%)",

@@ -961,7 +961,8 @@ def logistica_dashboard() -> rx.Component:
                                 placeholder="Ej: Electricidad, Plomeria, etc.",
                                 value=LogisticaState.nuevo_tipo,
                                 on_change=LogisticaState.set_nuevo_tipo,
-                                width="100%"
+                                width="100%",
+                                background="gray"
                             ),
                             spacing="1",
                             align="start",
@@ -973,7 +974,8 @@ def logistica_dashboard() -> rx.Component:
                                 placeholder="Ej: Cable 2.5mm",
                                 value=LogisticaState.nueva_descripcion,
                                 on_change=LogisticaState.set_nueva_descripcion,
-                                width="100%"
+                                width="100%",
+                                background="gray"
                             ),
                             spacing="1",
                             align="start",
@@ -988,7 +990,8 @@ def logistica_dashboard() -> rx.Component:
                                 step="0.01",
                                 value=LogisticaState.nuevo_precio,
                                 on_change=LogisticaState.set_nuevo_precio,
-                                width="100%"
+                                width="100%",
+                                background="gray"
                             ),
                             spacing="1",
                             align="start",
@@ -1033,7 +1036,8 @@ def logistica_dashboard() -> rx.Component:
                             rx.input(
                                 value=LogisticaState.precio_editado_tipo,
                                 on_change=LogisticaState.set_precio_editado_tipo,
-                                width="100%"
+                                width="100%",
+                                background="gray"
                             ),
                             spacing="1",
                             align="start",
@@ -1044,7 +1048,8 @@ def logistica_dashboard() -> rx.Component:
                             rx.input(
                                 value=LogisticaState.precio_editado_descripcion,
                                 on_change=LogisticaState.set_precio_editado_descripcion,
-                                width="100%"
+                                width="100%",
+                                background="gray"
                             ),
                             spacing="1",
                             align="start",
@@ -1058,7 +1063,8 @@ def logistica_dashboard() -> rx.Component:
                                 step="0.01",
                                 value=LogisticaState.precio_editado_precio,
                                 on_change=LogisticaState.set_precio_editado_precio,
-                                width="100%"
+                                width="100%",
+                                background="gray"
                             ),
                             spacing="1",
                             align="start",
@@ -1566,7 +1572,8 @@ def logistica_dashboard() -> rx.Component:
                                         placeholder="Buscar solicitudes...",
                                         on_change=LogisticaState.filter_solicitudes,
                                         width=["100%", "100%", "400px", "400px"],
-                                        size="3"
+                                        size="3",
+                                        background="gray"
                                     ),
                                     spacing="2",
                                     width="100%",

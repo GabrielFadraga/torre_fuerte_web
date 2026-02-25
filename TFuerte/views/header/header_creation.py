@@ -90,7 +90,7 @@ def headcreat() -> rx.Component:
                                 rx.hstack(
                                     rx.text("Contáctanos"),
                                     rx.icon(
-                                        tag="arrow_forward",
+                                        tag="check",
                                         size=20,
                                         margin_left="8px",
                                     ),

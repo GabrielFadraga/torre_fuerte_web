@@ -14,22 +14,22 @@ def admin_rm_dashboard() -> rx.Component:
     def estado_badge_rm(estado: str):
         return rx.cond(
             estado == "aprobado_tecnica",
-            rx.badge("APROBADO TÉCNICA", color_scheme="blue", variant="soft"),
+            rx.badge("APROBADO TÉCNICA", color_scheme="blue", variant="solid"),
             rx.cond(
                 estado == "aprobado_admin",
-                rx.badge("APROBADO ADMIN", color_scheme="green", variant="soft"),
-                rx.badge("RECHAZADA", color_scheme="red", variant="soft")
+                rx.badge("APROBADO ADMIN", color_scheme="green", variant="solid"),
+                rx.badge("RECHAZADA", color_scheme="red", variant="solid")
             )
         )
     
     def estado_badge_fin(estado: str):
         return rx.cond(
             estado == "aprobado_revfin",
-            rx.badge("APROBADO REV. FIN", color_scheme="blue", variant="soft"),
+            rx.badge("APROBADO REV. FIN", color_scheme="blue", variant="solid"),
             rx.cond(
                 estado == "completada",
-                rx.badge("COMPLETADA", color_scheme="green", variant="soft"),
-                rx.badge("RECHAZADA", color_scheme="red", variant="soft")
+                rx.badge("COMPLETADA", color_scheme="green", variant="solid"),
+                rx.badge("RECHAZADA", color_scheme="red", variant="solid")
             )
         )
     
@@ -197,7 +197,7 @@ def admin_rm_dashboard() -> rx.Component:
                                 num_recursos.to(str) + " productos"
                             ),
                             color_scheme="blue",
-                            variant="soft",
+                            variant="solid",
                             size="1"
                         ),
                         rx.button(
@@ -525,7 +525,7 @@ def admin_rm_dashboard() -> rx.Component:
                                 num_recursos.to(str) + " productos"
                             ),
                             color_scheme="blue",
-                            variant="soft",
+                            variant="solid",
                             size="1"
                         ),
                         rx.button(
@@ -741,7 +741,7 @@ def admin_rm_dashboard() -> rx.Component:
                                         AdminRMState.recursos_detalle_recursos,
                                         lambda recurso, idx: rx.box(
                                             rx.hstack(
-                                                rx.badge(idx + 1, color_scheme="purple", size="1"),
+                                                rx.badge(idx + 1, color_scheme="purple", size="1", variant="solid"),
                                                 rx.vstack(
                                                     rx.text(recurso.get("descripcion", "-"), size="2", font_weight="500"),
                                                     rx.hstack(
@@ -842,7 +842,7 @@ def admin_rm_dashboard() -> rx.Component:
                                         AdminRMState.recursos_detalle_fin,
                                         lambda recurso, idx: rx.box(
                                             rx.hstack(
-                                                rx.badge(idx + 1, color_scheme="green", size="1"),
+                                                rx.badge(idx + 1, color_scheme="green", size="1", variant="solid"),
                                                 rx.vstack(
                                                     rx.text(recurso.get("Descripcion", "-"), size="2", font_weight="500"),
                                                     rx.hstack(
@@ -1363,7 +1363,7 @@ def admin_rm_dashboard() -> rx.Component:
                                     spacing="0"
                                 ),
                                 color_scheme="purple",
-                                variant="soft",
+                                variant="solid",
                                 size="2"
                             ),
                             rx.badge(
@@ -1373,7 +1373,7 @@ def admin_rm_dashboard() -> rx.Component:
                                     spacing="0"
                                 ),
                                 color_scheme="green",
-                                variant="soft",
+                                variant="solid",
                                 size="2"
                             ),
                             rx.button(
@@ -1421,7 +1421,8 @@ def admin_rm_dashboard() -> rx.Component:
                                         placeholder="Buscar solicitudes RM...",
                                         on_change=AdminRMState.filter_solicitudes,
                                         width=["100%", "100%", "400px", "400px"],
-                                        size="3"
+                                        size="3",
+                                        background="gray"
                                     ),
                                     spacing="2",
                                     width="100%",
@@ -1494,7 +1495,8 @@ def admin_rm_dashboard() -> rx.Component:
                                         placeholder="Buscar solicitudes de financiamiento...",
                                         on_change=AdminRMState.filter_solicitudes_fin,
                                         width=["100%", "100%", "400px", "400px"],
-                                        size="3"
+                                        size="3",
+                                        background="gray"
                                     ),
                                     spacing="2",
                                     width="100%",
