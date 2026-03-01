@@ -473,7 +473,6 @@ def gallery() -> rx.Component:
             "delay": 0.8,
             "rotation": 3
         },
-
     ]
     
     # Lista de proyectos para ELÉCTRICA
@@ -537,6 +536,27 @@ def gallery() -> rx.Component:
             "image": "elec6.jpg",
             "delay": 0.6,
             "rotation": 1
+        },
+        # Nuevos proyectos eléctricos
+        {
+            "title": "Mantenimiento de grupo electrógeno - Panadería Río",
+            "category": "Eléctrica",
+            "description": "Reparación y mantenimiento de grupo electrógeno en panadería de La Habana",
+            "year": "2026",
+            "features": ["Grupo electrógeno", "Mantenimiento eléctrico", "Puesta en marcha"],
+            "image": "Rio.png",
+            "delay": 0.7,
+            "rotation": -3
+        },
+        {
+            "title": "Mantenimiento de grupo electrógeno - Panadería Bellas Artes",
+            "category": "Eléctrica",
+            "description": "Reparación y mantenimiento de grupo electrógeno en panadería de La Habana",
+            "year": "2026",
+            "features": ["Grupo electrógeno", "Sistema eléctrico", "Diagnóstico"],
+            "image": "BellasArtes.png",
+            "delay": 0.8,
+            "rotation": 3
         },
     ]
     
@@ -611,6 +631,47 @@ def gallery() -> rx.Component:
             "image": "meca7.jpg",
             "delay": 0.7,
             "rotation": -2
+        },
+        # Nuevos proyectos mecánicos
+        {
+            "title": "Rehabilitación de línea de fertilizantes",
+            "category": "Mecánica",
+            "description": "Trabajos de pailería, soldadura y taller en fábrica Rayonitro",
+            "year": "2026",
+            "features": ["Pailería", "Soldadura", "Trabajos de taller"],
+            "image": "Rayonitro.png",
+            "delay": 0.8,
+            "rotation": -2
+        },
+        {
+            "title": "Reparación de plancha de vapor",
+            "category": "Mecánica",
+            "description": "Mantenimiento y reparación de plancha de vapor en hotel de Varadero",
+            "year": "2026",
+            "features": ["Reparación de plancha", "Sistema de vapor", "Puesta en marcha"],
+            "image": "plancha.png",
+            "delay": 0.9,
+            "rotation": 1
+        },
+        {
+            "title": "Mantenimiento de secadora automática",
+            "category": "Mecánica",
+            "description": "Reparación y mantenimiento de secadora industrial en hotel",
+            "year": "2026",
+            "features": ["Secadora automática", "Mantenimiento preventivo", "Reparación mecánica"],
+            "image": "secadora.png",
+            "delay": 1.0,
+            "rotation": -1
+        },
+        {
+            "title": "Evaluación de duchas para evitar inundaciones",
+            "category": "Mecánica",
+            "description": "Levantamiento de instalaciones y evaluación para modificación de duchas en sótano",
+            "year": "2026",
+            "features": ["Instalaciones hidráulicas", "Evaluación técnica", "Prevención de inundaciones"],
+            "image": "hospital.png",
+            "delay": 1.1,
+            "rotation": 2
         },
     ]
     

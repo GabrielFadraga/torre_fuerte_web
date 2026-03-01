@@ -4,9 +4,10 @@ from TFuerte.components.title import title
 from TFuerte.components.link_sponsor import link_sponsor
 
 def sponsor() -> rx.Component:
+    """Versión desktop: las 6 tarjetas en grid de 6 columnas iguales"""
     return rx.box(
         rx.vstack(
-            # Título de la sección
+            # Título de la sección (sin cambios)
             rx.center(
                 rx.vstack(
                     rx.box(
@@ -43,9 +44,9 @@ def sponsor() -> rx.Component:
                 padding_y=styles.Spacer.LARGE.value,
             ),
             
-            # Grid de logos de clientes
+            # Grid de clientes (6 columnas iguales)
             rx.center(
-                rx.hstack(
+                rx.grid(
                     # Cliente 1 - Navegación
                     rx.box(
                         rx.link(
@@ -87,15 +88,8 @@ def sponsor() -> rx.Component:
                             "background": "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)",
                             "border": "1px solid rgba(255,255,255,0.2)",
                             "box_shadow": "0 10px 30px rgba(0,0,0,0.2)",
-                        }
-                    ),
-                    
-                    # Separador decorativo
-                    rx.box(
-                        width="1px",
-                        height="40px",
-                        background="linear-gradient(180deg, transparent, rgba(255,255,255,0.3), transparent)",
-                        margin_x="20px",
+                        },
+                        width="100%",  # Asegura que la tarjeta ocupe todo el ancho de la columna
                     ),
                     
                     # Cliente 2 - Salud
@@ -139,15 +133,8 @@ def sponsor() -> rx.Component:
                             "background": "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)",
                             "border": "1px solid rgba(255,255,255,0.2)",
                             "box_shadow": "0 10px 30px rgba(0,0,0,0.2)",
-                        }
-                    ),
-                    
-                    # Separador decorativo
-                    rx.box(
-                        width="1px",
-                        height="40px",
-                        background="linear-gradient(180deg, transparent, rgba(255,255,255,0.3), transparent)",
-                        margin_x="20px",
+                        },
+                        width="100%",
                     ),
                     
                     # Cliente 3 - Engimov
@@ -191,18 +178,11 @@ def sponsor() -> rx.Component:
                             "background": "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)",
                             "border": "1px solid rgba(255,255,255,0.2)",
                             "box_shadow": "0 10px 30px rgba(0,0,0,0.2)",
-                        }
+                        },
+                        width="100%",
                     ),
                     
-                    # Separador decorativo
-                    rx.box(
-                        width="1px",
-                        height="40px",
-                        background="linear-gradient(180deg, transparent, rgba(255,255,255,0.3), transparent)",
-                        margin_x="20px",
-                    ),
-                    
-                    # Cliente 4 - Prácticos de Puerto (NUEVO)
+                    # Cliente 4 - Prácticos de Puerto
                     rx.box(
                         rx.link(
                             rx.vstack(
@@ -243,21 +223,108 @@ def sponsor() -> rx.Component:
                             "background": "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)",
                             "border": "1px solid rgba(255,255,255,0.2)",
                             "box_shadow": "0 10px 30px rgba(0,0,0,0.2)",
-                        }
+                        },
+                        width="100%",
                     ),
                     
-                    align_items="center",
-                    justify="center",
-                    spacing="0",
+                    # Cliente 5 - Unión Eléctrica
+                    rx.box(
+                        rx.link(
+                            rx.vstack(
+                                rx.image(
+                                    src="UNE.png",
+                                    width="120px",
+                                    height="60px",
+                                    object_fit="contain",
+                                    filter="brightness(0) invert(1)",
+                                    transition="all 0.3s ease",
+                                    _hover={
+                                        "transform": "scale(1.1)",
+                                        "filter": "brightness(0) invert(1) drop-shadow(0 4px 12px rgba(255,255,255,0.3))",
+                                    }
+                                ),
+                                rx.text(
+                                    "Unión Eléctrica",
+                                    font_size="12px",
+                                    color="rgba(255,255,255,0.7)",
+                                    text_align="center",
+                                    margin_top="8px",
+                                    font_weight="medium",
+                                ),
+                                align_items="center",
+                                spacing="2",
+                            ),
+                            href="https://www.unionelectrica.cu/",
+                            is_external=True,
+                        ),
+                        padding="20px",
+                        background="linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
+                        border_radius="12px",
+                        border="1px solid rgba(255,255,255,0.1)",
+                        backdrop_filter="blur(10px)",
+                        transition="all 0.3s ease",
+                        _hover={
+                            "transform": "translateY(-5px)",
+                            "background": "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)",
+                            "border": "1px solid rgba(255,255,255,0.2)",
+                            "box_shadow": "0 10px 30px rgba(0,0,0,0.2)",
+                        },
+                        width="100%",
+                    ),
+                    
+                    # Cliente 6 - Ministerio de la Industria Alimentaria (sin link)
+                    rx.box(
+                        rx.vstack(
+                            rx.image(
+                                src="MINAL.png",
+                                width="120px",
+                                height="60px",
+                                object_fit="contain",
+                                filter="brightness(0) invert(1)",
+                                transition="all 0.3s ease",
+                                _hover={
+                                    "transform": "scale(1.1)",
+                                    "filter": "brightness(0) invert(1) drop-shadow(0 4px 12px rgba(255,255,255,0.3))",
+                                }
+                            ),
+                            rx.text(
+                                "Ministerio de la Industria Alimentaria",
+                                font_size="12px",
+                                color="rgba(255,255,255,0.7)",
+                                text_align="center",
+                                margin_top="8px",
+                                font_weight="medium",
+                            ),
+                            align_items="center",
+                            spacing="2",
+                        ),
+                        padding="20px",
+                        background="linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
+                        border_radius="12px",
+                        border="1px solid rgba(255,255,255,0.1)",
+                        backdrop_filter="blur(10px)",
+                        transition="all 0.3s ease",
+                        _hover={
+                            "transform": "translateY(-5px)",
+                            "background": "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)",
+                            "border": "1px solid rgba(255,255,255,0.2)",
+                            "box_shadow": "0 10px 30px rgba(0,0,0,0.2)",
+                        },
+                        width="100%",
+                    ),
+                    
+                    columns="6",          # 6 columnas de igual ancho
+                    spacing="6",           # Espaciado entre tarjetas
                     width="100%",
                     max_width="1200px",
+                    justify="center",
                 ),
                 width="100%",
                 padding_y=styles.Spacer.LARGE.value,
                 padding_x=styles.Spacer.LARGE.value,
             ),
             
-            # Línea decorativa inferior
+            # Línea decorativa inferior (sin cambios)
             rx.center(
                 rx.box(
                     width="100px",
@@ -428,7 +495,7 @@ def sponsor_mobile() -> rx.Component:
                     max_width="250px",
                 ),
                 
-                # Cliente 4 - Prácticos de Puerto (NUEVO)
+                # Cliente 4
                 rx.box(
                     rx.link(
                         rx.vstack(
@@ -452,6 +519,68 @@ def sponsor_mobile() -> rx.Component:
                         ),
                         href="https://www.practicosdepuerto.es",
                         is_external=True,
+                    ),
+                    padding="16px",
+                    background="linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
+                    border_radius="10px",
+                    border="1px solid rgba(255,255,255,0.1)",
+                    width="100%",
+                    max_width="250px",
+                ),
+                
+                # Cliente 5 - Unión Eléctrica (NUEVO)
+                rx.box(
+                    rx.link(
+                        rx.vstack(
+                            rx.image(
+                                src="UNE.png",
+                                width="100px",
+                                height="50px",
+                                object_fit="contain",
+                                filter="brightness(0) invert(1)",
+                            ),
+                            rx.text(
+                                "Unión Eléctrica",
+                                font_size="11px",
+                                color="rgba(255,255,255,0.7)",
+                                text_align="center",
+                                margin_top="6px",
+                                font_weight="medium",
+                            ),
+                            align_items="center",
+                            spacing="2",
+                        ),
+                        href="https://www.unionelectrica.cu/",
+                        is_external=True,
+                    ),
+                    padding="16px",
+                    background="linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
+                    border_radius="10px",
+                    border="1px solid rgba(255,255,255,0.1)",
+                    width="100%",
+                    max_width="250px",
+                ),
+                
+                # Cliente 6 - Ministerio de la Industria Alimentaria (NUEVO, sin link)
+                rx.box(
+                    rx.vstack(
+                        rx.image(
+                            src="MINAL.png",
+                            width="100px",
+                            height="50px",
+                            object_fit="contain",
+                            filter="brightness(0) invert(1)",
+                        ),
+                        rx.text(
+                            "Ministerio de la Industria Alimentaria",
+                            font_size="11px",
+                            color="rgba(255,255,255,0.7)",
+                            text_align="center",
+                            margin_top="6px",
+                            font_weight="medium",
+                        ),
+                        align_items="center",
+                        spacing="2",
                     ),
                     padding="16px",
                     background="linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
