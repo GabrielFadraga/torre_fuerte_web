@@ -1256,7 +1256,7 @@ def solicitante_rm_form() -> rx.Component:
         def precios_table() -> rx.Component:
             """Tabla de precios con paginación estilo logística."""
             
-            # Botón de página individual
+            # Botón de página individual con ancho fijo
             def create_page_button_precios(page_num: int):
                 return rx.button(
                     rx.text(page_num, size="2", font_weight="500"),
@@ -1271,8 +1271,8 @@ def solicitante_rm_form() -> rx.Component:
                             "border": "1px solid #10b981",
                             "_hover": {"background": "#059669"},
                             "flex_shrink": 0,
-                            "min_width": "32px",
-                            "padding": "0 8px",
+                            "width": "36px",          # Ancho fijo
+                            "padding": "0",            # Sin padding horizontal
                         },
                         {
                             "background": "white",
@@ -1283,8 +1283,8 @@ def solicitante_rm_form() -> rx.Component:
                                 "border": "1px solid #cbd5e1"
                             },
                             "flex_shrink": 0,
-                            "min_width": "32px",
-                            "padding": "0 8px",
+                            "width": "36px",           # Ancho fijo
+                            "padding": "0",             # Sin padding horizontal
                         }
                     )
                 )
@@ -1292,7 +1292,7 @@ def solicitante_rm_form() -> rx.Component:
             # Controles de paginación
             def render_pagination_precios():
                 return rx.hstack(
-                    # Botón anterior
+                    # Botón anterior con ancho fijo
                     rx.button(
                         rx.icon("chevron-left", size=16),
                         on_click=SolicitanteRMState.previous_page_precios,
@@ -1304,11 +1304,11 @@ def solicitante_rm_form() -> rx.Component:
                             "border": "1px solid #e2e8f0",
                             "color": "#1e293b",
                             "flex_shrink": 0,
-                            "min_width": "32px",
-                            "padding": "0 8px",
+                            "width": "36px",           # Ancho fijo
+                            "padding": "0",             # Sin padding
                         }
                     ),
-                    # Contenedor de números
+                    # Contenedor de números con ancho fijo
                     rx.box(
                         rx.hstack(
                             rx.cond(
@@ -1351,13 +1351,13 @@ def solicitante_rm_form() -> rx.Component:
                             spacing="1",
                             wrap="nowrap",
                             align="center",
+                            justify="end",             # Alinea los botones a la derecha dentro del contenedor
                         ),
-                        overflow_x="auto",
-                        flex_grow=0,
-                        flex_shrink=1,
-                        max_width="100%",
+                        width="220px",                  # Ancho fijo para el contenedor de números
+                        flex_shrink=0,
+                        overflow_x="auto",              # Scroll horizontal si es necesario (pocas páginas, no debería)
                     ),
-                    # Botón siguiente
+                    # Botón siguiente con ancho fijo
                     rx.button(
                         rx.hstack(
                             rx.icon("chevron-right", size=16),
@@ -1375,8 +1375,8 @@ def solicitante_rm_form() -> rx.Component:
                             "border": "1px solid #e2e8f0",
                             "color": "#1e293b",
                             "flex_shrink": 0,
-                            "min_width": "32px",
-                            "padding": "0 8px",
+                            "width": "36px",           # Ancho fijo
+                            "padding": "0",             # Sin padding
                         }
                     ),
                     spacing="2",
@@ -1501,18 +1501,18 @@ def solicitante_rm_form() -> rx.Component:
                                         size="2",
                                         color="#64748b",
                                         font_weight="500",
-                                        flex_shrink=0,
-                                        margin_right="8rem",
+                                        flex=1,                       # Ocupa el espacio disponible
+                                        margin_right="1rem",           # Separación del texto respecto a los botones
                                     ),
-                                    rx.spacer(),
+                                    
                                     rx.box(
                                         render_pagination_precios(),
                                         flex_shrink=0,
-                                        margin_left="0.5rem",
                                     ),
                                     width="100%",
                                     align="center",
-                                    spacing="6",
+                                    justify="between",          # Texto a la izquierda, botones a la derecha
+                                    spacing="2",
                                     wrap="wrap",
                                 ),
                                 padding="1.5rem 1rem",

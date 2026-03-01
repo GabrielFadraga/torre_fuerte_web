@@ -759,7 +759,7 @@ def logistica_dashboard() -> rx.Component:
                             precio.get("Descripcion", "-"),
                             color="#1F1F1F",
                             style={
-                                "max_width": "200px",
+                                "max_width": "500px",
                                 "overflow": "hidden",
                                 "text_overflow": "ellipsis",
                                 "white_space": "nowrap"
@@ -900,6 +900,7 @@ def logistica_dashboard() -> rx.Component:
                                         color="#64748b",
                                         font_weight="500",
                                         flex_shrink=0,
+                                        margin_right="15rem"
                                     ),
                                     rx.spacer(),
                                     rx.box(
@@ -1119,7 +1120,7 @@ def logistica_dashboard() -> rx.Component:
                         width="100%",
                         margin_y="1rem"
                     ),
-                    rx.hstack(
+                    rx.vstack(
                         rx.dialog.close(
                             rx.button("Cancelar", variant="soft", size="2"),
                         ),
