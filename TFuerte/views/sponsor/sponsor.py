@@ -2,12 +2,107 @@ import reflex as rx
 import TFuerte.styles.styles as styles
 from TFuerte.components.title import title
 from TFuerte.components.link_sponsor import link_sponsor
+from typing import List
+
+# Constantes fijas para el carrusel
+CARD_WIDTH = 250
+CARD_GAP = 16
+ITEMS_PER_PAGE = 4
+CARD_HEIGHT = 180  # Altura fija para todas las tarjetas
+
+class SponsorCarouselState(rx.State):
+    current_index: int = 0
+
+    clients: List[dict] = [
+        {"src": "navegacion.png", "name": "Empresa de Navegación Caribe", "href": "https://www.gemar.transnet.cu/es/empresas/empresa-de-navegacion-caribe"},
+        {"src": "salud.png", "name": "Ministerio de Salud Pública", "href": "https://salud.msp.gob.cu/"},
+        {"src": "eng.png", "name": "Engimov Caribe", "href": "https://www.engimov.pt/es/grupo/engimov-caribe"},
+        {"src": "puerto.png", "name": "Prácticos de Puerto", "href": "https://www.practicosdepuerto.es"},
+        {"src": "UNE.png", "name": "Unión Eléctrica", "href": "https://www.unionelectrica.cu/"},
+        {"src": "MINAL.png", "name": "Ministerio de la Industria Alimentaria", "href": None},
+        {"src": "turcos.png", "name": "Karadeniz Holding", "href": "https://www.karadenizholding.com/"},
+    ]
+
+    @rx.var
+    def total_width(self) -> int:
+        return len(self.clients) * CARD_WIDTH + (len(self.clients) - 1) * CARD_GAP
+
+    @rx.var
+    def visible_width(self) -> int:
+        return ITEMS_PER_PAGE * CARD_WIDTH + (ITEMS_PER_PAGE - 1) * CARD_GAP
+
+    @rx.var
+    def translate_x(self) -> str:
+        return f"translateX(-{self.current_index * (CARD_WIDTH + CARD_GAP)}px)"
+
+    @rx.var
+    def max_index(self) -> int:
+        return len(self.clients) - ITEMS_PER_PAGE
+
+    def next(self):
+        if self.current_index < self.max_index:
+            self.current_index += 1
+        else:
+            self.current_index = 0
+
+    def next_auto(self):
+        self.next()
+
+def client_card(client: dict) -> rx.Component:
+    content = rx.vstack(
+        rx.image(
+            src=client["src"],
+            width="120px",
+            height="60px",
+            object_fit="contain",
+            filter="brightness(0) invert(1)",
+            transition="all 0.3s ease",
+            _hover={
+                "transform": "scale(1.1)",
+                "filter": "brightness(0) invert(1) drop-shadow(0 4px 12px rgba(255,255,255,0.3))",
+            },
+        ),
+        rx.text(
+            client["name"],
+            font_size="12px",
+            color="rgba(255,255,255,0.7)",
+            text_align="center",
+            margin_top="8px",
+            font_weight="medium",
+        ),
+        align_items="center",
+        justify_content="center",  # Centrado vertical
+        spacing="2",
+        width="100%",
+        height="100%",  # Ocupa toda la altura de la tarjeta
+    )
+    return rx.box(
+        rx.cond(
+            client["href"],
+            rx.link(content, href=client["href"], is_external=True),
+            content,
+        ),
+        padding="20px",
+        background="linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
+        border_radius="12px",
+        border="1px solid rgba(255,255,255,0.1)",
+        backdrop_filter="blur(10px)",
+        transition="all 0.3s ease",
+        _hover={
+            "transform": "translateY(-5px)",
+            "background": "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)",
+            "border": "1px solid rgba(255,255,255,0.2)",
+            "box_shadow": "0 10px 30px rgba(0,0,0,0.2)",
+        },
+        width=f"{CARD_WIDTH}px",
+        height=f"{CARD_HEIGHT}px",  # Altura fija para uniformidad
+        flex_shrink=0,
+    )
 
 def sponsor() -> rx.Component:
-    """Versión desktop: las 6 tarjetas en grid de 6 columnas iguales"""
     return rx.box(
         rx.vstack(
-            # Título de la sección (sin cambios)
+            # Título de la sección
             rx.center(
                 rx.vstack(
                     rx.box(
@@ -43,298 +138,47 @@ def sponsor() -> rx.Component:
                 width="100%",
                 padding_y=styles.Spacer.LARGE.value,
             ),
-            
-            # Grid de clientes (6 columnas iguales)
+            # Carrusel centrado
             rx.center(
-                rx.grid(
-                    # Cliente 1 - Navegación
-                    rx.box(
-                        rx.link(
-                            rx.vstack(
-                                rx.image(
-                                    src="navegacion.png",
-                                    width="120px",
-                                    height="60px",
-                                    object_fit="contain",
-                                    filter="brightness(0) invert(1)",
-                                    transition="all 0.3s ease",
-                                    _hover={
-                                        "transform": "scale(1.1)",
-                                        "filter": "brightness(0) invert(1) drop-shadow(0 4px 12px rgba(255,255,255,0.3))",
-                                    }
-                                ),
-                                rx.text(
-                                    "Empresa de Navegación Caribe",
-                                    font_size="12px",
-                                    color="rgba(255,255,255,0.7)",
-                                    text_align="center",
-                                    margin_top="8px",
-                                    font_weight="medium",
-                                ),
-                                align_items="center",
-                                spacing="2",
+                rx.box(
+                    rx.hstack(
+                        rx.hstack(
+                            rx.foreach(
+                                SponsorCarouselState.clients,
+                                lambda client: client_card(client)
                             ),
-                            href="https://www.gemar.transnet.cu/es/empresas/empresa-de-navegacion-caribe",
-                            is_external=True,
+                            style={"gap": f"{CARD_GAP}px"},
+                            transform=SponsorCarouselState.translate_x,
+                            transition="transform 0.5s ease",
+                            width=f"{SponsorCarouselState.total_width}px",
                         ),
-                        padding="20px",
-                        background="linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
-                        border_radius="12px",
-                        border="1px solid rgba(255,255,255,0.1)",
-                        backdrop_filter="blur(10px)",
-                        transition="all 0.3s ease",
-                        _hover={
-                            "transform": "translateY(-5px)",
-                            "background": "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)",
-                            "border": "1px solid rgba(255,255,255,0.2)",
-                            "box_shadow": "0 10px 30px rgba(0,0,0,0.2)",
-                        },
-                        width="100%",  # Asegura que la tarjeta ocupe todo el ancho de la columna
+                        overflow_x="hidden",
+                        width=f"{SponsorCarouselState.visible_width}px",
                     ),
-                    
-                    # Cliente 2 - Salud
-                    rx.box(
-                        rx.link(
-                            rx.vstack(
-                                rx.image(
-                                    src="salud.png",
-                                    width="120px",
-                                    height="60px",
-                                    object_fit="contain",
-                                    filter="brightness(0) invert(1)",
-                                    transition="all 0.3s ease",
-                                    _hover={
-                                        "transform": "scale(1.1)",
-                                        "filter": "brightness(0) invert(1) drop-shadow(0 4px 12px rgba(255,255,255,0.3))",
-                                    }
-                                ),
-                                rx.text(
-                                    "Ministerio de Salud Pública",
-                                    font_size="12px",
-                                    color="rgba(255,255,255,0.7)",
-                                    text_align="center",
-                                    margin_top="8px",
-                                    font_weight="medium",
-                                ),
-                                align_items="center",
-                                spacing="2",
-                            ),
-                            href="https://salud.msp.gob.cu/",
-                            is_external=True,
-                        ),
-                        padding="20px",
-                        background="linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
-                        border_radius="12px",
-                        border="1px solid rgba(255,255,255,0.1)",
-                        backdrop_filter="blur(10px)",
-                        transition="all 0.3s ease",
-                        _hover={
-                            "transform": "translateY(-5px)",
-                            "background": "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)",
-                            "border": "1px solid rgba(255,255,255,0.2)",
-                            "box_shadow": "0 10px 30px rgba(0,0,0,0.2)",
-                        },
-                        width="100%",
-                    ),
-                    
-                    # Cliente 3 - Engimov
-                    rx.box(
-                        rx.link(
-                            rx.vstack(
-                                rx.image(
-                                    src="eng.png",
-                                    width="120px",
-                                    height="60px",
-                                    object_fit="contain",
-                                    filter="brightness(0) invert(1)",
-                                    transition="all 0.3s ease",
-                                    _hover={
-                                        "transform": "scale(1.1)",
-                                        "filter": "brightness(0) invert(1) drop-shadow(0 4px 12px rgba(255,255,255,0.3))",
-                                    }
-                                ),
-                                rx.text(
-                                    "Engimov Caribe",
-                                    font_size="12px",
-                                    color="rgba(255,255,255,0.7)",
-                                    text_align="center",
-                                    margin_top="8px",
-                                    font_weight="medium",
-                                ),
-                                align_items="center",
-                                spacing="2",
-                            ),
-                            href="https://www.engimov.pt/es/grupo/engimov-caribe",
-                            is_external=True,
-                        ),
-                        padding="20px",
-                        background="linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
-                        border_radius="12px",
-                        border="1px solid rgba(255,255,255,0.1)",
-                        backdrop_filter="blur(10px)",
-                        transition="all 0.3s ease",
-                        _hover={
-                            "transform": "translateY(-5px)",
-                            "background": "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)",
-                            "border": "1px solid rgba(255,255,255,0.2)",
-                            "box_shadow": "0 10px 30px rgba(0,0,0,0.2)",
-                        },
-                        width="100%",
-                    ),
-                    
-                    # Cliente 4 - Prácticos de Puerto
-                    rx.box(
-                        rx.link(
-                            rx.vstack(
-                                rx.image(
-                                    src="puerto.png",
-                                    width="120px",
-                                    height="60px",
-                                    object_fit="contain",
-                                    filter="brightness(0) invert(1)",
-                                    transition="all 0.3s ease",
-                                    _hover={
-                                        "transform": "scale(1.1)",
-                                        "filter": "brightness(0) invert(1) drop-shadow(0 4px 12px rgba(255,255,255,0.3))",
-                                    }
-                                ),
-                                rx.text(
-                                    "Prácticos de Puerto",
-                                    font_size="12px",
-                                    color="rgba(255,255,255,0.7)",
-                                    text_align="center",
-                                    margin_top="8px",
-                                    font_weight="medium",
-                                ),
-                                align_items="center",
-                                spacing="2",
-                            ),
-                            href="https://www.practicosdepuerto.es",
-                            is_external=True,
-                        ),
-                        padding="20px",
-                        background="linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
-                        border_radius="12px",
-                        border="1px solid rgba(255,255,255,0.1)",
-                        backdrop_filter="blur(10px)",
-                        transition="all 0.3s ease",
-                        _hover={
-                            "transform": "translateY(-5px)",
-                            "background": "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)",
-                            "border": "1px solid rgba(255,255,255,0.2)",
-                            "box_shadow": "0 10px 30px rgba(0,0,0,0.2)",
-                        },
-                        width="100%",
-                    ),
-                    
-                    # Cliente 5 - Unión Eléctrica
-                    rx.box(
-                        rx.link(
-                            rx.vstack(
-                                rx.image(
-                                    src="UNE.png",
-                                    width="120px",
-                                    height="60px",
-                                    object_fit="contain",
-                                    filter="brightness(0) invert(1)",
-                                    transition="all 0.3s ease",
-                                    _hover={
-                                        "transform": "scale(1.1)",
-                                        "filter": "brightness(0) invert(1) drop-shadow(0 4px 12px rgba(255,255,255,0.3))",
-                                    }
-                                ),
-                                rx.text(
-                                    "Unión Eléctrica",
-                                    font_size="12px",
-                                    color="rgba(255,255,255,0.7)",
-                                    text_align="center",
-                                    margin_top="8px",
-                                    font_weight="medium",
-                                ),
-                                align_items="center",
-                                spacing="2",
-                            ),
-                            href="https://www.unionelectrica.cu/",
-                            is_external=True,
-                        ),
-                        padding="20px",
-                        background="linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
-                        border_radius="12px",
-                        border="1px solid rgba(255,255,255,0.1)",
-                        backdrop_filter="blur(10px)",
-                        transition="all 0.3s ease",
-                        _hover={
-                            "transform": "translateY(-5px)",
-                            "background": "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)",
-                            "border": "1px solid rgba(255,255,255,0.2)",
-                            "box_shadow": "0 10px 30px rgba(0,0,0,0.2)",
-                        },
-                        width="100%",
-                    ),
-                    
-                    # Cliente 6 - Ministerio de la Industria Alimentaria (sin link)
-                    rx.box(
-                        rx.vstack(
-                            rx.image(
-                                src="MINAL.png",
-                                width="120px",
-                                height="60px",
-                                object_fit="contain",
-                                filter="brightness(0) invert(1)",
-                                transition="all 0.3s ease",
-                                _hover={
-                                    "transform": "scale(1.1)",
-                                    "filter": "brightness(0) invert(1) drop-shadow(0 4px 12px rgba(255,255,255,0.3))",
-                                }
-                            ),
-                            rx.text(
-                                "Ministerio de la Industria Alimentaria",
-                                font_size="12px",
-                                color="rgba(255,255,255,0.7)",
-                                text_align="center",
-                                margin_top="8px",
-                                font_weight="medium",
-                            ),
-                            align_items="center",
-                            spacing="2",
-                        ),
-                        padding="20px",
-                        background="linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
-                        border_radius="12px",
-                        border="1px solid rgba(255,255,255,0.1)",
-                        backdrop_filter="blur(10px)",
-                        transition="all 0.3s ease",
-                        _hover={
-                            "transform": "translateY(-5px)",
-                            "background": "linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.08) 100%)",
-                            "border": "1px solid rgba(255,255,255,0.2)",
-                            "box_shadow": "0 10px 30px rgba(0,0,0,0.2)",
-                        },
-                        width="100%",
-                    ),
-                    
-                    columns="6",          # 6 columnas de igual ancho
-                    spacing="6",           # Espaciado entre tarjetas
                     width="100%",
-                    max_width="1200px",
-                    justify="center",
+                    display="flex",
+                    justify_content="center",
                 ),
                 width="100%",
                 padding_y=styles.Spacer.LARGE.value,
                 padding_x=styles.Spacer.LARGE.value,
             ),
-            
-            # Línea decorativa inferior (sin cambios)
+            # Línea decorativa inferior
             rx.center(
                 rx.box(
                     width="100px",
                     height="3px",
                     background="linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)",
-                    margin_bottom=styles.Spacer.LARGE.value,
                 ),
                 width="100%",
+                margin_bottom=styles.Spacer.LARGE.value,
             ),
-            
+            # Temporizador invisible (cada 5 segundos)
+            rx.moment(
+                interval=5000,
+                on_change=SponsorCarouselState.next_auto,
+                display="none",
+            ),
             spacing="0",
             width="100%",
         ),
@@ -350,14 +194,12 @@ def sponsor() -> rx.Component:
             "right": "0",
             "bottom": "0",
             "background": "radial-gradient(circle at 30% 70%, rgba(255,255,255,0.1) 0%, transparent 50%)",
-        }
+        },
     )
 
-# Versión móvil optimizada
 def sponsor_mobile() -> rx.Component:
     return rx.box(
         rx.vstack(
-            # Título de la sección
             rx.center(
                 rx.vstack(
                     rx.box(
@@ -393,209 +235,16 @@ def sponsor_mobile() -> rx.Component:
                 padding_y=styles.Spacer.LARGE.value,
                 padding_x=styles.Spacer.MEDIUM.value,
             ),
-            
-            # Grid de logos en móvil
             rx.vstack(
-                # Cliente 1
-                rx.box(
-                    rx.link(
-                        rx.vstack(
-                            rx.image(
-                                src="navegacion.png",
-                                width="100px",
-                                height="50px",
-                                object_fit="contain",
-                                filter="brightness(0) invert(1)",
-                            ),
-                            rx.text(
-                                "Empresa de Navegación Caribe",
-                                font_size="11px",
-                                color="rgba(255,255,255,0.7)",
-                                text_align="center",
-                                margin_top="6px",
-                                font_weight="medium",
-                            ),
-                            align_items="center",
-                            spacing="2",
-                        ),
-                        href="https://www.gemar.transnet.cu/es/empresas/empresa-de-navegacion-caribe",
-                        is_external=True,
-                    ),
-                    padding="16px",
-                    background="linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
-                    border_radius="10px",
-                    border="1px solid rgba(255,255,255,0.1)",
-                    width="100%",
-                    max_width="250px",
+                rx.foreach(
+                    SponsorCarouselState.clients,
+                    lambda client: client_card(client)
                 ),
-                
-                # Cliente 2
-                rx.box(
-                    rx.link(
-                        rx.vstack(
-                            rx.image(
-                                src="salud.png",
-                                width="100px",
-                                height="50px",
-                                object_fit="contain",
-                                filter="brightness(0) invert(1)",
-                            ),
-                            rx.text(
-                                "Ministerio de Salud Pública",
-                                font_size="11px",
-                                color="rgba(255,255,255,0.7)",
-                                text_align="center",
-                                margin_top="6px",
-                                font_weight="medium",
-                            ),
-                            align_items="center",
-                            spacing="2",
-                        ),
-                        href="https://salud.msp.gob.cu/",
-                        is_external=True,
-                    ),
-                    padding="16px",
-                    background="linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
-                    border_radius="10px",
-                    border="1px solid rgba(255,255,255,0.1)",
-                    width="100%",
-                    max_width="250px",
-                ),
-                
-                # Cliente 3
-                rx.box(
-                    rx.link(
-                        rx.vstack(
-                            rx.image(
-                                src="eng.png",
-                                width="100px",
-                                height="50px",
-                                object_fit="contain",
-                                filter="brightness(0) invert(1)",
-                            ),
-                            rx.text(
-                                "Engimov Caribe",
-                                font_size="11px",
-                                color="rgba(255,255,255,0.7)",
-                                text_align="center",
-                                margin_top="6px",
-                                font_weight="medium",
-                            ),
-                            align_items="center",
-                            spacing="2",
-                        ),
-                        href="https://www.engimov.pt/es/grupo/engimov-caribe",
-                        is_external=True,
-                    ),
-                    padding="16px",
-                    background="linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
-                    border_radius="10px",
-                    border="1px solid rgba(255,255,255,0.1)",
-                    width="100%",
-                    max_width="250px",
-                ),
-                
-                # Cliente 4
-                rx.box(
-                    rx.link(
-                        rx.vstack(
-                            rx.image(
-                                src="puerto.png",
-                                width="100px",
-                                height="50px",
-                                object_fit="contain",
-                                filter="brightness(0) invert(1)",
-                            ),
-                            rx.text(
-                                "Prácticos de Puerto",
-                                font_size="11px",
-                                color="rgba(255,255,255,0.7)",
-                                text_align="center",
-                                margin_top="6px",
-                                font_weight="medium",
-                            ),
-                            align_items="center",
-                            spacing="2",
-                        ),
-                        href="https://www.practicosdepuerto.es",
-                        is_external=True,
-                    ),
-                    padding="16px",
-                    background="linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
-                    border_radius="10px",
-                    border="1px solid rgba(255,255,255,0.1)",
-                    width="100%",
-                    max_width="250px",
-                ),
-                
-                # Cliente 5 - Unión Eléctrica (NUEVO)
-                rx.box(
-                    rx.link(
-                        rx.vstack(
-                            rx.image(
-                                src="UNE.png",
-                                width="100px",
-                                height="50px",
-                                object_fit="contain",
-                                filter="brightness(0) invert(1)",
-                            ),
-                            rx.text(
-                                "Unión Eléctrica",
-                                font_size="11px",
-                                color="rgba(255,255,255,0.7)",
-                                text_align="center",
-                                margin_top="6px",
-                                font_weight="medium",
-                            ),
-                            align_items="center",
-                            spacing="2",
-                        ),
-                        href="https://www.unionelectrica.cu/",
-                        is_external=True,
-                    ),
-                    padding="16px",
-                    background="linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
-                    border_radius="10px",
-                    border="1px solid rgba(255,255,255,0.1)",
-                    width="100%",
-                    max_width="250px",
-                ),
-                
-                # Cliente 6 - Ministerio de la Industria Alimentaria (NUEVO, sin link)
-                rx.box(
-                    rx.vstack(
-                        rx.image(
-                            src="MINAL.png",
-                            width="100px",
-                            height="50px",
-                            object_fit="contain",
-                            filter="brightness(0) invert(1)",
-                        ),
-                        rx.text(
-                            "Ministerio de la Industria Alimentaria",
-                            font_size="11px",
-                            color="rgba(255,255,255,0.7)",
-                            text_align="center",
-                            margin_top="6px",
-                            font_weight="medium",
-                        ),
-                        align_items="center",
-                        spacing="2",
-                    ),
-                    padding="16px",
-                    background="linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)",
-                    border_radius="10px",
-                    border="1px solid rgba(255,255,255,0.1)",
-                    width="100%",
-                    max_width="250px",
-                ),
-                
                 align_items="center",
                 spacing="4",
                 width="100%",
                 padding_y=styles.Spacer.LARGE.value,
             ),
-            
             spacing="0",
             width="100%",
         ),
@@ -603,7 +252,6 @@ def sponsor_mobile() -> rx.Component:
         width="100%",
     )
 
-# Componente final con responsive
 def sponsor_final() -> rx.Component:
     return rx.box(
         rx.desktop_only(sponsor()),
