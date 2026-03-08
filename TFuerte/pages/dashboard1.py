@@ -35,11 +35,11 @@ def admin_dashboard() -> rx.Component:
         ("18", "MEDIOS DE PROTECCIÓN")
     ]
     
-    # Función para la tabla con paginación
+    # Función para la tabla con paginación (estilo Productos Disponibles)
     def productos_table() -> rx.Component:
-        """Tabla de productos con paginación estilo dashboard."""
+        """Tabla de productos con paginación estilo financiamiento."""
         
-        # Botón de página individual
+        # Botón de página individual (ancho fijo 36px)
         def create_page_button(page_num: int):
             return rx.button(
                 rx.text(page_num, size="2", font_weight="500"),
@@ -49,13 +49,13 @@ def admin_dashboard() -> rx.Component:
                 style=rx.cond(
                     AlmacenState.current_page == page_num,
                     {
-                        "background": "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                        "background": "#3b82f6",
                         "color": "white",
-                        "border": "1px solid #667eea",
-                        "_hover": {"background": "linear-gradient(135deg, #5a67d8 0%, #6b46a0 100%)"},
+                        "border": "1px solid #3b82f6",
+                        "_hover": {"background": "#1d4ed8"},
                         "flex_shrink": 0,
-                        "min_width": "32px",
-                        "padding": "0 8px",
+                        "width": "36px",
+                        "padding": "0",
                     },
                     {
                         "background": "white",
@@ -66,13 +66,13 @@ def admin_dashboard() -> rx.Component:
                             "border": "1px solid #cbd5e1"
                         },
                         "flex_shrink": 0,
-                        "min_width": "32px",
-                        "padding": "0 8px",
+                        "width": "36px",
+                        "padding": "0",
                     }
                 )
             )
         
-        # Controles de paginación (estilo logística)
+        # Controles de paginación (estilo Productos Disponibles)
         def render_pagination():
             return rx.hstack(
                 # Botón anterior
@@ -87,11 +87,11 @@ def admin_dashboard() -> rx.Component:
                         "border": "1px solid #e2e8f0",
                         "color": "#1e293b",
                         "flex_shrink": 0,
-                        "min_width": "32px",
-                        "padding": "0 8px",
+                        "width": "36px",
+                        "padding": "0",
                     }
                 ),
-                # Contenedor de números
+                # Contenedor de números (ancho fijo 220px)
                 rx.box(
                     rx.hstack(
                         # Primera página + "..." si estamos lejos del inicio
@@ -137,11 +137,11 @@ def admin_dashboard() -> rx.Component:
                         spacing="1",
                         wrap="nowrap",
                         align="center",
+                        justify="end",
                     ),
+                    width="220px",
+                    flex_shrink=0,
                     overflow_x="auto",
-                    flex_grow=0,
-                    flex_shrink=1,
-                    max_width="100%",
                 ),
                 # Botón siguiente
                 rx.button(
@@ -161,8 +161,8 @@ def admin_dashboard() -> rx.Component:
                         "border": "1px solid #e2e8f0",
                         "color": "#1e293b",
                         "flex_shrink": 0,
-                        "min_width": "32px",
-                        "padding": "0 8px",
+                        "width": "36px",
+                        "padding": "0",
                     }
                 ),
                 spacing="2",
@@ -172,7 +172,7 @@ def admin_dashboard() -> rx.Component:
                 width="100%",
             )
         
-        # Fila de producto (sin cambios, solo adaptamos para usar datos paginados)
+        # Fila de producto (sin cambios)
         def producto_row(item):
             return rx.table.row(
                 # Checkbox usando Numero como identificador
@@ -530,7 +530,7 @@ def admin_dashboard() -> rx.Component:
                         ),
                         rx.table.body(
                             rx.foreach(
-                                AlmacenState.paginated_data,  # <-- Usamos datos paginados
+                                AlmacenState.paginated_data,
                                 producto_row
                             )
                         ),
@@ -550,11 +550,12 @@ def admin_dashboard() -> rx.Component:
                 ),
                 width="100%",
             ),
-            # Controles de paginación
+            # Controles de paginación (nuevo estilo)
             rx.cond(
                 AlmacenState.filtered_data.length() > AlmacenState.items_per_page,
                 rx.box(
                     rx.hstack(
+                        # Texto "Mostrando X a Y de Z resultados"
                         rx.text(
                             rx.cond(
                                 AlmacenState.filtered_data.length() > 0,
@@ -576,25 +577,25 @@ def admin_dashboard() -> rx.Component:
                             size="2",
                             color="#64748b",
                             font_weight="500",
-                            flex_shrink=0,
-                            margin_right="8rem",
+                            flex=1,
+                            margin_right="1rem",
                         ),
-                        rx.spacer(),
+                        # Paginación
                         rx.box(
                             render_pagination(),
                             flex_shrink=0,
-                            margin_left="0.5rem",
                         ),
                         width="100%",
                         align="center",
-                        spacing="6",
+                        justify="between",
+                        spacing="2",
                         wrap="wrap",
                     ),
                     padding="1.5rem 1rem",
                     border_top="1px solid #e2e8f0",
                     background="#f8fafc",
                 ),
-                rx.box(height="1rem")  # Espacio cuando no hay paginación
+                rx.box(height="1rem")  # espacio cuando no hay paginación
             ),
             spacing="0",
             width="100%",
@@ -1178,7 +1179,7 @@ def admin_dashboard() -> rx.Component:
                             rx.cond(
                                 AlmacenState.filtered_data.length() > 0,
                                 rx.vstack(
-                                    productos_table(),  # <-- Usamos la nueva tabla con paginación
+                                    productos_table(),
                                     # Información de filtrado
                                     rx.cond(
                                         AlmacenState.search_value != "",

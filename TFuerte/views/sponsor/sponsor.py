@@ -17,7 +17,7 @@ class SponsorCarouselState(rx.State):
         {"src": "navegacion.png", "name": "Empresa de Navegación Caribe", "href": "https://www.gemar.transnet.cu/es/empresas/empresa-de-navegacion-caribe"},
         {"src": "salud.png", "name": "Ministerio de Salud Pública", "href": "https://salud.msp.gob.cu/"},
         {"src": "eng.png", "name": "Engimov Caribe", "href": "https://www.engimov.pt/es/grupo/engimov-caribe"},
-        {"src": "puerto.png", "name": "Prácticos de Puerto", "href": "https://practicosdecuba.transnet.cu/"},
+        {"src": "puerto.png", "name": "Prácticos de Cuba", "href": "https://practicosdecuba.transnet.cu/"},
         {"src": "UNE.png", "name": "Unión Eléctrica", "href": "https://www.unionelectrica.cu/"},
         {"src": "MINAL.png", "name": "Ministerio de la Industria Alimentaria", "href": None},
         {"src": "turcos.png", "name": "Karadeniz Holding", "href": "https://www.karadenizholding.com/"},
