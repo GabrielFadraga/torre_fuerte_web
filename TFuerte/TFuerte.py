@@ -35,6 +35,12 @@ from TFuerte.pages.admin_tf_login import admin_tf_login
 
 from TFuerte.pages.generar_comprobante import generar_comprobante
 
+from TFuerte.pages.commercial_login import commercial_login
+from TFuerte.pages.commercial_dashboard import commercial_dashboard
+from TFuerte.pages.commercial_admin_dashboard import commercial_admin_dashboard
+from TFuerte.pages.commercial_admin_login import commercial_admin_login
+
+
 from rxconfig import config
 
 

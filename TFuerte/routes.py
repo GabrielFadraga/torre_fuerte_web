@@ -40,3 +40,9 @@ class Route(Enum):
     ADMIN_LOGIN_PANEL = "/admin-tf-login"
 
     GENERAR_COMPROBANTE = "/generar-comprobante"
+
+    COMMERCIAL_LOGIN = "/comercial/login"
+    COMMERCIAL_DASHBOARD = "/comercial/dashboard"
+
+    COMMERCIAL_ADMIN_DASHBOARD = "/commercial-admin"
+    COMMERCIAL_ADMIN_LOGIN = "/commercial-admin-login"

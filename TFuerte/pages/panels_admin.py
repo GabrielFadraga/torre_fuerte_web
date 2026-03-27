@@ -253,7 +253,6 @@ def solicitante_card():
 
 # =============================================================================
 # NUEVAS TARJETAS PARA SOLICITUD DE RECURSOS Y FINANCIAMIENTO
-# (MISMAS DIMENSIONES Y ESTILO QUE LAS ORIGINALES)
 # =============================================================================
 
 def admin_rm_card():
@@ -627,6 +626,167 @@ def solicitante_rm_card():
     )
 
 # =============================================================================
+# TARJETAS PARA GESTIÓN COMERCIAL
+# =============================================================================
+def comercial_card():
+    return rx.card(
+        rx.vstack(
+            rx.icon(
+                "shopping-cart", 
+                size=70, 
+                color="#f97316",
+                style={
+                    "background": "linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%)",
+                    "padding": "20px",
+                    "border_radius": "50%",
+                    "margin_bottom": "20px"
+                }
+            ),
+            rx.heading("Gestión Comercial", size="6", color="#1e293b", font_weight="700"),
+            rx.text(
+                "Administración de clientes, proveedores y contratos comerciales.",
+                size="2", 
+                color="#64748b",
+                text_align="center",
+                line_height="1.5"
+            ),
+            rx.divider(margin_y="1rem"),
+            rx.vstack(
+                rx.hstack(
+                    rx.icon("chevron_right", size=16, color="#f97316"),
+                    rx.text("Gestión de clientes", size="2", color="#1e293b"),
+                    spacing="2", align="center"
+                ),
+                rx.hstack(
+                    rx.icon("chevron_right", size=16, color="#f97316"),
+                    rx.text("Gestión de proveedores", size="2", color="#1e293b"),
+                    spacing="2", align="center"
+                ),
+                rx.hstack(
+                    rx.icon("chevron_right", size=16, color="#f97316"),
+                    rx.text("Contratos con clientes", size="2", color="#1e293b"),
+                    spacing="2", align="center"
+                ),
+                rx.hstack(
+                    rx.icon("chevron_right", size=16, color="#f97316"),
+                    rx.text("Contratos con proveedores", size="2", color="#1e293b"),
+                    spacing="2", align="center"
+                ),
+                spacing="2", align="start"
+            ),
+            rx.button(
+                "Acceder como Gestión Comercial",
+                on_click=lambda: rx.redirect(Route.COMMERCIAL_LOGIN.value),
+                size="3", variant="solid",
+                style={
+                    "background": "linear-gradient(135deg, #f97316 0%, #ea580c 100%)",
+                    "color": "white", "font_weight": "600", "width": "100%",
+                    "margin_top": "1.5rem",
+                    "_hover": {
+                        "background": "linear-gradient(135deg, #ea580c 0%, #c2410c 100%)",
+                        "transform": "translateY(-2px)",
+                        "box_shadow": "0 10px 25px -5px rgba(249, 115, 22, 0.3)"
+                    }
+                }
+            ),
+            spacing="4", align="center", width="100%"
+        ),
+        style={
+            "background": "white",
+            "border_radius": "16px",
+            "box_shadow": "0 10px 40px rgba(0, 0, 0, 0.08)",
+            "border": "1px solid #e2e8f0",
+            "padding": "2rem",
+            "transition": "all 0.3s ease",
+            "_hover": {
+                "transform": "translateY(-5px)",
+                "box_shadow": "0 20px 60px rgba(0, 0, 0, 0.12)"
+            },
+            "height": "100%",
+            "width": "100%"
+        }
+    )
+
+def comercial_admin_card():
+    return rx.card(
+        rx.vstack(
+            rx.icon(
+                "eye", 
+                size=70, 
+                color="#4f46e5",
+                style={
+                    "background": "linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%)",
+                    "padding": "20px",
+                    "border_radius": "50%",
+                    "margin_bottom": "20px"
+                }
+            ),
+            rx.heading("Administración Comercial", size="6", color="#1e293b", font_weight="700"),
+            rx.text(
+                "Panel de solo lectura para supervisión completa del área comercial.",
+                size="2", 
+                color="#64748b",
+                text_align="center",
+                line_height="1.5"
+            ),
+            rx.divider(margin_y="1rem"),
+            rx.vstack(
+                rx.hstack(
+                    rx.icon("chevron_right", size=16, color="#4f46e5"),
+                    rx.text("Visualización de todos los registros", size="2", color="#1e293b"),
+                    spacing="2", align="center"
+                ),
+                rx.hstack(
+                    rx.icon("chevron_right", size=16, color="#4f46e5"),
+                    rx.text("Filtros y ordenamiento", size="2", color="#1e293b"),
+                    spacing="2", align="center"
+                ),
+                rx.hstack(
+                    rx.icon("chevron_right", size=16, color="#4f46e5"),
+                    rx.text("Descarga de datos en CSV", size="2", color="#1e293b"),
+                    spacing="2", align="center"
+                ),
+                rx.hstack(
+                    rx.icon("chevron_right", size=16, color="#4f46e5"),
+                    rx.text("Acceso exclusivo para administradores", size="2", color="#1e293b"),
+                    spacing="2", align="center"
+                ),
+                spacing="2", align="start"
+            ),
+            rx.button(
+                "Acceder como Administrador Comercial",
+                on_click=lambda: rx.redirect(Route.COMMERCIAL_ADMIN_LOGIN.value),
+                size="3", variant="solid",
+                style={
+                    "background": "linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)",
+                    "color": "white", "font_weight": "600", "width": "100%",
+                    "margin_top": "1.5rem",
+                    "_hover": {
+                        "background": "linear-gradient(135deg, #4338ca 0%, #3730a3 100%)",
+                        "transform": "translateY(-2px)",
+                        "box_shadow": "0 10px 25px -5px rgba(79, 70, 229, 0.3)"
+                    }
+                }
+            ),
+            spacing="4", align="center", width="100%"
+        ),
+        style={
+            "background": "white",
+            "border_radius": "16px",
+            "box_shadow": "0 10px 40px rgba(0, 0, 0, 0.08)",
+            "border": "1px solid #e2e8f0",
+            "padding": "2rem",
+            "transition": "all 0.3s ease",
+            "_hover": {
+                "transform": "translateY(-5px)",
+                "box_shadow": "0 20px 60px rgba(0, 0, 0, 0.12)"
+            },
+            "height": "100%",
+            "width": "100%"
+        }
+    )
+
+# =============================================================================
 # PÁGINA PRINCIPAL
 # =============================================================================
 
@@ -742,7 +902,7 @@ def user_selection() -> rx.Component:
                     border_bottom="1px solid #e2e8f0"
                 ),
                 
-                # ========== SECCIÓN 1: GESTIÓN DE ALMACÉN (IGUAL QUE EL ORIGINAL) ==========
+                # ========== SECCIÓN 1: GESTIÓN DE ALMACÉN ==========
                 rx.box(
                     rx.center(
                         rx.vstack(
@@ -775,7 +935,7 @@ def user_selection() -> rx.Component:
                                     width="100%",
                                     max_width="1200px",
                                     justify="center",
-                                    align="stretch",  # Cambiado a stretch para igualar alturas
+                                    align="stretch",
                                 ),
                                 display=["none", "none", "flex"]
                             ),
@@ -828,18 +988,65 @@ def user_selection() -> rx.Component:
                                         justify="center",
                                         align="stretch",
                                     ),
-                                    # Segunda fila: 2 tarjetas centradas (mismo ancho que las de arriba)
+                                    # Segunda fila: 2 tarjetas centradas
                                     rx.hstack(
                                         revfin_card(),
                                         solicitante_rm_card(),
                                         spacing="6",
                                         width="100%",
-                                        max_width="1200px",  # Mismo que la fila anterior
+                                        max_width="1200px",
                                         justify="center",
                                         align="stretch",
                                     ),
                                     spacing="6",
                                     width="100%"
+                                ),
+                                display=["none", "none", "flex"]
+                            ),
+                            spacing="4",
+                            align="center",
+                            width="100%"
+                        ),
+                        width="100%"
+                    ),
+                    width="100%",
+                    padding="2rem 1rem",
+                    border_top="1px solid #e2e8f0",
+                    margin_top="2rem"
+                ),
+
+                # ========== SECCIÓN 3: GESTIÓN COMERCIAL (DOS TARJETAS) ==========
+                rx.box(
+                    rx.center(
+                        rx.vstack(
+                            rx.heading(
+                                "🏢 Gestión Comercial",
+                                size="6",
+                                color="#1e293b",
+                                text_align="center",
+                                margin_bottom="2rem"
+                            ),
+                            # Móvil
+                            rx.box(
+                                rx.vstack(
+                                    comercial_card(),
+                                    comercial_admin_card(),
+                                    spacing="6",
+                                    width="100%",
+                                    max_width="400px"
+                                ),
+                                display=["block", "block", "none"]
+                            ),
+                            # Escritorio: dos tarjetas en fila
+                            rx.box(
+                                rx.hstack(
+                                    comercial_card(),
+                                    comercial_admin_card(),
+                                    spacing="6",
+                                    width="100%",
+                                    max_width="1200px",
+                                    justify="center",
+                                    align="stretch",
                                 ),
                                 display=["none", "none", "flex"]
                             ),

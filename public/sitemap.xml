@@ -81,4 +81,16 @@
   <url>
     <loc>http://localhost:3000/generar-comprobante</loc>
   </url>
+  <url>
+    <loc>http://localhost:3000/comercial/login</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/comercial/dashboard</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/commercial-admin</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/commercial-admin-login</loc>
+  </url>
 </urlset>
