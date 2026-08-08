@@ -40,6 +40,11 @@ from TFuerte.pages.commercial_dashboard import commercial_dashboard
 from TFuerte.pages.commercial_admin_dashboard import commercial_admin_dashboard
 from TFuerte.pages.commercial_admin_login import commercial_admin_login
 
+from TFuerte.pages.super_admin_login import super_admin_login
+from TFuerte.pages.user_management_page import user_management_page
+
+
+
 
 from rxconfig import config
 

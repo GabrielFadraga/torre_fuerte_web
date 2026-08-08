@@ -5,7 +5,127 @@ from TFuerte.styles.colors import Text_tx, Color_tx
 
 def president_message() -> rx.Component:
     return rx.vstack(
-        # Hero Section renovada con logo sobre fondo blanco
+        # -------------------------------
+        # NUEVO ANUNCIO: DESARROLLO WEB
+        # -------------------------------
+        rx.box(
+            rx.hstack(
+                # Columna de la imagen
+                rx.box(
+                    rx.image(
+                        src="wordpress.jpg",
+                        width="100%",
+                        height="280px",
+                        object_fit="cover",
+                        border_radius="12px",
+                        box_shadow="0 8px 30px rgba(0,0,0,0.12)",
+                        transition="transform 0.3s ease",
+                        _hover={"transform": "scale(1.02)"},
+                    ),
+                    flex="1",
+                    min_width="300px",
+                ),
+                # Columna de texto
+                rx.box(
+                    rx.vstack(
+                        rx.hstack(
+                            rx.box(
+                                rx.text(
+                                    "NUEVO",
+                                    font_size="12px",
+                                    font_weight="bold",
+                                    color="white",
+                                    background="#FF6B35",
+                                    padding_x="10px",
+                                    padding_y="4px",
+                                    border_radius="8px",
+                                    animation="pulse 2s infinite",
+                                    box_shadow="0 0 12px rgba(255,107,53,0.6)",
+                                ),
+                            ),
+                            rx.text(
+                                "Servicio digital",
+                                color="#64748b",
+                                font_size="14px",
+                                font_weight="medium",
+                            ),
+                            spacing="3",
+                            align_items="center",
+                        ),
+                        rx.heading(
+                            "Llevamos tu empresa al mundo digital",
+                            size="7",
+                            color="#194264",
+                            font_weight="bold",
+                            line_height="1.2",
+                        ),
+                        rx.text(
+                            "Creamos sitios web profesionales, rápidos y optimizados para potenciar tu presencia online. "
+                            "Desde landing pages hasta plataformas completas, hechas a tu medida.",
+                            color="#334155",
+                            font_size="16px",
+                            line_height="1.7",
+                            max_width="500px",
+                        ),
+                        rx.link(
+                            rx.button(
+                                rx.hstack(
+                                    rx.text("Más información"),
+                                    rx.icon(tag="arrow_forward", size=18),
+                                    spacing="2",
+                                    align_items="center",
+                                ),
+                                background="linear-gradient(135deg, #FF6B35 0%, #FF8E53 100%)",
+                                color="white",
+                                padding_x="28px",
+                                padding_y="14px",
+                                font_size="16px",
+                                font_weight="bold",
+                                border_radius="8px",
+                                box_shadow="0 4px 15px rgba(255, 107, 53, 0.3)",
+                                transition="all 0.3s ease",
+                                _hover={
+                                    "transform": "translateY(-2px)",
+                                    "box_shadow": "0 8px 25px rgba(255, 107, 53, 0.5)",
+                                    "background": "linear-gradient(135deg, #FF8E53 0%, #FF6B35 100%)",
+                                },
+                            ),
+                            href="https://wa.me/message/OKIP2WN55MKEK1",
+                            is_external=True,
+                            margin_top="16px",
+                        ),
+                        align_items="start",
+                        spacing="5",
+                    ),
+                    flex="1.5",
+                    padding_left="40px",
+                ),
+                align_items="center",
+                spacing="6",
+                width="100%",
+            ),
+            width="100%",
+            padding="40px",
+            background="white",
+            border_radius="16px",
+            box_shadow="0 4px 20px rgba(0,0,0,0.04)",
+            border="1px solid rgba(25, 66, 100, 0.08)",
+            margin_bottom="0px",
+            opacity="0",
+            animation="fadeInUp 0.8s ease-out 0.2s forwards",
+            style={
+                "@keyframes fadeInUp": {
+                    "0%": {"opacity": "0", "transform": "translateY(30px)"},
+                    "100%": {"opacity": "1", "transform": "translateY(0)"},
+                },
+                "@keyframes pulse": {
+                    "0%": {"opacity": "0.5"},
+                    "100%": {"opacity": "1"},
+                },
+            },
+        ),
+
+        # Hero Section renovada con logo sobre fondo blanco (original)
         rx.box(
             rx.hstack(
                 # Columna izquierda - Logo sobre fondo blanco
@@ -349,10 +469,9 @@ def president_message() -> rx.Component:
             background="white",
         ),
 
-        # Sección de ubicación en formato horizontal (como footer minimalista)
+        # Sección de ubicación en formato horizontal
         rx.box(
             rx.hstack(
-                # Información de ubicación
                 rx.box(
                     rx.vstack(
                         rx.heading(
@@ -420,7 +539,6 @@ def president_message() -> rx.Component:
             padding_y=styles.Spacer.VERY_BIG.value,
             background="white",
             border_top="1px solid #e2e8f0",
-            # Animación sutil de entrada
             opacity="0",
             animation="fadeInUp 0.8s ease-out forwards",
             style={
@@ -443,9 +561,110 @@ def president_message() -> rx.Component:
         background="#FFFFFF",
     )
 
+
 def president_message_mobile() -> rx.Component:
     return rx.vstack(
-        # Header móvil
+        # -------------------------------
+        # ANUNCIO DESARROLLO WEB (MÓVIL)
+        # -------------------------------
+        rx.box(
+            rx.vstack(
+                rx.image(
+                    src="wordpress.jpg",
+                    width="100%",
+                    height="200px",
+                    object_fit="cover",
+                    border_radius="12px",
+                    box_shadow="0 6px 20px rgba(0,0,0,0.1)",
+                ),
+                rx.vstack(
+                    rx.hstack(
+                        rx.box(
+                            rx.text(
+                                "NUEVO",
+                                font_size="10px",
+                                font_weight="bold",
+                                color="white",
+                                background="#FF6B35",
+                                padding_x="8px",
+                                padding_y="3px",
+                                border_radius="6px",
+                                animation="pulse 2s infinite",
+                                box_shadow="0 0 10px rgba(255,107,53,0.6)",
+                            ),
+                        ),
+                        rx.text(
+                            "Servicio digital",
+                            color="#64748b",
+                            font_size="12px",
+                            font_weight="medium",
+                        ),
+                        spacing="2",
+                        align_items="center",
+                    ),
+                    rx.heading(
+                        "Llevamos tu empresa al mundo digital",
+                        size="5",
+                        color="#194264",
+                        font_weight="bold",
+                        text_align="center",
+                    ),
+                    rx.text(
+                        "Creamos sitios web profesionales, rápidos y optimizados para potenciar tu presencia online.",
+                        color="#334155",
+                        font_size="14px",
+                        text_align="center",
+                        line_height="1.6",
+                    ),
+                    rx.link(
+                        rx.button(
+                            rx.hstack(
+                                rx.text("Más información"),
+                                rx.icon(tag="arrow_forward", size=16),
+                                spacing="1",
+                            ),
+                            background="linear-gradient(135deg, #FF6B35 0%, #FF8E53 100%)",
+                            color="white",
+                            width="100%",
+                            padding_y="12px",
+                            font_size="14px",
+                            font_weight="bold",
+                            border_radius="8px",
+                        ),
+                        href="https://wa.me/message/OKIP2WN55MKEK1",
+                        is_external=True,
+                        width="100%",
+                        margin_top="12px",
+                    ),
+                    align_items="center",
+                    spacing="4",
+                    width="100%",
+                ),
+                spacing="4",
+                align_items="center",
+                width="100%",
+            ),
+            width="100%",
+            padding="24px",
+            background="white",
+            border_radius="16px",
+            box_shadow="0 4px 20px rgba(0,0,0,0.04)",
+            border="1px solid rgba(25, 66, 100, 0.08)",
+            opacity="0",
+            animation="fadeInUp 0.8s ease-out 0.2s forwards",
+            style={
+                "@keyframes fadeInUp": {
+                    "0%": {"opacity": "0", "transform": "translateY(30px)"},
+                    "100%": {"opacity": "1", "transform": "translateY(0)"},
+                },
+                "@keyframes pulse": {
+                    "0%": {"opacity": "0.5"},
+                    "100%": {"opacity": "1"},
+                },
+            },
+        ),
+
+        # Header móvil original
         rx.box(
             rx.center(
                 rx.vstack(
@@ -497,9 +716,8 @@ def president_message_mobile() -> rx.Component:
             background="white",
         ),
         
-        # Contenido móvil
+        # Contenido móvil (resto original)
         rx.vstack(
-            # Introducción
             rx.box(
                 rx.vstack(
                     rx.heading(
@@ -526,7 +744,6 @@ def president_message_mobile() -> rx.Component:
                 border_left="4px solid #194264",
             ),
             
-            # Valor diferencial
             rx.box(
                 rx.vstack(
                     rx.text(
@@ -544,7 +761,6 @@ def president_message_mobile() -> rx.Component:
                 padding=styles.Spacer.LARGE.value,
             ),
             
-            # Cita
             rx.box(
                 rx.vstack(
                     rx.text(
@@ -573,7 +789,6 @@ def president_message_mobile() -> rx.Component:
                 margin_y=styles.Spacer.LARGE.value,
             ),
             
-            # Contacto
             rx.vstack(
                 rx.text(
                     "Lic. Maikel Torres López",
@@ -605,7 +820,6 @@ def president_message_mobile() -> rx.Component:
                 padding=styles.Spacer.LARGE.value,
             ),
 
-            # Ubicación en móvil
             rx.box(
                 rx.vstack(
                     rx.heading(
@@ -664,6 +878,7 @@ def president_message_mobile() -> rx.Component:
         spacing="0",
         width="100%",
     )
+
 
 def logo() -> rx.Component:
     return rx.box(

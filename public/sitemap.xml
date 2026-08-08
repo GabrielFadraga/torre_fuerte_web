@@ -93,4 +93,10 @@
   <url>
     <loc>http://localhost:3000/commercial-admin-login</loc>
   </url>
+  <url>
+    <loc>http://localhost:3000/super-admin-login</loc>
+  </url>
+  <url>
+    <loc>http://localhost:3000/user-management</loc>
+  </url>
 </urlset>

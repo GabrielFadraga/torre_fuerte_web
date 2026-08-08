@@ -6,8 +6,6 @@ config = rx.Config(
     api_url="https://torre-fuerte-web.onrender.com",
 
     cors_allowed_origins=[
-        "http://localhost:3000",
-        "http://localhost:3170",
         "https://www.torrefuertesurl.com",
     ],
     plugins=[

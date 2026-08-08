@@ -46,3 +46,6 @@ class Route(Enum):
 
     COMMERCIAL_ADMIN_DASHBOARD = "/commercial-admin"
     COMMERCIAL_ADMIN_LOGIN = "/commercial-admin-login"
+
+    SUPER_ADMIN_LOGIN = "/super-admin-login"
+    USER_MANAGEMENT = "/user-management"
